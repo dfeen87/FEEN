@@ -7,27 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install Build Tools
         run: |
           sudo apt update
           sudo apt install -y cmake g++ build-essential
 
       - name: Configure CMake
+        # We tell CMake to treat the library as a header-only INTERFACE
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DFEEN_BUILD_TESTS=ON
 
-      - name: Build
-        run: cmake --build build --config Release -j$(nproc)
+      - name: Build Tests
+        # Even though the lib is header-only, we must build the test executable
+        run: cmake --build build --config Release
 
-      - name: Run Tests
+      - name: Run Physical Validation
         run: |
           cd build
           ctest --output-on-failure
