@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cassert>
 #include <iomanip>
-#include "../include/feen/resonator.h"
+#include <feen/resonator.h>
 
 using namespace feen;
 
