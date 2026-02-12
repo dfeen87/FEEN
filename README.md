@@ -400,15 +400,46 @@ For L = 10 cm, αₜₕₑᵣₘₐₗ = 2 × 10⁻⁵ K⁻¹: **δT < 5.4 K** (
 
 #### 9.1 Energy Per Operation
 
-```
-EFEEN ≈ Pₛᵢgₙₐₗ × τₛwᵢₜcₕ
-```
-
-For Pₛᵢgₙₐₗ ≈ 2 × 10⁻¹⁹ W and τₛwᵢₜcₕ ≈ 10 ms:
+Energy per computational operation:
 
 ```
-EFEEN ≈ 2 × 10⁻²¹ J per operation
+E_compute ≈ P_signal × τ_switch
 ```
+
+For P_signal ≈ 2 × 10⁻¹⁹ W and τ_switch ≈ 10 ms:
+
+```
+E_compute ≈ 2 × 10⁻²¹ J per operation
+```
+
+**However, this is only the direct computational energy.** Total system energy must account for:
+
+```
+E_system = E_compute + E_gain + E_control + E_thermal
+```
+
+where:
+- **E_gain**: Amplification energy for fan-out and signal restoration
+- **E_control**: Calibration, synchronization, and active reset circuits
+- **E_thermal**: Temperature stabilization (if required)
+
+**Critical reality**: In practical systems with extensive fan-out and error correction:
+
+```
+E_gain ≫ E_compute
+```
+
+Amplification overhead can increase total energy by **2-3 orders of magnitude** beyond the bare computational energy.
+
+**Example calculation** for a system with 10× fan-out requiring gain g = 2 per stage:
+
+```
+E_gain ≈ (g - 1) × P_signal × τ_switch × N_stages
+     ≈ 1 × (2 × 10⁻¹⁹) × 0.01 × 10
+     ≈ 2 × 10⁻²⁰ J
+```
+
+Already **10× larger** than E_compute for a modest system.
 
 #### 9.2 Comparison to CMOS
 
@@ -607,6 +638,27 @@ The most significant departure from conventional languages: **memory is dynamic*
 
 This is not a bug to be engineered away; **it's fundamental to the acoustic substrate.**
 
+**Connection to Reservoir Computing**: This dynamic memory model positions FEEN resonators as natural implementations of **reservoir computing** architectures. In reservoir computing formalism:
+
+```
+ẋ = f(x, u)        (reservoir dynamics)
+y = W_out · x      (readout mapping)
+```
+
+where:
+- **x**: reservoir state vector (FEEN: amplitudes of all active resonators)
+- **u**: input signal (FEEN: injected wave sources)
+- **f**: nonlinear dynamics (FEEN: damped wave equation with interference)
+- **W_out**: trained readout weights (FEEN: interference pattern coefficients)
+
+**Key insight**: FEEN resonators naturally implement a **physical reservoir** where:
+- Reservoir dynamics arise from wave physics (no simulation needed)
+- High-dimensional state space emerges from modal decomposition
+- Nonlinearity comes from material response and interference
+- Fading memory property follows from exponential decay
+
+This makes FEEN particularly well-suited for **time-series processing**, **pattern recognition**, and **temporal classification** tasks that leverage reservoir computing principles.
+
 #### 13.2 Decay and Sustain Window
 
 Every resonator has a **sustain window**: period during which stored state is reliable (amplitude above minimum threshold for readable operation).
@@ -647,6 +699,23 @@ wave channel_C -> emit output_C
 ```
 
 Direct consequence of superposition principle: multiple waves at different frequencies occupy the same physical medium simultaneously and independently.
+
+**Caveat—Finite-Q Mode Coupling**: Strict spectral orthogonality (⟨φᵢ, φⱼ⟩ = 0 for i ≠ j) holds only in idealized infinite-Q systems with perfect boundary conditions. In real MEMS resonators with finite Q, several non-ideal effects break orthogonality:
+
+- **Damping-induced mode mixing**: Finite damping couples nearby modes with strength ~ 1/Q
+- **Fabrication disorder**: Boundary imperfections scatter energy between modes
+- **Nonlinear coupling**: At high amplitudes, cubic nonlinearity generates intermodulation products
+- **Thermal fluctuations**: Temperature variations modulate mode frequencies, causing time-varying overlap
+
+**Practical consequence**: Mode isolation is limited to:
+
+```
+Isolation ≈ -20 log₁₀(1/Q) dB
+```
+
+For Q = 200: **Isolation ≈ 46 dB** (sufficient for most applications but not perfect).
+
+When high isolation is critical, **guard bands** (unused frequency regions between active channels) must be inserted, further reducing effective channel density.
 
 #### 13.4 Memory Persistence Model
 
@@ -1004,37 +1073,55 @@ where:
 
 #### 25.2 Fixed Points and Stability
 
-In the absence of driving (F = 0), the system has a potential:
+For a **bistable (double-well) potential**, we use the form:
 
 ```
-U(x) = ½ ω₀² x² + ¼ β x⁴
+U(x) = -½ α² x² + ¼ β x⁴
 ```
+
+where α², β > 0. This can be rewritten in terms of the Duffing equation by setting α² = ω₀² and noting that the equation becomes:
+
+```
+ẍ + 2γ ẋ - ω₀² x + β x³ = F cos(ωt)
+```
+
+(Note the negative sign before ω₀² for the bistable case.)
 
 **Fixed points** satisfy dU/dx = 0:
 
 ```
-ω₀² x + β x³ = 0
+-α² x + β x³ = 0
+x(-α² + β x²) = 0
 ```
 
 Solutions:
-- x₀ = 0 (trivial fixed point)
-- x₁,₂ = ±√(-ω₀²/β) (exists only if β < 0)
+- x₀ = 0 (unstable saddle point)
+- x₁,₂ = ±α/√β = ±√(ω₀²/β) (stable minima)
 
-**Stability condition**: For β < 0, the system exhibits bistability with stable points at x₁,₂ and unstable point at x₀.
-
-Local stability requires:
+**Stability analysis**: Local stability requires d²U/dx² > 0 at the fixed point.
 
 ```
-d²U/dx² |_{x₁,₂} = ω₀² + 3β x₁,₂² > 0
+d²U/dx² = -α² + 3β x²
 ```
 
-Substituting x₁,₂ = ±√(-ω₀²/β):
+At x₀ = 0:
+```
+d²U/dx² |_{x=0} = -α² < 0  ⟹ unstable
+```
+
+At x₁,₂ = ±√(α²/β):
+```
+d²U/dx² |_{x₁,₂} = -α² + 3β(α²/β) = 2α² > 0  ⟹ stable
+```
+
+Therefore: **Bistability requires the inverted-parabola-plus-quartic form with α², β > 0**
+
+**Barrier height** between wells:
 
 ```
-ω₀² + 3β(-ω₀²/β) = -2ω₀² > 0  (contradiction unless β < 0)
+ΔE = U(x₀) - U(x₁) = 0 - (-½α² · α²/β + ¼β · α⁴/β²)
+     = α⁴/(4β) = ω₀⁴/(4β)
 ```
-
-Therefore: **β < 0 required for bistability**
 
 #### 25.3 Bifurcation Regime
 
@@ -1170,11 +1257,19 @@ For Q = 200, f₀ = 1kHz, D = 10:
 T_compute ≈ 10 × (200/(π × 1000)) ≈ 640 ms
 ```
 
-**Clock rate** fundamentally limited by:
+**Clock rate** fundamentally limited by **both** resonant period and switching time:
 
 ```
-f_clock ≤ f₀/Q
+f_clock ≤ min(f₀/Q, 1/τ_switch)
 ```
+
+The resonant period bound (f₀/Q) sets the maximum rate at which energy can accumulate in a resonator. The switching time bound (1/τ_switch) sets the maximum rate at which bistable transitions can complete reliably.
+
+For typical systems:
+- f₀/Q ≈ 5-10 Hz (passive systems)
+- 1/τ_switch ≈ 100-1000 Hz (active nonlinear switching)
+
+**Therefore, the effective clock rate is dominated by the resonant period constraint** in passive systems and by switching dynamics in actively driven nonlinear systems.
 
 #### 27.2 Channel Scaling Cost
 
@@ -1497,6 +1592,566 @@ For longer delays, **external acoustic delay lines** (off-chip) required:
 ```
 
 **Compilation error** if program requires delays exceeding physical budget.
+
+---
+
+## Part X: Error Models, Robustness, and Computational Class
+
+### 31. Explicit Error Rate Model for Logic Gates
+
+#### 31.1 Per-Gate Error Probability
+
+Combining readout noise and SNR degradation across pipeline stages, the **per-gate error probability** at stage M is:
+
+```
+P_gate(M) = ½ erfc((SNR_in / √M) / √2)
+```
+
+This accounts for:
+- Thermal noise accumulation: SNR_out = SNR_in / √M
+- Threshold decision uncertainty at each gate
+- Noise propagation through interference operations
+
+For SNR_in = 30 and M = 10 stages:
+
+```
+SNR_out = 30 / √10 ≈ 9.5
+P_gate(10) ≈ ½ erfc(9.5 / 1.41) ≈ 10⁻¹⁰
+```
+
+**Highly reliable** under these conditions.
+
+#### 31.2 Maximum Reliable Pipeline Depth
+
+For reliable operation, we require P_gate < 10⁻⁶ (one error per million operations).
+
+This constrains:
+
+```
+SNR_in / √M > √2 · erfc⁻¹(2 × 10⁻⁶) ≈ 4.75
+```
+
+Therefore:
+
+```
+M_max ≈ (SNR_in / 4.75)²
+```
+
+For SNR_in = 30: **M_max ≈ 40 stages** before error rate exceeds tolerance.
+
+For SNR_in = 20: **M_max ≈ 18 stages**
+
+This provides **quantitative closure** on pipeline depth limits.
+
+#### 31.3 Error Rate Budget
+
+Total error probability for N-gate computation:
+
+```
+P_total ≈ N · P_gate(M)
+```
+
+For N = 100 gates, M = 10, SNR_in = 30:
+
+```
+P_total ≈ 100 × 10⁻¹⁰ = 10⁻⁸
+```
+
+Still well within reliable operation.
+
+**Critical threshold**: System becomes unreliable when:
+
+```
+N · M > (SNR_in / 4.75)²
+```
+
+### 32. Full Adder Stability Under Noise
+
+#### 32.1 Noise Sensitivity of Carry Logic
+
+Carry-out in the phononic full adder depends on nonlinear products:
+
+```
+C_out = κ |a₁ a₂| + κ |a₃ (a₁ - a₂)|
+```
+
+**First-order perturbation analysis**: Let aᵢ = aᵢ⁰ + δaᵢ where δaᵢ represents amplitude noise.
+
+For the first term (AND gate):
+
+```
+|a₁ a₂| ≈ |a₁⁰ a₂⁰| + Re[(a₂⁰)* δa₁ + (a₁⁰)* δa₂]
+```
+
+Therefore:
+
+```
+δC_AND ≈ κ(|a₂⁰| |δa₁| + |a₁⁰| |δa₂|)
+```
+
+**Error amplification**: Multiplicative nonlinearity amplifies noise by the signal amplitude.
+
+For normalized inputs |aᵢ⁰| = 1:
+
+```
+δC_out / C_out ≈ |δa₁|/|a₁| + |δa₂|/|a₂|
+```
+
+**Noise adds linearly in relative terms** for the AND operation.
+
+#### 32.2 Phase Noise Sensitivity
+
+Phase noise δφ in inputs causes:
+
+```
+a₁ = |a₁| e^(i(φ₁ + δφ₁))
+```
+
+For XOR (phase interference):
+
+```
+a_XOR = a₁ + a₂ e^(iπ)
+```
+
+With phase noise:
+
+```
+δa_XOR ≈ i|a₁| δφ₁ - i|a₂| δφ₂
+```
+
+**Phase-to-amplitude conversion**: Phase noise δφ converts to amplitude error ~ |a|·δφ.
+
+For π/16 phase tolerance and |a| = 1:
+
+```
+|δa_XOR| < 1 · (π/16) ≈ 0.196
+```
+
+Approximately **20% amplitude error** at the phase tolerance limit.
+
+#### 32.3 Drift Impact on Carry Chain
+
+Frequency drift δω causes phase accumulation:
+
+```
+δφ(t) = δω · t
+```
+
+For carry propagation time t_carry through D stages:
+
+```
+t_carry ≈ D · Q / (π f₀)
+```
+
+Phase error accumulates:
+
+```
+δφ_total ≈ D · (δω/f₀) · (Q/π)
+```
+
+For D = 4 (4-bit adder), Q = 200, δω/f₀ = 10⁻⁴:
+
+```
+δφ_total ≈ 4 × 10⁻⁴ × (200/π) ≈ 0.025 rad
+```
+
+**Acceptable** (well below π/16 tolerance).
+
+**Conclusion**: Full adder is **structurally sound and reasonably robust** to realistic noise levels, but requires:
+- SNR_in > 20 for reliable operation
+- Phase stability < π/16
+- Calibration to maintain δω/ω < 10⁻⁴
+
+### 33. Thermal Noise and Kramers Escape Rate
+
+#### 33.1 Stochastic Switching Dynamics
+
+The switching time given earlier:
+
+```
+τ_switch ≈ (1/γ) ln(ΔE / k_B T)
+```
+
+is a simplified deterministic approximation. The full **stochastic escape rate** in a bistable potential follows the **Kramers formula**:
+
+```
+τ_escape⁻¹ = (ω₀ ω_barrier)/(2π γ) · exp(-ΔE / k_B T)
+```
+
+where:
+- ω₀: frequency at potential minimum
+- ω_barrier: imaginary frequency at barrier top
+- ΔE = ω₀⁴/(4β): barrier height
+
+For the double-well potential U(x) = -½α²x² + ¼βx⁴:
+
+```
+ω_barrier² = -d²U/dx²|_{x=0} = α² = ω₀²
+```
+
+Therefore:
+
+```
+τ_escape⁻¹ ≈ (ω₀²)/(2π γ) · exp(-ω₀⁴/(4β k_B T))
+```
+
+#### 33.2 Comparison to Deterministic Estimate
+
+Deterministic switching time:
+
+```
+τ_switch ≈ (1/γ) ln(ω₀⁴/(4β k_B T))
+```
+
+Kramers escape time:
+
+```
+τ_escape ≈ (2π γ/ω₀²) exp(ω₀⁴/(4β k_B T))
+```
+
+The Kramers form is **exponentially more sensitive** to barrier height and temperature.
+
+**Practical consequence**: At room temperature with realistic barrier heights, Kramers escape dominates for **weak driving**, while deterministic switching dominates for **strong driving** (F > F_crit).
+
+FEEN logic gates operate in the **strong-driving regime** where deterministic switching is valid.
+
+### 34. Spatial Coupling Model
+
+#### 34.1 Coupled Resonator Dynamics
+
+Two resonators with coupling strength κ₁₂ obey:
+
+```
+ȧ₁ = -γ a₁ + iω₁ a₁ + κ₁₂ a₂
+ȧ₂ = -γ a₂ + iω₂ a₂ + κ₂₁ a₁
+```
+
+where κ₁₂ is the **coupling coefficient** depending on physical separation.
+
+#### 34.2 Coupling Strength vs. Distance
+
+For evanescent coupling (exponential decay):
+
+```
+κ₁₂ ~ κ₀ exp(-d/ℓ)
+```
+
+where:
+- d: physical separation between resonators
+- ℓ: coupling decay length (material-dependent)
+- κ₀: maximum coupling at contact
+
+For MEMS resonators: ℓ ≈ 0.1-1 μm
+
+For acoustic waveguides: ℓ ≈ λ/4 ≈ 1-10 cm
+
+#### 34.3 Coupling Design Constraints
+
+For **constructive interference** (strong coupling):
+
+```
+κ₁₂ > γ  (overcoupled regime)
+```
+
+Requires: d < ℓ ln(κ₀/γ)
+
+For **spectral isolation** (weak coupling):
+
+```
+κ₁₂ < Δω  (undercoupled regime)
+```
+
+Requires: d > ℓ ln(κ₀/Δω)
+
+**Layout constraint**: Resonators must be spaced according to desired coupling strength:
+
+```
+d_min(coupling) = ℓ ln(κ₀/γ)      (for interference)
+d_min(isolation) = ℓ ln(κ₀/Δω)    (for spectral addressing)
+```
+
+This provides the **missing physical layout layer** for compiler synthesis.
+
+### 35. Energy–Time Tradeoff
+
+#### 35.1 Fundamental Tradeoff in Resonant Systems
+
+For a resonator with quality factor Q and frequency ω₀, the energy stored is:
+
+```
+E_stored ∝ Q/ω₀
+```
+
+The decay time (operational time) is:
+
+```
+T_op ∝ Q/ω₀
+```
+
+Therefore:
+
+```
+E_stored · T_op ∝ (Q/ω₀)²
+```
+
+#### 35.2 Energy-Speed Product
+
+For fixed Q (determined by material physics), the **energy per operation** scales as:
+
+```
+E_compute ∝ 1/f_clock
+```
+
+where f_clock = ω₀/Q.
+
+**Energy-time tradeoff**:
+
+```
+E_compute · f_clock ≈ constant
+```
+
+To operate faster (higher f_clock), must increase ω₀, which increases energy per cycle.
+
+#### 35.3 Comparison to CMOS
+
+CMOS (switching):
+```
+E_CMOS ≈ C V² (independent of speed for given voltage)
+```
+
+FEEN (resonant):
+```
+E_FEEN ≈ constant / f_clock
+```
+
+**Crossover point**: FEEN becomes more energy-efficient than CMOS when:
+
+```
+f_clock < constant / (C V²)
+```
+
+For typical values: **f_clock < 1 kHz**
+
+This **formalizes the energy-speed tradeoff** and shows FEEN's advantage is restricted to **low-frequency applications**.
+
+### 36. Memory Allocation and Fragmentation
+
+#### 36.1 Static vs. Dynamic Allocation
+
+**FEEN memory allocation is static at compile time**. All resonators are pre-allocated with fixed frequencies:
+
+```
+resonator mem_k @ ωₖ { ... }
+```
+
+Frequencies cannot be dynamically reassigned during runtime—the physical resonant frequency is determined by cavity geometry.
+
+#### 36.2 Spectral Namespace Fragmentation
+
+With static allocation, **no fragmentation** occurs during program execution. However, **inter-program fragmentation** can occur:
+
+If Program A uses channels at 440, 880, 1320 Hz with 10 Hz guard bands:
+- Used: [430-450], [870-890], [1310-1330] Hz
+- Fragmented gaps: [450-870], [890-1310] Hz
+
+Program B cannot use these small gaps if its resonators require wider spacing.
+
+**Fragmentation overhead**: With guard bands, effective spectral utilization is:
+
+```
+η_spectral ≈ (N · 2Δω) / B
+```
+
+where:
+- N: number of channels
+- 2Δω: channel width + guard band
+- B: total bandwidth
+
+For N = 100, Δω = 10 Hz, B = 10 kHz:
+
+```
+η_spectral ≈ (100 × 20) / 10000 = 20%
+```
+
+**Only 20% of spectrum is usable** with realistic guard banding.
+
+#### 36.3 Optimal Channel Allocation
+
+Compiler should allocate channels to **minimize spectral fragmentation**:
+
+1. Sort channels by bandwidth requirement
+2. Pack tightly in frequency (bin packing algorithm)
+3. Insert minimum required guard bands
+4. Verify crosstalk < threshold
+
+This is an **NP-hard bin packing problem** but solvable for N < 100 channels.
+
+### 37. Compositional Semantics for Gain
+
+#### 37.1 Gain in the Type System
+
+Gain operator injects energy, violating linear resource discipline. Must be explicitly typed:
+
+```
+G : Wave[ω, E] → Wave[ω, g²E]  with energy_source
+```
+
+Type system must track:
+- Energy input E_in
+- Gain factor g
+- Energy output E_out = g² E_in
+- Source annotation (where energy comes from)
+
+#### 37.2 Energy Conservation with Gain
+
+Total energy balance:
+
+```
+E_compute + E_source = E_output + E_loss
+```
+
+where E_source is externally supplied energy for gain stages.
+
+**Linear type discipline**: Each gain operation must be annotated with energy source:
+
+```
+wave signal
+    -> amplify(gain: 2.0, source: external_power)
+    -> emit output
+```
+
+Compiler verifies:
+
+```
+∑ E_source ≥ ∑ (g² - 1) E_compute
+```
+
+Without source annotation, program is **ill-typed** (violates conservation).
+
+#### 37.3 Gain Budget
+
+System must declare **total available gain budget**:
+
+```
+system {
+    max_gain_power: 1.0 mW
+    efficiency: 0.2  // 20% efficient amplification
+}
+```
+
+Compiler verifies:
+
+```
+∑_stages (g_i² - 1) E_signal < max_gain_power × efficiency
+```
+
+If exceeded, **compilation error**.
+
+### 38. Formal Computational Class
+
+#### 38.1 FEEN Computational Model
+
+FEEN programs correspond to:
+
+**Bounded-depth nonlinear dynamical systems over ℂⁿ with finite modal basis**
+
+Formally:
+
+```
+State space: ℋ = span{φ₁, ..., φₙ} ⊂ L²(Ω)
+Evolution: ȧ = f(a, u) where f is polynomial in a
+Observation: y = M(a) = ⟨a, χ⟩
+Computation depth: D < D_max (bounded pipeline depth)
+```
+
+#### 38.2 Relationship to Other Models
+
+| Model | FEEN Relationship |
+|-------|-------------------|
+| Turing Machine | FEEN ⊄ TM (not Turing-complete; bounded memory) |
+| Finite Automaton | FA ⊂ FEEN (can implement FA via phase gates) |
+| Boolean Circuit | BC ⊂ FEEN (via interference + thresholding) |
+| Analog Circuit | FEEN ≈ Bounded-depth analog circuit |
+| Reservoir Computing | FEEN ⊆ RC (physical reservoir with trainable readout) |
+
+#### 38.3 Precise Characterization
+
+FEEN is equivalent to:
+
+**Bounded-time continuous-state computation with polynomial nonlinearity and exponential decay**
+
+Computational power lies between:
+- **Lower bound**: Boolean circuits of depth D
+- **Upper bound**: Polynomial-time analog circuits with exponentially decaying memory
+
+**Not universal** but **sufficient for specific signal processing and pattern recognition tasks**.
+
+### 39. Hardware Variability and Monte Carlo Bounds
+
+#### 39.1 Channel Collision Probability
+
+With fabrication variance σ_fab, probability of two channels ω_k and ω_{k'} colliding is:
+
+```
+P_collision ≈ σ_fab / Δω
+```
+
+where Δω is the nominal frequency spacing.
+
+For σ_fab = 1 Hz, Δω = 10 Hz:
+
+```
+P_collision ≈ 0.1 = 10%
+```
+
+**High collision risk** without calibration.
+
+#### 39.2 Crosstalk Growth Over Time
+
+Frequency drift causes crosstalk to grow:
+
+```
+X(t) ≈ X₀ + (σ_aging √t) / Δω
+```
+
+where X₀ is initial crosstalk and σ_aging is drift rate.
+
+For σ_aging = 0.1 Hz/√hr, Δω = 10 Hz, t = 100 hr:
+
+```
+X(100 hr) ≈ X₀ + (0.1 × 10) / 10 ≈ X₀ + 0.1
+```
+
+**10% crosstalk increase** after 100 hours operation.
+
+**Calibration required every ~10-20 hours** to maintain crosstalk < 1%.
+
+#### 39.3 Monte Carlo Reliability Bound
+
+With N channels, probability that **at least one** collision occurs:
+
+```
+P_any_collision ≈ 1 - (1 - P_collision)^(N(N-1)/2)
+```
+
+For N = 100, P_collision = 0.1:
+
+```
+P_any_collision ≈ 1 - (0.9)^4950 ≈ 1.0
+```
+
+**Collision is certain** for large N without calibration.
+
+**With calibration** (reducing effective σ_fab to 0.1 Hz):
+
+```
+P_collision ≈ 0.01
+P_any_collision ≈ 1 - (0.99)^4950 ≈ 1.0
+```
+
+**Still very likely** for N = 100.
+
+**Conclusion**: Systems with N > 50 channels **require continuous calibration** or significant guard banding to maintain reliability.
 
 ---
 
