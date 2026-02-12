@@ -7,7 +7,6 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Test (${{ matrix.compiler }} / ${{ matrix.build_type }})
     runs-on: ubuntu-latest
 
     strategy:
@@ -25,19 +24,17 @@ jobs:
           sudo apt update
           sudo apt install -y cmake ninja-build ccache g++ clang build-essential
 
-      - name: Configure Compiler
+      - name: Select Compiler
         run: |
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
-            export CXX=g++
-            export CC=gcc
+            echo "CC=gcc" >> $GITHUB_ENV
+            echo "CXX=g++" >> $GITHUB_ENV
           else
-            export CXX=clang++
-            export CC=clang
+            echo "CC=clang" >> $GITHUB_ENV
+            echo "CXX=clang++" >> $GITHUB_ENV
           fi
-          echo "CXX=$CXX" >> $GITHUB_ENV
-          echo "CC=$CC" >> $GITHUB_ENV
 
-      - name: Configure (CMake)
+      - name: Configure
         run: |
           cmake -S . -B build \
             -G Ninja \
@@ -49,10 +46,10 @@ jobs:
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }}
 
-      - name: Run Tests
+      - name: Test
         run: ctest --test-dir build --output-on-failure
 
-      - name: Upload Build Artifacts (on failure)
+      - name: Upload Artifacts on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
