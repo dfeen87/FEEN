@@ -1,0 +1,7 @@
+{
+  "name": "SRAM_equivalent",
+  "frequency_hz": 1000,
+  "q_factor": 500,
+  "beta": -1e8,
+  "sustain_s": 0.1
+}
