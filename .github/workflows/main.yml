@@ -9,13 +9,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
-      - name: Install
+      
+      - name: Install Dependencies
         run: sudo apt update && sudo apt install -y cmake g++ build-essential
-      - name: Configure
+      
+      - name: Configure CMake
         run: cmake -S . -B build -DFEEN_BUILD_TESTS=ON
+      
       - name: Build
         run: cmake --build build
-      - name: Test
+      
+      - name: Run Tests
         run: cd build && ctest --output-on-failure
