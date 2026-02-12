@@ -103,10 +103,22 @@ public:
         state_ = {0.0, 0.0, 0.0};
     }
 
+    // -------------------------------------------------------------------------
+    // Read-only State Accessors (for networks/tools/analysis)
+    // -------------------------------------------------------------------------
+
     [[nodiscard]] double x() const noexcept { return state_.x; }
     [[nodiscard]] double v() const noexcept { return state_.v; }
     [[nodiscard]] double t() const noexcept { return state_.t; }
 
+    // -------------------------------------------------------------------------
+    // Read-only Physical Parameter Accessors (for thermal/schedulers/tools)
+    // -------------------------------------------------------------------------
+
+    [[nodiscard]] double frequency_hz() const noexcept { return cfg_.frequency_hz; }
+    [[nodiscard]] double q_factor() const noexcept { return cfg_.q_factor; }
+    [[nodiscard]] double omega0() const noexcept { return omega0_; }
+    [[nodiscard]] double gamma() const noexcept { return gamma_; }
 
     // -------------------------------------------------------------------------
     // Injection
@@ -207,16 +219,19 @@ public:
                (4.0 * std::abs(cfg_.beta));
     }
 
+    // NOTE: Log-scaled Arrhenius approximation.
+    // Used for relative stability comparison, not absolute rate prediction.
     double switching_time(double T = ROOM_TEMP) const {
         if (cfg_.beta >= 0.0) return 0.0;
-        double ΔU = barrier_height();
+        double dU = barrier_height();
         double kT = thermal_energy(T);
-        if (ΔU <= kT) return 0.0;
-        return (1.0/gamma_) * std::log(ΔU/kT);
+        if (dU <= kT) return 0.0;
+        return (1.0/gamma_) * std::log(dU/kT);
     }
 
+    // Stable memory means switching is unlikely within the sustain window.
     bool switching_time_ok() const {
-        return switching_time() < sustain_s_ / 10.0;
+        return switching_time() > sustain_s_;
     }
 
     // -------------------------------------------------------------------------
