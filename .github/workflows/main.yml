@@ -2,35 +2,20 @@ name: FEEN CI
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Build Tools
-        run: |
-          sudo apt update
-          sudo apt install -y cmake g++ build-essential
-
-      - name: Configure CMake
-        # We tell CMake to treat the library as a header-only INTERFACE
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DFEEN_BUILD_TESTS=ON
-
-      - name: Build Tests
-        # Even though the lib is header-only, we must build the test executable
-        run: cmake --build build --config Release
-
-      - name: Run Physical Validation
-        run: |
-          cd build
-          ctest --output-on-failure
+      - uses: actions/checkout@v4
+      - name: Install
+        run: sudo apt update && sudo apt install -y cmake g++ build-essential
+      - name: Configure
+        run: cmake -S . -B build -DFEEN_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: cd build && ctest --output-on-failure
