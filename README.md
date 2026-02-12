@@ -982,6 +982,524 @@ Before phononic hardware exists, FEEN programs require physics-informed software
 
 ---
 
+## Part IX: Formal Analysis & Missing Components
+
+### 25. Explicit Stability Analysis for Bistable Switching
+
+#### 25.1 The Duffing Oscillator Model
+
+Bistable nonlinear switching is governed by the **driven Duffing oscillator**:
+
+```
+ẍ + 2γ ẋ + ω₀² x + β x³ = F cos(ωt)
+```
+
+where:
+- x: displacement amplitude
+- γ: damping coefficient
+- ω₀: natural frequency
+- β: cubic nonlinearity coefficient
+- F: drive amplitude
+- ω: drive frequency
+
+#### 25.2 Fixed Points and Stability
+
+In the absence of driving (F = 0), the system has a potential:
+
+```
+U(x) = ½ ω₀² x² + ¼ β x⁴
+```
+
+**Fixed points** satisfy dU/dx = 0:
+
+```
+ω₀² x + β x³ = 0
+```
+
+Solutions:
+- x₀ = 0 (trivial fixed point)
+- x₁,₂ = ±√(-ω₀²/β) (exists only if β < 0)
+
+**Stability condition**: For β < 0, the system exhibits bistability with stable points at x₁,₂ and unstable point at x₀.
+
+Local stability requires:
+
+```
+d²U/dx² |_{x₁,₂} = ω₀² + 3β x₁,₂² > 0
+```
+
+Substituting x₁,₂ = ±√(-ω₀²/β):
+
+```
+ω₀² + 3β(-ω₀²/β) = -2ω₀² > 0  (contradiction unless β < 0)
+```
+
+Therefore: **β < 0 required for bistability**
+
+#### 25.3 Bifurcation Regime
+
+Under periodic driving, the system exhibits bifurcation when:
+
+```
+|F| > F_crit = (4/3√3) |β| A³
+```
+
+where A is the amplitude at the saddle-node bifurcation.
+
+**Hysteresis region**: For drive frequencies near resonance (ω ≈ ω₀), the system exhibits jump phenomena between low-amplitude and high-amplitude states.
+
+The **bistability condition** becomes:
+
+```
+|β|/ω₀² > (2γ/ω₀)² = 4/(Q²)
+```
+
+This is equivalent to our earlier statement |β|/K > (γ/ω₀)² with K = ω₀².
+
+**Critical drive amplitude** for switching:
+
+```
+F_switch ≈ 2γ √(ω₀²/|β|)
+```
+
+#### 25.4 Switching Dynamics
+
+The switching time between bistable states follows:
+
+```
+τ_switch ≈ (1/γ) ln(ΔE/k_B T)
+```
+
+where ΔE is the barrier height between wells:
+
+```
+ΔE = U(x₀) - U(x₁) = ω₀⁴/(4|β|)
+```
+
+For reliable switching at temperature T:
+
+```
+ΔE > 10 k_B T  ⟹  ω₀⁴/(4|β|) > 10 k_B T
+```
+
+**This establishes the minimum nonlinearity bound for thermal stability.**
+
+### 26. Explicit Gain Model
+
+#### 26.1 Physical Gain Mechanisms
+
+Gain operator G : a ↦ g·a must compensate for fan-out and damping losses.
+
+**Physical realizations**:
+
+1. **Piezoelectric amplification**: 
+   ```
+   g = V_piezo × d₃₃ × Q_eff
+   ```
+   where V_piezo is applied voltage, d₃₃ is piezoelectric coefficient
+
+2. **Active feedback amplification**:
+   ```
+   g = exp(κ t_amp)
+   ```
+   where κ is feedback gain coefficient, t_amp is amplification time
+
+3. **Parametric pumping**:
+   ```
+   g = 1 + (F_pump/F_signal) cos(2ω₀ t)
+   ```
+   where F_pump is pump amplitude at 2ω₀
+
+#### 26.2 Noise Cost of Amplification
+
+Each gain stage introduces noise:
+
+```
+SNR_out = SNR_in / (1 + F·g²)
+```
+
+where F is the **noise figure** of the amplifier (typically F ≈ 2-10 for mechanical systems).
+
+**Total noise accumulation** through n gain stages:
+
+```
+SNR_final = SNR_initial / ∏ᵢ(1 + Fᵢ·gᵢ²)
+```
+
+For practical systems with g ≈ 2, F ≈ 3:
+
+```
+SNR degradation per stage ≈ 13 dB
+```
+
+**This severely limits allowable fan-out depth.**
+
+#### 26.3 Energy Cost of Gain
+
+Power consumption for gain g in amplifier:
+
+```
+P_amp = η⁻¹ (g - 1) P_signal
+```
+
+where η is amplifier efficiency (typically η ≈ 0.1-0.3 for MEMS).
+
+**Total system energy** including amplification:
+
+```
+E_total = E_compute + ∑ E_amp,i
+```
+
+For systems with extensive fan-out, amplification energy **dominates computational energy**.
+
+### 27. Complexity Model
+
+#### 27.1 Time Complexity Scaling
+
+**Computation time** for depth-D pipeline:
+
+```
+T_compute ~ O(D · Q/f₀)
+```
+
+where each stage requires one resonant period τ = Q/(πf₀).
+
+For Q = 200, f₀ = 1kHz, D = 10:
+
+```
+T_compute ≈ 10 × (200/(π × 1000)) ≈ 640 ms
+```
+
+**Clock rate** fundamentally limited by:
+
+```
+f_clock ≤ f₀/Q
+```
+
+#### 27.2 Channel Scaling Cost
+
+**Maximum addressable channels**:
+
+```
+N_channels ~ O(B · Q / ω₀)
+```
+
+where B is available bandwidth.
+
+**With crosstalk mitigation** (10× spacing requirement):
+
+```
+N_practical ~ O(B · Q / (10 ω₀))
+```
+
+**Fabrication-limited scaling**:
+
+```
+N_feasible ~ O(4Q)  (from σ_fab < ω₀/(4Q))
+```
+
+The **effective channel count** is the minimum of these constraints.
+
+#### 27.3 Crosstalk Scaling Law
+
+Crosstalk between channels k and k' scales as:
+
+```
+X_{k,k'} ~ 1/[Q² (Δω/ω₀)²]
+```
+
+For dense packing with Δω = ω₀/Q:
+
+```
+X ~ 1/Q² → 0 as Q → ∞
+```
+
+But fabrication disorder introduces:
+
+```
+X_disorder ~ σ_fab/Δω
+```
+
+**Asymptotic limit**:
+
+```
+N_channels ~ O(min(BQ/ω₀, ω₀/σ_fab))
+```
+
+For σ_fab/ω₀ = 0.001 (0.1% tolerance):
+
+```
+N_channels ~ O(1000) theoretical
+N_practical ~ O(100) with crosstalk mitigation
+```
+
+#### 27.4 Complexity Comparison to Digital
+
+| Metric | FEEN | CMOS Digital |
+|--------|------|--------------|
+| Clock rate | O(f₀/Q) ~ 1-100 Hz | O(GHz) ~ 10⁹ Hz |
+| Parallelism | O(BQ/ω₀) ~ 100 channels | O(10⁶-10⁹) gates |
+| Energy/op | O(10⁻²¹) J | O(10⁻¹⁵) J |
+| Time/op | O(Q/f₀) ~ 10 ms | O(ps) ~ 10⁻¹² s |
+| Integration density | O(λ²) ~ cm² | O(nm²) ~ 10⁻¹⁴ cm² |
+
+**FEEN advantage**: Energy efficiency for specific analog operations
+
+**FEEN disadvantage**: Speed, integration density, channel count
+
+### 28. Measurement Formalism
+
+#### 28.1 Observable Definition
+
+Measurement operator projects Hilbert space state onto observable subspace:
+
+```
+ℳ : ℋ → ℝ
+```
+
+**Amplitude measurement**:
+
+```
+ℳ_amp(Ψ) = |⟨Ψ, φ_readout⟩|
+```
+
+where φ_readout is the readout mode.
+
+**Phase measurement** (relative to reference φ_ref):
+
+```
+ℳ_phase(Ψ) = arg(⟨Ψ, φ_readout⟩) - arg(⟨φ_ref, φ_readout⟩)
+```
+
+**Energy measurement** (bandpass window [ω₁, ω₂]):
+
+```
+ℳ_energy(Ψ) = ∫_{ω₁}^{ω₂} |Ψ̂(ω)|² dω
+```
+
+where Ψ̂(ω) is the Fourier transform of Ψ.
+
+#### 28.2 Thresholding Operator
+
+Binary decision via **threshold projection**:
+
+```
+Θ_A(x) = { 1  if |x| ≥ A₀
+          { 0  if |x| < A₀
+```
+
+For soft thresholding (acknowledging transition region):
+
+```
+Θ_soft(x) = ½[1 + tanh((|x| - A₀)/δ)]
+```
+
+where δ is the transition width.
+
+**Readout noise** adds uncertainty:
+
+```
+x_measured = x_true + n
+```
+
+where n ~ N(0, σ_readout²).
+
+**Probability of error**:
+
+```
+P_error = ½ erfc((A₀ - ⟨x⟩)/(√2 σ_readout))
+```
+
+For reliable operation (P_error < 10⁻⁶):
+
+```
+A₀ - ⟨x⟩ > 4.75 σ_readout
+```
+
+#### 28.3 Readout Circuit Model
+
+**Capacitive transduction**:
+
+```
+V_out = (∂C/∂x) · x · V_bias
+```
+
+**Piezoresistive readout**:
+
+```
+ΔR/R = G_F · (x/L)
+```
+
+where G_F is gauge factor (typically 50-200 for silicon).
+
+**Optical readout**:
+
+```
+I_photo = I₀[1 + m · cos(4π x/λ_laser)]
+```
+
+where m is modulation depth.
+
+### 29. Calibration Protocol Model
+
+#### 29.1 Frequency Drift Model
+
+Time-dependent frequency drift:
+
+```
+ω_k(t) = ω_k(0) + ε_k(t)
+```
+
+where ε_k(t) is a stochastic drift process.
+
+**Thermal drift**:
+
+```
+ε_thermal(t) = α_thermal · ω_k(0) · ΔT(t)
+```
+
+**Aging drift** (random walk):
+
+```
+Var[ε_aging(t)] = σ_aging² · t
+```
+
+**Total drift variance**:
+
+```
+Var[ε_total(t)] = (α_thermal ω₀)² Var[ΔT] + σ_aging² t
+```
+
+#### 29.2 Calibration Frequency
+
+Calibration required when drift exceeds tolerance:
+
+```
+√Var[ε(t)] < Δω/4 = ω₀/(4Q)
+```
+
+**Calibration interval**:
+
+```
+t_cal < (ω₀/(4Q σ_aging))²
+```
+
+For Q = 200, ω₀ = 1kHz, σ_aging = 0.1 Hz/√hr:
+
+```
+t_cal < (1000/(4 × 200 × 0.1))² ≈ 156 hours ≈ 6.5 days
+```
+
+**Calibration must be performed weekly** for this system.
+
+#### 29.3 Calibration Procedure
+
+**Frequency calibration**:
+1. Inject reference tone at known frequency ω_ref
+2. Measure resonator response ω_measured
+3. Compute correction: δω = ω_ref - ω_measured
+4. Update frequency map: ω_k → ω_k + δω
+
+**Phase calibration**:
+1. Interfere calibration tone with reference
+2. Measure phase offset δφ
+3. Apply correction to phase-locked loops
+
+**Amplitude calibration**:
+1. Drive with known amplitude A_ref
+2. Measure response A_measured
+3. Compute gain correction: g_cal = A_ref/A_measured
+
+**Calibration overhead**: ~5-10% of system runtime if performed continuously.
+
+### 30. Physical Layout Constraints
+
+#### 30.1 Delay-Length Mapping
+
+Temporal delay τ requires physical path length:
+
+```
+L = c · τ
+```
+
+For acoustic waves in silicon (c ≈ 8000 m/s):
+
+**10 ms delay**:
+```
+L = 8000 × 0.01 = 80 meters
+```
+
+**This is NOT chip-scale.**
+
+#### 30.2 Compact Delay Structures
+
+**Folded waveguides**: Serpentine paths reduce footprint:
+```
+L_footprint ≈ √(L · w)
+```
+where w is waveguide width (typically 10-100 μm).
+
+For L = 80 m, w = 50 μm:
+```
+L_footprint ≈ √(80 × 0.00005) ≈ 0.063 m = 6.3 cm
+```
+
+**Still too large** for integrated systems.
+
+**Slow-wave structures**: Phononic crystals reduce group velocity:
+```
+c_eff = c_bulk / n_eff
+```
+
+where n_eff is effective index (achievable n_eff ≈ 10-100).
+
+For n_eff = 50:
+```
+L_slow = L/n_eff = 80/50 = 1.6 m
+```
+
+**More tractable but still challenging.**
+
+#### 30.3 Practical Delay Limits
+
+For **chip-scale integration** (die size ~ 1 cm²):
+
+Maximum realizable delay with slow-wave structures:
+
+```
+τ_max ≈ (L_die · n_eff) / c_bulk
+```
+
+For L_die = 1 cm, n_eff = 50, c_bulk = 8000 m/s:
+
+```
+τ_max ≈ (0.01 × 50) / 8000 ≈ 62.5 μs
+```
+
+**This limits FEEN programs to microsecond-scale delays on-chip.**
+
+For longer delays, **external acoustic delay lines** (off-chip) required:
+- Bulk acoustic wave (BAW) delay lines: up to 10 ms
+- Surface acoustic wave (SAW) delay lines: up to 100 μs
+- Fiber-optic acoustic delay: arbitrary (but defeats purpose)
+
+#### 30.4 Layout Implications for FEEN Programs
+
+**Compiler must**:
+1. Map logical delays to physical paths
+2. Verify path lengths fit within die budget
+3. Insert slow-wave segments where needed
+4. Route delay lines to minimize footprint
+
+**Type system constraint**:
+```
+τ_delay : Delay(t) where t < τ_max(L_die, n_eff)
+```
+
+**Compilation error** if program requires delays exceeding physical budget.
+
+---
+
 ## Conclusion
 
 FEEN represents a **genuine alternative computational substrate** with clear physical boundaries that must be respected in language design and hardware implementation.
