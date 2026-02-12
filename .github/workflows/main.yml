@@ -2,25 +2,18 @@ name: FEEN CI
 
 on:
   push:
-    branches: [ main, dev, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Dependencies
+      - name: Install
         run: sudo apt update && sudo apt install -y cmake g++ build-essential
-      
-      - name: Configure CMake
+      - name: Configure
         run: cmake -S . -B build -DFEEN_BUILD_TESTS=ON
-      
       - name: Build
         run: cmake --build build
-      
-      - name: Run Tests
+      - name: Test
         run: cd build && ctest --output-on-failure
