@@ -1,0 +1,10 @@
+{
+  "name": "feen",
+  "version": "3.0.0",
+  "dependencies": [
+    "eigen3",
+    "boost-math",
+    "matplotplusplus",
+    "pybind11"
+  ]
+}
