@@ -103,6 +103,11 @@ public:
         state_ = {0.0, 0.0, 0.0};
     }
 
+    [[nodiscard]] double x() const noexcept { return state_.x; }
+    [[nodiscard]] double v() const noexcept { return state_.v; }
+    [[nodiscard]] double t() const noexcept { return state_.t; }
+
+
     // -------------------------------------------------------------------------
     // Injection
     // -------------------------------------------------------------------------
