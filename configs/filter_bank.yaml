@@ -1,0 +1,7 @@
+resonators:
+  - frequency_hz: 1000
+    q_factor: 1000
+    beta: 1e-4
+  - frequency_hz: 2000
+    q_factor: 1000
+    beta: 1e-4
