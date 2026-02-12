@@ -65,4 +65,3 @@ jobs:
         with:
           name: feen-build-${{ matrix.compiler }}-${{ matrix.build_type }}
           path: build
-
