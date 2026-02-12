@@ -24,18 +24,21 @@ jobs:
           sudo apt install -y cmake g++ build-essential
 
       - name: Configure CMake
+        # We explicitly enable FEEN_BUILD_TESTS so CMake knows to build your test file
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DCMAKE_CXX_STANDARD=17 \
-            -DCMAKE_CXX_STANDARD_REQUIRED=ON
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+            -DFEEN_BUILD_TESTS=ON
 
       - name: Build
         run: |
           cmake --build build --config ${{ matrix.build-type }} -- -j$(nproc)
 
       - name: Run Tests
-        if: exists('build')
+        # Removed the invalid if: exists('build') 
+        # The build step above already ensures the directory exists
         run: |
           cd build
-          ctest --output-on-failure || echo "No tests defined."
+          ctest --output-on-failure
