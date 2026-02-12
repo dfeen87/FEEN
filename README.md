@@ -1,7 +1,7 @@
 # FEEN: A Wave-Native Programming Language 
 ## Unified Design Document with Physical Realizability Analysis
 
-**Version 2.0** | Early-Stage Design with Engineering Constraints 
+**Version 2.0** | Early-Stage Design with Engineering Constraints  
 
 ---
 
