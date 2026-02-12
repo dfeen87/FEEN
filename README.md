@@ -4,7 +4,7 @@
 **Version 2.0** | Early-Stage Design with Engineering Constraints   
 
 ---
-
+ 
 ## Abstract
 
 FEEN is a programming language designed for processors whose execution substrate is governed by acoustic and resonant physics rather than electronic binary logic. This document presents both the theoretical foundation and the critical physical constraints that bound what FEEN can realistically achieve.
