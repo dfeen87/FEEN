@@ -24,23 +24,3 @@ jobs:
       
       - name: Run Tests
         run: cd build && ctest --output-on-failure
-```
-
-5. **Click "Commit changes"**
-
-## Also Add `.gitignore`:
-
-Same process:
-1. Click "Add file" → "Create new file"  
-2. Name it: `.gitignore`
-3. Paste:
-```
-build/
-cmake-build-*/
-*.exe
-*.out
-*.o
-CMakeCache.txt
-CMakeFiles/
-.vscode/
-.idea/
