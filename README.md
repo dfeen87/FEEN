@@ -17,7 +17,7 @@
 
 ## What is FEEN?
 
-FEEN is a revolutionary computing paradigm that replaces electrons with **phonons** (mechanical vibrations) as information carriers. Unlike conventional digital logic, FEEN harnesses the nonlinear dynamics of elastic resonators to perform computation through wave mechanics.
+FEEN (Frequency-Encoded Elastic Network) is a revolutionary computing paradigm that replaces electrons with **phonons** (mechanical vibrations) as information carriers. Unlike conventional digital logic, FEEN harnesses the nonlinear dynamics of elastic resonators to perform computation through wave mechanics.
 
 ## Status
 
