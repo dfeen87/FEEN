@@ -11,6 +11,9 @@ namespace feen::ailee {
 // Numerical tolerance for variance floor (prevents division by zero)
 constexpr double VARIANCE_FLOOR = 1e-12;
 
+// Low confidence score when value disagrees with zero-variance history
+constexpr double LOW_CONFIDENCE_DISAGREEMENT = 0.2;
+
 /**
  * @brief Configuration parameters for phononic confidence evaluation.
  *
@@ -134,7 +137,10 @@ private:
         variance /= history.size();
 
         if (variance <= VARIANCE_FLOOR) {
-            return (std::abs(raw_value - mean) <= VARIANCE_FLOOR) ? 1.0 : 0.2;
+            // When history has near-zero variance, value must match closely
+            return (std::abs(raw_value - mean) <= VARIANCE_FLOOR) 
+                ? 1.0 
+                : LOW_CONFIDENCE_DISAGREEMENT;
         }
 
         const double sigma = std::sqrt(variance);

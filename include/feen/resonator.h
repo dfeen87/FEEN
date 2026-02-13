@@ -32,6 +32,7 @@ constexpr double TWO_PI    = 2.0 * M_PI;
 constexpr double BOLTZMANN = 1.380649e-23;  // J/K
 constexpr double ROOM_TEMP = 300.0;         // K
 constexpr double MIN_READABLE_SNR = 10.0;
+constexpr double EFFECTIVE_INFINITE_SNR = 1e10;  // SNR at T→0
 
 // =============================================================================
 // Decay Profile
@@ -221,7 +222,7 @@ public:
         double thermal = thermal_energy(T);
         // Protect against very low temperatures (though unlikely in practice)
         if (thermal < 1e-30) {
-            return 1e10;  // Effectively infinite SNR at T→0
+            return EFFECTIVE_INFINITE_SNR;  // Effectively infinite SNR at T→0
         }
         return total_energy() / thermal;
     }
