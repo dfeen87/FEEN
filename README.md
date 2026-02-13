@@ -165,7 +165,7 @@ SNR: 89234.2
 feen/
 │
 ├── 📁 include/feen/          # Core library (header-only)
-│   ├── resonator.h           # Main resonator class
+│   ├── resonator.h           # ⭐ Main resonator class
 │   ├── network.h             # Multi-resonator coupling
 │   ├── gates.h               # Logic gate primitives
 │   ├── memory.h              # Memory management
@@ -189,6 +189,13 @@ feen/
 │   ├── neural_network.h      # Phononic neural nets
 │   ├── signal_processing.h   # Filters and transforms
 │   └── oscillator_bank.h     # Frequency multiplexing
+│
+├── 📁 examples/              # 🎓 Step-by-step tutorials
+│   ├── 01_basic_oscillator.cpp      # Beginner: Your first resonator
+│   ├── 02_bistable_bit.cpp          # Beginner: Digital memory cell
+│   ├── 03_frequency_multiplexing.cpp # Intermediate: Parallel channels
+│   ├── 04_logic_gates.cpp           # Intermediate: Boolean logic
+│   └── 05_neural_network.cpp        # Advanced: AI with phonons
 │
 ├── 📁 python/                # Python bindings
 │   ├── pyfeen.cpp            # pybind11 interface
