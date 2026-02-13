@@ -1,21 +1,12 @@
 #pragma once
 
+#include "feen/ailee/ailee_types.h"
+
 #include <vector>
 #include <algorithm>
 #include <cstddef>
 
 namespace feen::ailee {
-
-/**
- * @brief Result of a fallback evaluation.
- *
- * Exposes stabilization signals only.
- * AILEE decides when and how fallback is used.
- */
-struct FallbackResult {
-    double value;          // stabilized output value
-    std::size_t samples;   // number of history samples used
-};
 
 /**
  * @brief Supported fallback aggregation modes.
