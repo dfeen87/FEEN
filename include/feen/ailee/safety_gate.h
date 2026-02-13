@@ -81,7 +81,7 @@ public:
         const double bw = positive(cfg_.barrier_width);
         const double h  = positive(cfg_.hysteresis);
 
-        // NEAR_BARRIER is always based on barrier_width alone.
+        // NEAR_BARRIER region check (always consistent with stateless behavior)
         if (std::abs(margin) <= bw) {
             return {GateState::NEAR_BARRIER, margin, bw};
         }
@@ -112,10 +112,16 @@ public:
             return {GateState::HIGH_WELL, margin, bw};
         }
 
-        // Prior was NEAR_BARRIER: classify purely by side.
-        return (margin > 0.0)
-            ? SafetyGateResult{GateState::HIGH_WELL, margin, bw}
-            : SafetyGateResult{GateState::LOW_WELL,  margin, bw};
+        // Prior was NEAR_BARRIER: use hysteresis bands for consistent transitions
+        // This prevents oscillation when value hovers near barrier edges
+        if (margin > switch_band) {
+            return {GateState::HIGH_WELL, margin, bw};
+        } else if (margin < -switch_band) {
+            return {GateState::LOW_WELL, margin, bw};
+        } else {
+            // Still in extended barrier region, stay NEAR_BARRIER
+            return {GateState::NEAR_BARRIER, margin, bw};
+        }
     }
 
 private:

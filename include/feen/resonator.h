@@ -195,6 +195,11 @@ public:
         state_.x += dt/6.0 * (k1x + 2*k2x + 2*k3x + k4x);
         state_.v += dt/6.0 * (k1v + 2*k2v + 2*k3v + k4v);
         state_.t += dt;
+
+        // Check for numerical stability
+        if (!std::isfinite(state_.x) || !std::isfinite(state_.v)) {
+            throw std::runtime_error("Resonator state diverged (NaN or Inf detected)");
+        }
     }
 
     // -------------------------------------------------------------------------
