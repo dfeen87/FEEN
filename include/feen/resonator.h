@@ -89,6 +89,13 @@ public:
     explicit Resonator(const ResonatorConfig& cfg)
         : cfg_(cfg)
     {
+        if (cfg_.frequency_hz <= 0.0) {
+            throw std::invalid_argument("Resonator frequency must be > 0");
+        }
+        if (cfg_.q_factor <= 0.0) {
+            throw std::invalid_argument("Resonator Q-factor must be > 0");
+        }
+        
         omega0_ = TWO_PI * cfg_.frequency_hz;
         gamma_  = omega0_ / (2.0 * cfg_.q_factor);
 
@@ -211,7 +218,12 @@ public:
     }
 
     double snr(double T = ROOM_TEMP) const {
-        return total_energy() / thermal_energy(T);
+        double thermal = thermal_energy(T);
+        // Protect against very low temperatures (though unlikely in practice)
+        if (thermal < 1e-30) {
+            return 1e10;  // Effectively infinite SNR at T→0
+        }
+        return total_energy() / thermal;
     }
 
     // -------------------------------------------------------------------------

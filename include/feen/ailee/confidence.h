@@ -8,6 +8,9 @@
 
 namespace feen::ailee {
 
+// Numerical tolerance for variance floor (prevents division by zero)
+constexpr double VARIANCE_FLOOR = 1e-12;
+
 /**
  * @brief Configuration parameters for phononic confidence evaluation.
  *
@@ -90,8 +93,11 @@ private:
         }
         variance /= history.size();
 
+        // Protect against near-zero variance with floor
+        const double safe_variance = std::max(variance, VARIANCE_FLOOR);
+        
         // Inverse‑variance mapping (bounded, monotonic)
-        return 1.0 / (1.0 + variance);
+        return 1.0 / (1.0 + safe_variance);
     }
 
     double compute_agreement(double raw_value, const std::vector<double>& peers) const
@@ -127,8 +133,8 @@ private:
         }
         variance /= history.size();
 
-        if (variance <= 1e-12) {
-            return (std::abs(raw_value - mean) <= 1e-12) ? 1.0 : 0.2;
+        if (variance <= VARIANCE_FLOOR) {
+            return (std::abs(raw_value - mean) <= VARIANCE_FLOOR) ? 1.0 : 0.2;
         }
 
         const double sigma = std::sqrt(variance);
