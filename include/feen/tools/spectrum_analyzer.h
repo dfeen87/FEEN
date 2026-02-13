@@ -38,6 +38,10 @@ public:
     fft(const std::vector<double>& signal) const
     {
         const std::size_t N = signal.size();
+        if (N == 0) {
+            throw std::invalid_argument("Cannot compute FFT of empty signal");
+        }
+        
         std::vector<std::complex<double>> X(N);
 
         for (std::size_t k = 0; k < N; ++k) {
@@ -81,6 +85,10 @@ public:
     //
     double peak_frequency(const std::vector<std::complex<double>>& X) const
     {
+        if (X.empty()) {
+            throw std::invalid_argument("Cannot find peak frequency of empty spectrum");
+        }
+        
         std::size_t k_max = 0;
         double max_mag = 0.0;
 

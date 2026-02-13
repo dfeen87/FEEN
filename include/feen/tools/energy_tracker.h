@@ -8,6 +8,9 @@
 
 namespace feen {
 
+// Numerical tolerance for degenerate fit detection
+constexpr double DECAY_FIT_EPSILON = 1e-16;
+
 // =============================================================================
 // Energy Tracker
 // =============================================================================
@@ -34,41 +37,52 @@ public:
     // Estimate exponential decay rate
     // -------------------------------------------------------------------------
     //
-    // Fits ln(E) = -λ t + C using least squares
+    // Fits ln(E) = -λ t + C using least squares with centered variables
+    // to avoid catastrophic cancellation
     //
     double decay_rate() const {
         if (times_.size() < 2)
             throw std::runtime_error("Insufficient data for decay estimation");
 
-        double sum_t = 0.0;
-        double sum_lnE = 0.0;
-        double sum_t2 = 0.0;
-        double sum_t_lnE = 0.0;
-        std::size_t N = 0;
-
+        // Collect valid data points
+        std::vector<double> t_valid;
+        std::vector<double> lnE_valid;
+        
         for (std::size_t i = 0; i < energies_.size(); ++i) {
             if (energies_[i] <= 0.0) continue;
-
-            double t = times_[i];
-            double lnE = std::log(energies_[i]);
-
-            sum_t += t;
-            sum_lnE += lnE;
-            sum_t2 += t * t;
-            sum_t_lnE += t * lnE;
-            ++N;
+            t_valid.push_back(times_[i]);
+            lnE_valid.push_back(std::log(energies_[i]));
         }
 
-        if (N < 2)
-            throw std::runtime_error("Insufficient positive‑energy samples");
+        if (t_valid.size() < 2)
+            throw std::runtime_error("Insufficient positive-energy samples");
 
-        double denom = N * sum_t2 - sum_t * sum_t;
-        if (denom == 0.0)
+        // Center the data to improve numerical stability
+        double t_mean = 0.0;
+        double lnE_mean = 0.0;
+        for (std::size_t i = 0; i < t_valid.size(); ++i) {
+            t_mean += t_valid[i];
+            lnE_mean += lnE_valid[i];
+        }
+        t_mean /= t_valid.size();
+        lnE_mean /= t_valid.size();
+
+        // Compute slope using centered variables
+        double numer = 0.0;
+        double denom = 0.0;
+        for (std::size_t i = 0; i < t_valid.size(); ++i) {
+            double t_centered = t_valid[i] - t_mean;
+            double lnE_centered = lnE_valid[i] - lnE_mean;
+            numer += t_centered * lnE_centered;
+            denom += t_centered * t_centered;
+        }
+
+        if (std::abs(denom) < DECAY_FIT_EPSILON)
             throw std::runtime_error("Degenerate decay fit");
 
-        double slope = (N * sum_t_lnE - sum_t * sum_lnE) / denom;
+        double slope = numer / denom;
 
-        // λ = -slope
+        // λ = -slope (decay rate is positive)
         return -slope;
     }
 

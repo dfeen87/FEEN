@@ -42,9 +42,11 @@ public:
         const double v = std::abs(r.v());
 
         // Characteristic timescale from velocity
-        double dt_dyn = (v > 0.0) ? 1.0 / v : dt_max_;
+        // Protect against very small velocities that could cause overflow
+        constexpr double MIN_VELOCITY = 1e-10;
+        double dt_dyn = (v > MIN_VELOCITY) ? 1.0 / v : dt_max_;
 
-        // Energy‑based refinement (high energy → smaller dt)
+        // Energy-based refinement (high energy -> smaller dt)
         double dt_energy = (E > 0.0)
             ? 1.0 / std::sqrt(E)
             : dt_max_;

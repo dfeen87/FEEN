@@ -96,6 +96,10 @@ private:
 
     static double compute_mean(const std::vector<double>& values)
     {
+        if (values.empty()) {
+            throw std::invalid_argument("Cannot compute mean of empty vector");
+        }
+        
         double sum = 0.0;
         for (double v : values) {
             sum += v;
@@ -106,6 +110,15 @@ private:
     static double compute_median(std::vector<double> values)
     {
         const std::size_t n = values.size();
+        if (n == 0) {
+            throw std::invalid_argument("Cannot compute median of empty vector");
+        }
+        
+        // Handle single element case explicitly
+        if (n == 1) {
+            return values[0];
+        }
+        
         std::nth_element(values.begin(), values.begin() + n / 2, values.end());
 
         if (n % 2 == 1) {

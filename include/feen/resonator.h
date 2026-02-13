@@ -32,6 +32,7 @@ constexpr double TWO_PI    = 2.0 * M_PI;
 constexpr double BOLTZMANN = 1.380649e-23;  // J/K
 constexpr double ROOM_TEMP = 300.0;         // K
 constexpr double MIN_READABLE_SNR = 10.0;
+constexpr double EFFECTIVE_INFINITE_SNR = 1e10;  // SNR at T→0
 
 // =============================================================================
 // Decay Profile
@@ -89,6 +90,13 @@ public:
     explicit Resonator(const ResonatorConfig& cfg)
         : cfg_(cfg)
     {
+        if (cfg_.frequency_hz <= 0.0) {
+            throw std::invalid_argument("Resonator frequency must be > 0");
+        }
+        if (cfg_.q_factor <= 0.0) {
+            throw std::invalid_argument("Resonator Q-factor must be > 0");
+        }
+        
         omega0_ = TWO_PI * cfg_.frequency_hz;
         gamma_  = omega0_ / (2.0 * cfg_.q_factor);
 
@@ -195,6 +203,11 @@ public:
         state_.x += dt/6.0 * (k1x + 2*k2x + 2*k3x + k4x);
         state_.v += dt/6.0 * (k1v + 2*k2v + 2*k3v + k4v);
         state_.t += dt;
+
+        // Check for numerical stability
+        if (!std::isfinite(state_.x) || !std::isfinite(state_.v)) {
+            throw std::runtime_error("Resonator state diverged (NaN or Inf detected)");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -206,7 +219,12 @@ public:
     }
 
     double snr(double T = ROOM_TEMP) const {
-        return total_energy() / thermal_energy(T);
+        double thermal = thermal_energy(T);
+        // Protect against very low temperatures (though unlikely in practice)
+        if (thermal < 1e-30) {
+            return EFFECTIVE_INFINITE_SNR;  // Effectively infinite SNR at T→0
+        }
+        return total_energy() / thermal;
     }
 
     // -------------------------------------------------------------------------

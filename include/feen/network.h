@@ -83,12 +83,18 @@ public:
     void add_coupling(index_t i, index_t j, double strength) {
         bounds_check_node_(i);
         bounds_check_node_(j);
+        if (!std::isfinite(strength)) {
+            throw std::invalid_argument("Coupling strength must be finite");
+        }
         coupling_.at(i, j) += strength;
     }
 
     void set_coupling(index_t i, index_t j, double strength) {
         bounds_check_node_(i);
         bounds_check_node_(j);
+        if (!std::isfinite(strength)) {
+            throw std::invalid_argument("Coupling strength must be finite");
+        }
         coupling_.at(i, j) = strength;
     }
 
