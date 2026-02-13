@@ -1,32 +1,10 @@
 #pragma once
 
+#include "feen/ailee/ailee_types.h"
+
 #include <cmath>
 
 namespace feen::ailee {
-
-/**
- * @brief Minimal, policy-free safety gate state classification.
- *
- * This is NOT the AILEE SafetyStatus enum. It is a physics-facing
- * classification used to expose a deterministic "state of the gate"
- * that AILEE can interpret using its own thresholds and routing rules.
- */
-enum class GateState : unsigned char {
-    LOW_WELL = 0,      // confidently low (reject-side well)
-    HIGH_WELL = 1,     // confidently high (accept-side well)
-    NEAR_BARRIER = 2   // borderline region near the separatrix
-};
-
-/**
- * @brief Result of evaluating a value through a bistable-style safety gate.
- *
- * Exposes signals (state + margin), not trust policy decisions.
- */
-struct SafetyGateResult {
-    GateState state;
-    double margin;         // signed margin from barrier center (positive -> HIGH_WELL side)
-    double barrier_width;  // half-width of the borderline band used for NEAR_BARRIER
-};
 
 /**
  * @brief Configuration for a bistable safety gate.
