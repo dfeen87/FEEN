@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "FEEN: The Phononic Wave Engine"
+message: "If you use FEEN in academic work, please cite it as below."
+type: software
+version: 3.0.0
+date-released: 2026-02-12
+license: MIT
+
+authors:
+  - family-names: Feeney
+    given-names: Don Michael
+    affiliation: Independent Researcher
+
+repository-code: https://github.com/dfeen87/feen
+
+abstract: >
+  FEEN is a wave-native, physics-informed computing substrate built on nonlinear
+  resonant dynamics. It enables computation through energy flow, phase locking,
+  and spectral isolation rather than symbolic state, with direct mapping to
+  MEMS/NEMS and FPGA-controlled physical systems.
+
+keywords:
+  - phononic computing
+  - nonlinear dynamics
+  - resonator networks
+  - physics-informed computation
+  - wave-based logic
