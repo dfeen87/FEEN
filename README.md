@@ -3,7 +3,7 @@
 <div align="center">
 
 **Frequency-Encoded Elastic Network**
-
+ 
 *A Physics-First Phononic Computing Framework*
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
