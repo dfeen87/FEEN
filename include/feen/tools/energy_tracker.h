@@ -8,6 +8,9 @@
 
 namespace feen {
 
+// Numerical tolerance for degenerate fit detection
+constexpr double DECAY_FIT_EPSILON = 1e-16;
+
 // =============================================================================
 // Energy Tracker
 // =============================================================================
@@ -52,7 +55,7 @@ public:
         }
 
         if (t_valid.size() < 2)
-            throw std::runtime_error("Insufficient positive‑energy samples");
+            throw std::runtime_error("Insufficient positive-energy samples");
 
         // Center the data to improve numerical stability
         double t_mean = 0.0;
@@ -74,7 +77,7 @@ public:
             denom += t_centered * t_centered;
         }
 
-        if (std::abs(denom) < 1e-16)
+        if (std::abs(denom) < DECAY_FIT_EPSILON)
             throw std::runtime_error("Degenerate decay fit");
 
         double slope = numer / denom;

@@ -112,8 +112,10 @@ public:
             return {GateState::HIGH_WELL, margin, bw};
         }
 
-        // Prior was NEAR_BARRIER: use hysteresis bands for consistent transitions
-        // This prevents oscillation when value hovers near barrier edges
+        // Prior was NEAR_BARRIER: use hysteresis bands for consistent transitions.
+        // This prevents oscillation when value hovers near barrier edges.
+        // switch_band = barrier_width + hysteresis extends the region where
+        // the state remains NEAR_BARRIER until it clearly crosses to a well.
         if (margin > switch_band) {
             return {GateState::HIGH_WELL, margin, bw};
         } else if (margin < -switch_band) {
