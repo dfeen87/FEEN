@@ -11,8 +11,6 @@
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Examples](#examples) • [Citation](citation)
-
 </div>
 
 ---
