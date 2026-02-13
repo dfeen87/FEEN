@@ -1,22 +1,12 @@
 #pragma once
 
+#include "feen/ailee/ailee_types.h"
+
 #include <vector>
 #include <cmath>
 #include <cstddef>
 
 namespace feen::ailee {
-
-/**
- * @brief Result of a phononic consensus evaluation.
- *
- * This structure exposes *signals*, not policy decisions.
- * AILEE remains responsible for quorum rules and interpretation.
- */
-struct ConsensusResult {
-    double coherence;     // [0.0, 1.0] measure of peer agreement
-    double deviation;     // absolute deviation of candidate from peer mean
-    std::size_t peers;    // number of peers evaluated
-};
 
 /**
  * @brief Configuration parameters for phononic consensus evaluation.
