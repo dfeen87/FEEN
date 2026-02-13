@@ -19,7 +19,11 @@
 
 FEEN is a revolutionary computing paradigm that replaces electrons with **phonons** (mechanical vibrations) as information carriers. Unlike conventional digital logic, FEEN harnesses the nonlinear dynamics of elastic resonators to perform computation through wave mechanics.
 
-### Key Innovation
+## Status
+
+This repository is a continuous research project under active development.
+
+## Key Innovation
 
 - **Computational Primitive**: Duffing resonators with tunable nonlinearity
 - **Information Encoding**: Frequency, amplitude, and phase of mechanical oscillations
@@ -37,7 +41,7 @@ double state = bit.total_energy();  // Read
 
 ## Features
 
-### 🔬 **Physically Rigorous**
+### **Physically Rigorous**
 - Fourth-order Runge-Kutta integration for nonlinear differential equations
 - Thermodynamic consistency validation (entropy always increases)
 - Thermal noise modeling with Boltzmann statistics
