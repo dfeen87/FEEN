@@ -73,7 +73,7 @@ feen/
 
 ---
 
-## 🔐 AILEE Trust Acceleration
+## AILEE Trust Acceleration
 
 FEEN provides hardware‑ready primitives that accelerate **AILEE (Adaptive Inference & Evaluation Engine)** — a modular trust layer designed to evaluate confidence, consensus, safety, and fallback behavior in AI systems.
 
