@@ -1,22 +1,12 @@
 #pragma once
 
+#include "feen/ailee/ailee_types.h"
+
 #include <vector>
 #include <cstddef>
+#include <cmath>
 
 namespace feen::ailee {
-
-/**
- * @brief Result of a phononic confidence evaluation.
- *
- * This structure intentionally exposes *signals*, not decisions.
- * AILEE remains the semantic authority for interpreting confidence.
- */
-struct ConfidenceResult {
-    double score;        // Normalized confidence score [0.0, 1.0]
-    double stability;    // Temporal stability component
-    double agreement;    // Peer agreement component
-    double likelihood;   // Historical plausibility component
-};
 
 /**
  * @brief Configuration parameters for phononic confidence evaluation.
