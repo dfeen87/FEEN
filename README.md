@@ -560,7 +560,7 @@ Special thanks to:
 
 ---
 
-## 💡 Fun Facts
+## Fun Facts
 
 - A single FEEN resonator at 1 kHz with Q=1000 can store information for **~300 milliseconds** with zero active power
 - At room temperature, a typical bistable resonator has a bit-flip probability of **< 10⁻⁵⁰** per second
@@ -568,13 +568,3 @@ Special thanks to:
 - The energy barrier in a bistable resonator is **~10 billion times** larger than thermal noise (k_B T)
 
 ---
-
-<div align="center">
-
-**[⬆ Back to Top](#-feen-wave-engine)**
-
-Made with 🌊 by the FEEN team
-
-*Computing with waves, not electrons*
-
-</div>
