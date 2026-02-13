@@ -73,6 +73,48 @@ feen/
 
 ---
 
+## 🔐 AILEE Trust Acceleration
+
+FEEN provides hardware‑ready primitives that accelerate **AILEE (Adaptive Inference & Evaluation Engine)** — a modular trust layer designed to evaluate confidence, consensus, safety, and fallback behavior in AI systems.
+
+AILEE defines *trust semantics and policy*.  
+FEEN provides *physics‑native signal primitives* that AILEE can optionally offload to hardware.
+
+### What FEEN Accelerates for AILEE
+
+FEEN exposes deterministic, policy‑free trust signals that map cleanly to phononic and resonator‑based hardware:
+
+- **Confidence decomposition**  
+  Temporal stability, peer agreement, and historical plausibility
+
+- **Bistable safety gating**  
+  Hardware‑mappable LOW / HIGH / NEAR‑BARRIER state classification
+
+- **Peer consensus coherence**  
+  Spectral agreement and deviation measurement
+
+- **Fallback stabilization**  
+  Median / mean / last‑value aggregation for recovery paths
+
+These primitives are exposed via a stable C++ ABI and Python bindings, allowing AILEE to transparently switch between software and FEEN‑accelerated execution.
+
+### Clean Separation of Responsibilities
+
+- **AILEE**  
+  Owns trust semantics, thresholds, routing, and policy decisions
+
+- **FEEN**  
+  Provides signal‑level primitives only — no accept/reject logic, no policy leakage
+
+This separation ensures that FEEN can evolve toward FPGA or ASIC implementations without requiring changes to AILEE or downstream applications.
+
+### Learn More
+
+- **AILEE Trust Layer Repository**  
+  https://github.com/dfeen87/AILEE-Trust-Layer
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -166,64 +208,73 @@ SNR: 89234.2
 ```
 feen/
 │
-├── 📁 include/feen/          # Core library (header-only)
-│   ├── resonator.h           # ⭐ Main resonator class
-│   ├── network.h             # Multi-resonator coupling
-│   ├── gates.h               # Logic gate primitives
-│   ├── memory.h              # Memory management
-│   ├── transducer.h          # Electrical ↔ phononic conversion
+├── 📁 include/feen/              # Core library (header-only)
+│   ├── resonator.h               # Main resonator class
+│   ├── network.h                 # Multi-resonator coupling
+│   ├── gates.h                   # Logic gate primitives
+│   ├── memory.h                  # Memory management
+│   ├── transducer.h              # Electrical ↔ phononic conversion
 │   │
-│   ├── 📁 sim/               # Simulation infrastructure
-│   │   ├── integrators.h     # RK4, RK45, Verlet schemes
-│   │   ├── scheduler.h       # Adaptive timestep control
-│   │   └── thermal.h         # Thermal noise injection
+│   ├── 📁 ailee/                 # AILEE trust primitives
+│   │   ├── ailee_types.h         # Shared FEEN–AILEE signal types
+│   │   ├── confidence.h          # Confidence decomposition
+│   │   ├── safety_gate.h         # Bistable safety gating
+│   │   ├── consensus.h           # Peer coherence measurement
+│   │   └── fallback.h            # Stabilization & recovery
 │   │
-│   ├── 📁 tools/             # Analysis utilities
+│   ├── 📁 sim/                   # Simulation infrastructure
+│   │   ├── integrators.h         # RK4, RK45, Verlet schemes
+│   │   ├── scheduler.h           # Adaptive timestep control
+│   │   └── thermal.h             # Thermal noise injection
+│   │
+│   ├── 📁 tools/                 # Analysis utilities
 │   │   ├── spectrum_analyzer.h
 │   │   ├── phase_portrait.h
 │   │   └── energy_tracker.h
 │   │
-│   └── 📁 hardware/          # Physical device interfaces
-│       ├── fpga_driver.h     # FPGA control
+│   └── 📁 hardware/              # Physical device interfaces
+│       ├── fpga_driver.h         # FPGA control
 │       └── mems_calibration.h
 │
-├── 📁 apps/                  # High-level applications
-│   ├── neural_network.h      # Phononic neural nets
-│   ├── signal_processing.h   # Filters and transforms
-│   └── oscillator_bank.h     # Frequency multiplexing
+├── 📁 apps/                      # High-level applications
+│   ├── neural_network.h          # Phononic neural nets
+│   ├── signal_processing.h       # Filters and transforms
+│   └── oscillator_bank.h         # Frequency multiplexing
 │
-├── 📁 examples/              # 🎓 Step-by-step tutorials
-│   ├── 01_basic_oscillator.cpp      # Beginner: Your first resonator
-│   ├── 02_bistable_bit.cpp          # Beginner: Digital memory cell
-│   ├── 03_frequency_multiplexing.cpp # Intermediate: Parallel channels
-│   ├── 04_logic_gates.cpp           # Intermediate: Boolean logic
-│   └── 05_neural_network.cpp        # Advanced: AI with phonons
+├── 📁 examples/                  # Step-by-step tutorials
+│   ├── 01_basic_oscillator.cpp
+│   ├── 02_bistable_bit.cpp
+│   ├── 03_frequency_multiplexing.cpp
+│   ├── 04_logic_gates.cpp
+│   └── 05_neural_network.cpp
 │
-├── 📁 python/                # Python bindings
-│   ├── pyfeen.cpp            # pybind11 interface
+├── 📁 python/                    # Python bindings
+│   ├── pyfeen.cpp                # pybind11 interface (FEEN + AILEE)
+│   ├── ailee.py                  # Python façade for AILEE primitives
 │   └── examples/
 │       └── plot_bifurcation.py
 │
-├── 📁 tests/                 # Validation & testing
-│   ├── test_resonator.cpp    # Unit tests
-│   ├── unit_tests.cpp        # Component tests
+├── 📁 tests/                     # Validation & testing
+│   ├── test_resonator.cpp
+│   ├── unit_tests.cpp
 │   └── numerical_accuracy.cpp
 │
-├── 📁 benchmarks/            # Performance analysis
+├── 📁 benchmarks/                # Performance analysis
 │   └── performance.cpp
 │
-├── 📁 configs/               # Example configurations
-│   ├── memory_cell.json      # Bistable memory parameters
-│   └── filter_bank.yaml      # Signal processing chain
+├── 📁 configs/                   # Example configurations
+│   ├── memory_cell.json
+│   └── filter_bank.yaml
 │
-├── 📁 docs/                  # Documentation
-│   ├── FEEN.md               # Technical analysis
-│   └── FEEN_WAVE_ENGINE.md   # Complete reference
+├── 📁 docs/                      # Documentation
+│   ├── FEEN.md
+│   └── FEEN_WAVE_ENGINE.md
 │
-├── CMakeLists.txt            # Build configuration
-├── vcpkg.json                # Dependencies
-├── CITATION.cff              # Academic citation
-└── LICENSE                   # MIT License
+├── CMakeLists.txt                # Build configuration
+├── vcpkg.json                    # Dependencies
+├── CITATION.cff                  # Academic citation
+└── LICENSE                       # MIT License
+
 ```
 
 ---
