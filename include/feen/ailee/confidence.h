@@ -96,7 +96,7 @@ private:
         // Protect against near-zero variance with floor
         const double safe_variance = std::max(variance, VARIANCE_FLOOR);
         
-        // Inverse‑variance mapping (bounded, monotonic)
+        // Inverse-variance mapping (bounded, monotonic)
         return 1.0 / (1.0 + safe_variance);
     }
 
