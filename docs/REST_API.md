@@ -34,14 +34,18 @@ The server will start on `http://localhost:5000` by default.
 python3 feen_rest_api.py --help
 
 Options:
-  --host HOST      Host to bind to (default: 0.0.0.0)
+  --host HOST      Host to bind to (default: 127.0.0.1 for localhost only)
   --port PORT      Port to bind to (default: 5000)
   --debug          Enable debug mode
 ```
 
 Example:
 ```bash
-python3 feen_rest_api.py --host 127.0.0.1 --port 8080 --debug
+# Start on localhost (default, secure)
+python3 feen_rest_api.py
+
+# Bind to all interfaces (use with caution)
+python3 feen_rest_api.py --host 0.0.0.0 --port 8080 --debug
 ```
 
 ## API Endpoints
