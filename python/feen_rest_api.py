@@ -258,15 +258,30 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='FEEN REST API Server')
-    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
+    parser.add_argument('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1 for localhost only)')
     parser.add_argument('--port', type=int, default=5000, help='Port to bind to')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     
     args = parser.parse_args()
     
+    print("=" * 80)
+    print("FEEN REST API Server - Development/Research Mode")
+    print("=" * 80)
+    print("")
+    print("⚠️  WARNING: This is a DEVELOPMENT server, not for production use!")
+    print("   For production deployments, use a production WSGI server like:")
+    print("   - Gunicorn: gunicorn -w 4 -b 0.0.0.0:5000 feen_rest_api:app")
+    print("   - uWSGI: uwsgi --http 0.0.0.0:5000 --module feen_rest_api:app")
+    print("")
     print(f"Starting FEEN REST API server on {args.host}:{args.port}")
     print(f"Access the API at: http://{args.host}:{args.port}")
     print(f"API Documentation: http://{args.host}:{args.port}/")
+    print("")
+    if args.host == '0.0.0.0':
+        print("⚠️  Note: Binding to 0.0.0.0 exposes the API to all network interfaces.")
+        print("   This API has no authentication. Use with caution on untrusted networks.")
+        print("")
+    print("=" * 80)
     
     app.run(host=args.host, port=args.port, debug=args.debug)
 
