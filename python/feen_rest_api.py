@@ -64,12 +64,17 @@ class ResonatorNetworkManager:
             'v': res.v(),
             't': res.t(),
             'energy': res.energy(),
-            'snr': res.snr()
+            'snr': res.snr()  # Now uses default temperature
         }
     
     def get_all_nodes_state(self):
         """Get the state of all nodes."""
-        return [self.get_node_state(i) for i in range(len(self.nodes))]
+        states = []
+        for i in range(len(self.nodes)):
+            state = self.get_node_state(i)
+            if state is not None:
+                states.append(state)
+        return states
     
     def inject_node(self, node_id, amplitude, phase=0.0):
         """Inject a signal into a specific node."""
