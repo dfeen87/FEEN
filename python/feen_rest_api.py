@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+"""
+FEEN REST API Server
+Provides HTTP REST API access to FEEN resonator network with global node access.
+"""
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import sys
+import os
+
+# Add parent directory to path to import pyfeen
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    import pyfeen
+except ImportError:
+    print("Error: pyfeen module not found. Please build the Python bindings first.")
+    print("Run: cd build && cmake .. -DFEEN_BUILD_PYTHON=ON && make")
+    sys.exit(1)
+
+
+class ResonatorNetworkManager:
+    """Manages a global FEEN resonator network accessible via REST API."""
+    
+    def __init__(self):
+        self.nodes = []
+        self.time = 0.0
+        self.ticks = 0
+        
+    def add_node(self, config_dict):
+        """Add a new resonator node to the network."""
+        config = pyfeen.ResonatorConfig()
+        config.frequency_hz = config_dict.get('frequency_hz', 1000.0)
+        config.q_factor = config_dict.get('q_factor', 200.0)
+        config.beta = config_dict.get('beta', 1e-4)
+        config.name = config_dict.get('name', f'node_{len(self.nodes)}')
+        
+        resonator = pyfeen.Resonator(config)
+        self.nodes.append({
+            'id': len(self.nodes),
+            'resonator': resonator,
+            'config': config_dict
+        })
+        return len(self.nodes) - 1
+    
+    def get_node(self, node_id):
+        """Get a specific node by ID."""
+        if node_id < 0 or node_id >= len(self.nodes):
+            return None
+        return self.nodes[node_id]
+    
+    def get_node_state(self, node_id):
+        """Get the state of a specific node."""
+        node = self.get_node(node_id)
+        if node is None:
+            return None
+        
+        res = node['resonator']
+        return {
+            'id': node_id,
+            'name': node['config'].get('name', f'node_{node_id}'),
+            'x': res.x(),
+            'v': res.v(),
+            't': res.t(),
+            'energy': res.energy(),
+            'snr': res.snr()
+        }
+    
+    def get_all_nodes_state(self):
+        """Get the state of all nodes."""
+        return [self.get_node_state(i) for i in range(len(self.nodes))]
+    
+    def inject_node(self, node_id, amplitude, phase=0.0):
+        """Inject a signal into a specific node."""
+        node = self.get_node(node_id)
+        if node is None:
+            return False
+        
+        node['resonator'].inject(amplitude, phase)
+        return True
+    
+    def tick_network(self, dt):
+        """Evolve all nodes by timestep dt."""
+        for node in self.nodes:
+            node['resonator'].tick(dt)
+        self.time += dt
+        self.ticks += 1
+        return True
+    
+    def get_network_status(self):
+        """Get overall network status."""
+        return {
+            'num_nodes': len(self.nodes),
+            'time': self.time,
+            'ticks': self.ticks
+        }
+    
+    def get_state_vector(self):
+        """Get global state vector [x0, v0, x1, v1, ...]."""
+        state_vector = []
+        for node in self.nodes:
+            res = node['resonator']
+            state_vector.extend([res.x(), res.v()])
+        return state_vector
+
+
+# Global network manager
+network = ResonatorNetworkManager()
+
+# Flask app
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint."""
+    return jsonify({'status': 'ok', 'service': 'FEEN REST API'})
+
+
+@app.route('/api/network/status', methods=['GET'])
+def get_network_status():
+    """Get network status."""
+    return jsonify(network.get_network_status())
+
+
+@app.route('/api/network/nodes', methods=['GET'])
+def list_nodes():
+    """List all nodes in the network."""
+    return jsonify({
+        'nodes': network.get_all_nodes_state(),
+        'count': len(network.nodes)
+    })
+
+
+@app.route('/api/network/nodes', methods=['POST'])
+def add_node():
+    """Add a new node to the network."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+    
+    try:
+        node_id = network.add_node(data)
+        return jsonify({
+            'id': node_id,
+            'message': 'Node added successfully',
+            'state': network.get_node_state(node_id)
+        }), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/network/nodes/<int:node_id>', methods=['GET'])
+def get_node(node_id):
+    """Get a specific node's state."""
+    state = network.get_node_state(node_id)
+    if state is None:
+        return jsonify({'error': f'Node {node_id} not found'}), 404
+    return jsonify(state)
+
+
+@app.route('/api/network/nodes/<int:node_id>/inject', methods=['POST'])
+def inject_signal(node_id):
+    """Inject a signal into a specific node."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+    
+    amplitude = data.get('amplitude', 1.0)
+    phase = data.get('phase', 0.0)
+    
+    if network.inject_node(node_id, amplitude, phase):
+        return jsonify({
+            'message': f'Signal injected into node {node_id}',
+            'state': network.get_node_state(node_id)
+        })
+    else:
+        return jsonify({'error': f'Node {node_id} not found'}), 404
+
+
+@app.route('/api/network/tick', methods=['POST'])
+def tick_network():
+    """Evolve the network by a timestep."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+    
+    dt = data.get('dt', 1e-6)
+    steps = data.get('steps', 1)
+    
+    try:
+        for _ in range(steps):
+            network.tick_network(dt)
+        
+        return jsonify({
+            'message': f'Network evolved by {steps} steps',
+            'status': network.get_network_status(),
+            'nodes': network.get_all_nodes_state()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/network/state', methods=['GET'])
+def get_state_vector():
+    """Get the global state vector of all nodes."""
+    return jsonify({
+        'state_vector': network.get_state_vector(),
+        'format': 'Interleaved [x0, v0, x1, v1, ...]',
+        'num_nodes': len(network.nodes)
+    })
+
+
+@app.route('/api/network/reset', methods=['POST'])
+def reset_network():
+    """Reset the network (clear all nodes)."""
+    global network
+    network = ResonatorNetworkManager()
+    return jsonify({'message': 'Network reset successfully'})
+
+
+@app.route('/', methods=['GET'])
+def index():
+    """API documentation."""
+    return jsonify({
+        'service': 'FEEN REST API',
+        'version': '1.0.0',
+        'description': 'REST API for FEEN Wave Engine with global node access',
+        'endpoints': {
+            'GET /api/health': 'Health check',
+            'GET /api/network/status': 'Get network status',
+            'GET /api/network/nodes': 'List all nodes',
+            'POST /api/network/nodes': 'Add a new node',
+            'GET /api/network/nodes/<id>': 'Get specific node state',
+            'POST /api/network/nodes/<id>/inject': 'Inject signal to node',
+            'POST /api/network/tick': 'Evolve network by timestep',
+            'GET /api/network/state': 'Get global network state vector',
+            'POST /api/network/reset': 'Reset the network'
+        },
+        'example_node_config': {
+            'frequency_hz': 1000.0,
+            'q_factor': 200.0,
+            'beta': 1e-4,
+            'name': 'my_resonator'
+        }
+    })
+
+
+def main():
+    """Main entry point for the REST API server."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='FEEN REST API Server')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
+    parser.add_argument('--port', type=int, default=5000, help='Port to bind to')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    
+    args = parser.parse_args()
+    
+    print(f"Starting FEEN REST API server on {args.host}:{args.port}")
+    print(f"Access the API at: http://{args.host}:{args.port}")
+    print(f"API Documentation: http://{args.host}:{args.port}/")
+    
+    app.run(host=args.host, port=args.port, debug=args.debug)
+
+
+if __name__ == '__main__':
+    main()

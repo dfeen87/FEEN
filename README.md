@@ -68,6 +68,7 @@ feen/
 ├── Hardware Support   → FPGA drivers, MEMS calibration
 ├── Analysis Tools     → Spectrum analyzer, phase portraits
 ├── Python Bindings    → NumPy integration, visualization
+├── REST API           → HTTP access with global node control
 └── Validation Suite   → Physics-enforcing tests
 ```
 
@@ -372,6 +373,43 @@ plt.ylabel('Final State')
 plt.title('Bistable Resonator Bifurcation')
 plt.show()
 ```
+
+### REST API
+
+The FEEN REST API provides HTTP access to resonator networks with global node control:
+
+```bash
+# Start the REST API server
+cd python
+pip install -r requirements.txt
+python3 feen_rest_api.py
+
+# Add a resonator node
+curl -X POST http://localhost:5000/api/network/nodes \
+  -H "Content-Type: application/json" \
+  -d '{"frequency_hz": 1000.0, "q_factor": 200.0, "beta": 1e-4}'
+
+# Inject a signal
+curl -X POST http://localhost:5000/api/network/nodes/0/inject \
+  -H "Content-Type: application/json" \
+  -d '{"amplitude": 1.0, "phase": 0.0}'
+
+# Evolve the network
+curl -X POST http://localhost:5000/api/network/tick \
+  -H "Content-Type: application/json" \
+  -d '{"dt": 1e-6, "steps": 1000}'
+
+# Get global network state
+curl http://localhost:5000/api/network/state
+```
+
+**Key Features:**
+- Global node access via `/api/network/state` endpoint
+- Synchronized network evolution with `/api/network/tick`
+- RESTful CRUD operations for resonator nodes
+- Real-time state monitoring and control
+
+See [REST API Documentation](docs/REST_API.md) for complete endpoint reference.
 
 ---
 
