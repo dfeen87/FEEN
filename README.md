@@ -598,6 +598,8 @@ We welcome contributions! Here's how to get started:
 
 ## 📈 Roadmap
 
+The items below are exploratory and forward-looking. They represent potential research directions and platform maturity goals, not committed or scheduled work. All items are subject to experimental validation and may evolve as the project matures.
+
 ### v3.1 — Scaling & Instrumentation
 - [ ] GPU‑accelerated network simulations (CUDA/OpenCL)
 - [ ] Real‑time visualization and diagnostics dashboard
@@ -605,8 +607,8 @@ We welcome contributions! Here's how to get started:
 - [ ] Extended harmonic mode and coupling support
 
 ### v3.2 — Hybrid & Experimental Regimes
-- [ ] Exploratory quantum‑regime phonon modeling (ground‑state dynamics)
-- [ ] Machine learning model training on resonator networks
+- [ ] Quantum‑regime phonon modeling (ground‑state dynamics) — exploratory, subject to experimental validation
+- [ ] Machine learning model training on resonator networks — research-oriented
 - [ ] Hardware‑in‑the‑loop testing framework
 - [ ] WebAssembly demo for browser‑based simulation
 
