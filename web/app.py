@@ -1,6 +1,6 @@
 import sys
 import os
-from flask import Flask, send_from_directory, render_template
+from flask import Flask, send_from_directory, render_template, redirect
 
 # Ensure we can import from python/ directory
 python_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python'))
@@ -18,6 +18,12 @@ except ImportError as e:
 base_dir = os.path.dirname(os.path.abspath(__file__))
 app.template_folder = os.path.join(base_dir, 'templates')
 app.static_folder = os.path.join(base_dir, 'static')
+
+@app.route('/')
+def root():
+    """Redirect root to the dashboard UI."""
+    return redirect('/dashboard')
+
 
 @app.route('/dashboard')
 def dashboard():
