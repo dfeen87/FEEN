@@ -361,5 +361,57 @@ class TestBuiltinPlugins(unittest.TestCase):
         self.assertAlmostEqual(m["nodes"][0]["snr_headroom_db"], 5.0)
 
 
+class TestEagerPluginInitialization(unittest.TestCase):
+    """Verify that plugins and blueprints are registered at import time.
+
+    Flask 2.x raises an error if blueprints are registered after the first
+    request.  Eager initialization in feen_rest_api ensures this never happens.
+    """
+
+    def _import_feen_rest_api(self):
+        """Import feen_rest_api in a clean module environment."""
+        import importlib
+        # Remove cached module so each test gets a fresh import.
+        for key in list(sys.modules.keys()):
+            if "feen_rest_api" in key:
+                del sys.modules[key]
+        sys.path.insert(0, _PYTHON_DIR)
+        try:
+            import feen_rest_api
+            return feen_rest_api
+        except SystemExit:
+            self.skipTest("pyfeen native module not available in this environment")
+
+    def test_plugins_initialized_before_first_request(self):
+        """_plugins_initialized must be True after importing feen_rest_api."""
+        mod = self._import_feen_rest_api()
+        self.assertTrue(
+            mod._plugins_initialized,
+            "Plugins must be initialized at import time, not lazily on first request.",
+        )
+
+    def test_blueprints_registered_before_first_request(self):
+        """Plugin blueprints must be registered with the Flask app at import time."""
+        mod = self._import_feen_rest_api()
+        registered_names = {bp.name for bp in mod.app.blueprints.values()}
+        # All active plugins that provided a blueprint must be registered.
+        active_bps = mod.plugin_registry.active_blueprints()
+        for bp in active_bps:
+            self.assertIn(
+                bp.name,
+                registered_names,
+                f"Blueprint {bp.name!r} was not registered before the first request.",
+            )
+
+    def test_health_endpoint_works_after_eager_init(self):
+        """The /api/health endpoint must respond correctly after eager init."""
+        mod = self._import_feen_rest_api()
+        client = mod.app.test_client()
+        response = client.get("/api/health")
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["status"], "ok")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
