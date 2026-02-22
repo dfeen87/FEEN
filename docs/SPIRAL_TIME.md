@@ -32,16 +32,18 @@ We formalize FEEN, a distributed phononic mesh network that performs timing, sen
 2. [Related Work and Engineering Positioning](#2-related-work-and-engineering-positioning)
 3. [System Definition and Architecture](#3-system-definition-and-architecture)
 4. [Coupled-Mode Model (Phononic Mesh Dynamics)](#4-coupled-mode-model-phononic-mesh-dynamics)
-5. [Phase Reduction and Emergent Synchronization](#5-phase-reduction-and-emergent-synchronization)
-6. [Intrinsic Memory Extensions (Non-Markovian FEEN)](#6-intrinsic-memory-extensions-non-markovian-feen)
-7. [Deterministic Observer Layer](#7-deterministic-observer-layer-optional-δφ-type-functional)
-8. [Pipeline Diagram](#8-pipeline-diagram)
-9. [Performance Metrics and Evaluation Protocol](#9-performance-metrics-and-evaluation-protocol)
-10. [Falsification Program and Null Hypotheses](#10-falsification-program-and-null-hypotheses)
-11. [Experimental Roadmap (Prototype)](#11-experimental-roadmap-prototype)
-12. [Discussion](#12-discussion)
-13. [Conclusion](#13-conclusion)
-14. [References](#references)
+5. [Energy Functional and Dissipation Structure](#5-energy-functional-and-dissipation-structure)
+6. [Phase Reduction and Emergent Synchronization](#6-phase-reduction-and-emergent-synchronization)
+7. [Dimensional Analysis and Scaling Laws](#7-dimensional-analysis-and-scaling-laws)
+8. [Intrinsic Memory Extensions (Non-Markovian FEEN)](#8-intrinsic-memory-extensions-non-markovian-feen)
+9. [Deterministic Observer Layer](#9-deterministic-observer-layer-optional-δφ-type-functional)
+10. [Pipeline Diagram](#10-pipeline-diagram)
+11. [Performance Metrics and Evaluation Protocol](#11-performance-metrics-and-evaluation-protocol)
+12. [Falsification Program and Null Hypotheses](#12-falsification-program-and-null-hypotheses)
+13. [Experimental Roadmap (Prototype)](#13-experimental-roadmap-prototype)
+14. [Discussion](#14-discussion)
+15. [Conclusion](#15-conclusion)
+16. [References](#references)
 
 ---
 
@@ -134,15 +136,50 @@ where **sᵢ(t)** is a local injection/perturbation term (drive, sensing input, 
 
 with **Ω = diag(Ωᵢ)**, **Γ = diag(γᵢ)**, and **K** encoding couplings.
 
-### 4.2 Linear stability criterion
+### 4.2 Linear Stability of the Synchronized Manifold
 
-A steady state (or operating point) **a\*** is linearly stable if the Jacobian **J = M** has eigenvalues **λₖ** satisfying:
+We study the linear stability of the coupled-mode network:
 
 ```
-                         Re[λₖ(M)] < 0    ∀k                                            (3)
+                         ȧ = (−Γ + iΩ₀) a + K a                                        (3)
 ```
 
-This provides a direct engineering test: damping and coupling must yield **net contraction** in the linearized dynamics.
+where **a ∈ ℂᴺ**, **Γ = diag(γ₁, …, γₙ)** with **γᵢ > 0**, **Ω₀ = diag(ω₁, …, ωₙ)**, and **K = (κᵢⱼ)** is the coupling operator.
+
+**Stability in terms of the Hermitian part.** Let **M := −Γ + K** be the real (dissipative) part of the generator. Define the Hermitian part **H := ½(M + M†)**. Using the quadratic Lyapunov candidate **V(a) = ‖a‖₂² = a†a** we obtain:
+
+```
+                         V̇ = a†(M + M†)a = 2 a†H a                                     (4)
+```
+
+Hence the origin (and, in the rotating frame, the synchronized manifold) is **globally exponentially stable** if:
+
+```
+                         λₘₐₓ(H) < 0,    with rate α := −λₘₐₓ(H) > 0                  (5)
+```
+
+which implies **‖a(t)‖₂ ≤ e^(−αt) ‖a(0)‖₂**.
+
+**Identical damping / frequency (clean criterion).** If **Γ = γI** and **ωᵢ = ω₀** (identical nodes), then **H = ½(K + K†) − γI** and:
+
+```
+                         λₘₐₓ(½(K + K†)) < γ  ⟹  linear stability                     (6)
+```
+
+For real symmetric coupling (**K = Kᵀ**), this reduces to **Re(λₘₐₓ(K)) < γ**.
+
+**Adjacency vs. Laplacian coupling.** Two common choices are:
+
+1. **Adjacency-type:** K = κA (with adjacency matrix A). Then stability requires **κ λₘₐₓ(A) < γ**.
+2. **Diffusive (Laplacian) coupling:** K = −κL (graph Laplacian L). Then K is negative semidefinite and damping is enhanced by coupling: **λₘₐₓ(H) ≤ −γ < 0** for **γ > 0**, while synchronization quality is controlled by the spectral gap **λ₂(L)**.
+
+**Synchronization threshold under disorder (phase reduction link).** When node frequencies are non-identical with spread **Δω** and coupling is weak-to-moderate, standard phase reduction yields a Kuramoto-type threshold controlled by the algebraic connectivity:
+
+```
+                         κ λ₂(L) ≳ c Δω                                                 (7)
+```
+
+where **c = O(1)** depends on the coupling function and operating point. Equation (7) is the graph-theoretic synchronization condition used for design scaling.
 
 ### 4.3 Inclusion of nonlinear saturation (optional but realistic)
 
@@ -156,9 +193,83 @@ with **ηᵢ > 0** for nonlinear damping and **βᵢ** for Duffing-type frequenc
 
 ---
 
-## 5 Phase Reduction and Emergent Synchronization
+## 5 Energy Functional and Dissipation Structure
 
-### 5.1 Phase extraction and weak-coupling limit
+The coupled resonator dynamics (Eq. 10) together with the phase-field evolution admit a Lyapunov-type functional. This provides a global stability structure beyond linear analysis.
+
+### 5.1 Total Energy Functional
+
+We define the total energy of the mesh as:
+
+```
+         E(t) = Σᵢ₌₁ᴺ |aᵢ(t)|² + (D_Φ/2) ∫|∇Φ(x,t)|² dx + (λ_Φ/2) ∫(Φ(x,t) − Φ₀)² dx   (9)
+```
+
+The three terms represent:
+- **Modal energy** stored in the resonators: Σᵢ |aᵢ(t)|²
+- **Spatial phase gradient penalty:** (D_Φ/2) ∫|∇Φ|² dx
+- **Relaxation toward reference configuration Φ₀:** (λ_Φ/2) ∫(Φ − Φ₀)² dx
+
+All terms are positive definite for **D_Φ > 0** and **λ_Φ > 0**.
+
+### 5.2 Energy Dissipation
+
+Using the coupled-mode equation:
+
+```
+                 ȧᵢ = (−γᵢ + iωᵢ) aᵢ + Σⱼ κᵢⱼ aⱼ                                      (10)
+```
+
+and the phase-field evolution:
+
+```
+                 ∂ₜΦ = D_Φ ∇²Φ − λ_Φ(Φ − Φ₀) + F(ψ)                                   (11)
+```
+
+we compute the time derivative of the energy functional.
+
+For the **resonator part**:
+
+```
+     d/dt Σᵢ |aᵢ|² = 2 Σᵢ Re(āᵢ ȧᵢ) = −2 Σᵢ γᵢ|aᵢ|² + 2 Σᵢ Re( āᵢ Σⱼ κᵢⱼ aⱼ )
+```
+
+If the coupling matrix is purely reactive (skew-Hermitian after factoring out *i*), or if Laplacian/diffusive coupling forms are used, this ensures zero net energy growth from coupling alone.
+
+For the **phase-field contribution**, integration by parts (with periodic or vanishing-flux boundary conditions) yields:
+
+```
+     d/dt [ (D_Φ/2) ∫|∇Φ|² dx + (λ_Φ/2) ∫(Φ−Φ₀)² dx ]
+         = −∫ [ D_Φ|∇Φ|² + λ_Φ(Φ−Φ₀)² ] dx + O(F)
+```
+
+Collecting terms gives the **total energy rate**:
+
+```
+     dE/dt = −2 Σᵢ γᵢ|aᵢ|² − ∫[ D_Φ|∇Φ|² + λ_Φ(Φ−Φ₀)² ] dx + O(F)                  (12)
+```
+
+In the absence of external forcing (**F = 0**):
+
+```
+                         dE/dt ≤ 0                                                       (13)
+```
+
+showing that the dynamics is **dissipative**.
+
+### 5.3 Implication: Gradient-like Relaxation
+
+The system admits a Lyapunov functional **E(t)** that decreases monotonically under unforced dynamics.
+
+> Synchronization is not externally imposed but emerges as a **dissipative relaxation process** toward minima of E. Coherent phase configurations correspond to stable attractors of a gradient-like dissipative dynamical system.
+
+This establishes global energetic consistency of the mesh and explains why phase locking is structurally robust against moderate perturbations.
+
+---
+
+## 6 Phase Reduction and Emergent Synchronization
+
+### 6.1 Phase extraction and weak-coupling limit
 
 Write **aᵢ(t) = rᵢ(t) eⁱθᵢ⁽ᵗ⁾**. In weak coupling and near steady amplitude, one obtains an effective phase model of Kuramoto type:
 
@@ -168,7 +279,7 @@ Write **aᵢ(t) = rᵢ(t) eⁱθᵢ⁽ᵗ⁾**. In weak coupling and near steady
 
 where **ωᵢ** are effective frequencies and **Kᵢⱼ ≥ 0** effective couplings; **ξᵢ(t)** captures fluctuations.
 
-### 5.2 Order parameter and emergent time reference
+### 6.2 Order parameter and emergent time reference
 
 Define the **global order parameter**:
 
@@ -216,15 +327,45 @@ Define the **global order parameter**:
 
 **Design implication.** For fixed oscillator heterogeneity, increased coupling strength and improved graph connectivity (higher **λ₂**) expand the practical locking range and reduce the steady-state phase dispersion, directly improving the emergent clock stability.
 
-### 5.3 Synchronization threshold (testable scaling)
+### 6.3 Synchronization threshold (testable scaling)
 
 For heterogeneous **ωᵢ**, coherence requires sufficiently strong coupling. On general graphs, the threshold depends on topology and disorder scale. A falsifiable signature is the existence of a coupling regime where **R\*** transitions from ≈ 0 to > 0 as coupling increases.
 
 ---
 
-## 6 Intrinsic Memory Extensions (Non-Markovian FEEN)
+## 7 Dimensional Analysis and Scaling Laws
 
-### 6.1 Memory kernel formulation
+### 7.1 Characteristic Scales
+
+Define characteristic time and length scales:
+
+```
+                         τ = γ⁻¹,    ℓ꜀ = √(D_Φ / λ_Φ)
+```
+
+The dimensionless parameters governing the system are:
+
+```
+                         κ̃ = κ/γ,    Δω̃ = Δω/γ,    D̃ = D_Φ / (γL²)
+```
+
+### 7.2 Scaling Regimes
+
+**Table 1: Dominant scaling regimes of the FEEN mesh.**
+
+| Regime | Condition | Dominant Effect | Interpretation |
+|---|---|---|---|
+| Undercoupled | κ̃ < 1 | Local drift dominates | No global phase lock |
+| Critical | κ̃ ~ 1 | Marginal stability | Edge of synchronization |
+| Overcoupled | κ̃ ≫ 1 | Fast convergence | Robust collective mode |
+| Diffusive | ℓ꜀ ≪ L | Local coherence only | Clustered sync |
+| Global field | ℓ꜀ ≫ L | Uniform phase field | Macroscopic oscillator |
+
+---
+
+## 8 Intrinsic Memory Extensions (Non-Markovian FEEN)
+
+### 8.1 Memory kernel formulation
 
 To capture intrinsic temporal memory (beyond simple damping), we augment node dynamics by a memory kernel:
 
@@ -250,15 +391,15 @@ the model becomes Markovian in an extended state with auxiliary variables **uᵢ
 
 This yields a practical route for simulation and control.
 
-### 6.2 Null hypothesis and falsification target
+### 8.2 Null hypothesis and falsification target
 
-A key empirical question is whether observed memory signatures can be explained by finite baths or engineered environmental coupling. FEEN + intrinsic memory predicts regimes where history-dependence persists under resets/ablations that would eliminate standard bath memory (Sec. 10).
+A key empirical question is whether observed memory signatures can be explained by finite baths or engineered environmental coupling. FEEN + intrinsic memory predicts regimes where history-dependence persists under resets/ablations that would eliminate standard bath memory (Sec. 12).
 
 ---
 
-## 7 Deterministic Observer Layer (Optional: ΔΦ-type Functional)
+## 9 Deterministic Observer Layer (Optional: ΔΦ-type Functional)
 
-### 7.1 Observer functional
+### 9.1 Observer functional
 
 Define a deterministic observer functional on multichannel trajectories **y(t)**:
 
@@ -272,7 +413,7 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
 
 ---
 
-## 8 Pipeline Diagram
+## 10 Pipeline Diagram
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -293,20 +434,20 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
                      ▼
         ┌─────────────────────────┐
         │     Phase Reduction     │
-        │        Eq. (5)          │
+        │        Eq. (14)         │
         └────────────┬────────────┘
                      │
               ┌──────┴──────┐
               ▼             ▼
   ┌──────────────────┐  ┌──────────────────┐
   │  Emergent Clock  │  │ Intrinsic Memory  │
-  │  Order param.    │  │    Eq. (7)        │
-  │    Eq. (6)       │  └────────┬─────────┘
+  │  Order param.    │  │    Eq. (16)       │
+  │    Eq. (15)      │  └────────┬─────────┘
   └────────┬─────────┘           │
            │                     ▼
            │          ┌──────────────────────┐
            │          │ Deterministic Observer│
-           │          │    ΔΦ  Eq. (10)      │
+           │          │    ΔΦ  Eq. (19)      │
            │          └────────┬─────────────┘
            │                   │
            └─────────┬─────────┘
@@ -322,9 +463,9 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
 
 ---
 
-## 9 Performance Metrics and Evaluation Protocol
+## 11 Performance Metrics and Evaluation Protocol
 
-### 9.1 Metrics
+### 11.1 Metrics
 
 | Metric | Formula | Description |
 |---|---|---|
@@ -333,7 +474,7 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
 | Energy-per-operation | Eₒₚ | Energy dissipated per timing/sensing update |
 | Robustness | ΔR, ΔTᶜ | Degradation under noise/disorder |
 
-### 9.2 Parameter-to-model mapping
+### 11.2 Parameter-to-model mapping
 
 **Table 1: Mapping physical parameters to reduced models.**
 
@@ -341,16 +482,16 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
 |---|---|---|
 | Resonance frequency | Ωᵢ in Eq. (1) | sets effective ωᵢ |
 | Damping / loss | γᵢ in Eq. (1) | affects locking range, Tᶜ |
-| Neighbor coupling | κᵢⱼ in Eq. (1) | sets Kᵢⱼ in Eq. (5) |
-| Nonlinear saturation | ηᵢ, βᵢ in Eq. (4) | stabilizes amplitude, improves robustness |
-| Intrinsic memory kernel | Kᵢ in Eq. (7) | history dependence beyond Markov |
+| Neighbor coupling | κᵢⱼ in Eq. (1) | sets Kᵢⱼ in Eq. (14) |
+| Nonlinear saturation | ηᵢ, βᵢ in Eq. (8) | stabilizes amplitude, improves robustness |
+| Intrinsic memory kernel | Kᵢ in Eq. (16) | history dependence beyond Markov |
 | Noise / perturbations | sᵢ(t) or ξᵢ(t) | limits R\* and Tᶜ |
 
 **Table 2: Claims vs. evidence status and required validation steps (engineering QA view).**
 
 | Claim | Operational definition (measurable) | Current status | Validation / falsification |
 |---|---|---|---|
-| Emergent clock without global timing | R(t) → R\* > 0 and bounded σ_θ(t) across operating window | Model-derived (Sec. 5) | Measure R, σ_θ vs. coupling/disorder; verify reproducibility across runs |
+| Emergent clock without global timing | R(t) → R\* > 0 and bounded σ_θ(t) across operating window | Model-derived (Sec. 6) | Measure R, σ_θ vs. coupling/disorder; verify reproducibility across runs |
 | Drive-free sidebands | Spectral sidebands present when sᵢ(t) has no periodic component (verified instrumentation) | Prediction | Instrument ablation: disconnect external references; vary topology/coupling; verify persistence and scaling |
 | Coherence plateau | Tᶜ and R\* remain stable over parameter range where Markovian baseline decays | Prediction | Compare against Markovian baseline model; show plateau survives reset/thermal drift controls |
 | Topology-dependent phase offsets | Stable phase offsets correlated with graph cycles / symmetry classes | Prediction | Swap topology with same node count; check phase-offset changes follow topology not hardware placement |
@@ -358,7 +499,7 @@ where **F** is deterministic and **w** is a weighting kernel. This layer produce
 | Energy scaling advantage | Lower Eₒₚ at equal timing error / coherence target | Open (engineering question) | Measure dissipation vs. N and compare to digital clock distribution overhead under comparable accuracy targets |
 | Observer functional utility (optional) | ΔΦ improves detection/control performance without altering physics | Optional layer | Ablation: compare control/regime detection with/without ΔΦ under identical signals and constraints |
 
-### 9.3 Algorithm: simulation protocol
+### 11.3 Algorithm: simulation protocol
 
 ```
 Algorithm 1 — FEEN Evaluation Protocol (Simulation)
@@ -368,13 +509,13 @@ Require: Graph G, parameters {Ωᵢ, γᵢ, κᵢⱼ}, noise level,
 
  1: Initialize a(0) [or θᵢ(0)], set t = 0
  2: for t = 0 to T do
- 3:     Integrate coupled-mode Eq. (1) [or phase Eq. (5)]
+ 3:     Integrate coupled-mode Eq. (1) [or phase Eq. (14)]
  4:     if memory enabled then
- 5:         Integrate kernel dynamics Eq. (7) or embedded form Eq. (9)
+ 5:         Integrate kernel dynamics Eq. (16) or embedded form Eq. (18)
  6:     end if
- 7:     Compute R(t) via Eq. (6) and synchronization error σ_θ(t)
+ 7:     Compute R(t) via Eq. (15) and synchronization error σ_θ(t)
  8:     if observer enabled then
- 9:         Compute ΔΦ[y](t) via Eq. (10)
+ 9:         Compute ΔΦ[y](t) via Eq. (19)
 10:     end if
 11: end for
 12: Estimate Tᶜ, Eₒₚ, robustness curves vs. disorder/noise
@@ -383,11 +524,11 @@ Require: Graph G, parameters {Ωᵢ, γᵢ, κᵢⱼ}, noise level,
 
 ---
 
-## 10 Falsification Program and Null Hypotheses
+## 12 Falsification Program and Null Hypotheses
 
 > **Reviewer-facing note.** Items labeled as "Prediction" are explicitly framed as falsifiable signatures. No performance advantage is assumed without measurement; the contribution is the end-to-end model plus a validation program that rules out common artifact classes (hidden drives, parameter drift, finite-bath memory).
 
-### 10.1 Core falsifiable signatures
+### 12.1 Core falsifiable signatures
 
 The architecture becomes scientifically meaningful if at least one of the following is reproducibly observed:
 
@@ -396,7 +537,7 @@ The architecture becomes scientifically meaningful if at least one of the follow
 3. **Topology-dependent phase offsets:** stable offsets locked to graph topology (e.g., cycles) persist under perturbations.
 4. **Reset-resistant memory:** history-dependent behavior persists under interventions designed to erase bath correlations.
 
-### 10.2 Null hypotheses (what must be ruled out)
+### 12.2 Null hypotheses (what must be ruled out)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -425,13 +566,13 @@ FEEN + intrinsic memory is supported **only if** these null hypotheses fail unde
 
 ---
 
-## 11 Experimental Roadmap (Prototype)
+## 13 Experimental Roadmap (Prototype)
 
-### 11.1 Minimal hardware concept
+### 13.1 Minimal hardware concept
 
 A minimal prototype can be implemented using a small (**N ~ 8–64**) resonator array with programmable couplings (e.g., via tunable mechanical links, piezoelectric coupling, or electronic feedback emulating coupling). Key observables are phase, frequency, and spectrum at each node.
 
-### 11.2 Measurement plan
+### 13.2 Measurement plan
 
 Measure:
 - Node phases **θᵢ(t)** and compute **R(t)**
@@ -441,20 +582,20 @@ Measure:
 
 ---
 
-## 12 Discussion
+## 14 Discussion
 
-### 12.1 What is genuinely new?
+### 14.1 What is genuinely new?
 
 Synchronization is known; the value of FEEN is a complete, falsifiable, engineering-facing formulation for a clockless mesh and a pathway to distinguish intrinsic memory from bath memory using explicit ablation tests.
 
-### 12.2 Limitations
+### 14.2 Limitations
 
 - Any claim of superiority (energy, robustness) must be demonstrated experimentally.
 - The intrinsic memory kernel must be constrained by data; otherwise it remains a modeling ansatz.
 
 ---
 
-## 13 Conclusion
+## 15 Conclusion
 
 We provided a rigorous, testable formulation of FEEN as a phononic mesh network without a central clock. Starting from coupled-mode dynamics, we derived a phase reduction yielding an emergent time reference through synchronization, extended the model to non-Markovian memory kernels, and proposed a falsification program with null hypotheses and measurable signatures. This establishes a concrete route from concept to prototype and to peer-review evaluation.
 
