@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN - VCP Wiring</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .graph-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            touch-action: pan-y;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .coupling-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .coupling-controls label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--clr-text-muted, #8a8a96);
+            margin-bottom: 0.35rem;
+        }
+
+        .param-input {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #eee;
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .coupling-btn-group {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* Ambient AI VCP Styling Touches */
+        .vcp-badge {
+            background: #00ff9d;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            background: #1a1a1a;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .user-info {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #00ff9d;
+        }
+
+        /* Login Panel inside Controls Card */
+        .login-panel {
+            background: #222;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-panel h3 {
+            margin-top: 0;
+            color: #eee;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 0.6rem;
+            margin-bottom: 0.8rem;
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/node-graph" class="nav-link">Node Graph</a>
+                <a href="/vcp-wiring" class="nav-link active">VCP Wiring</a>
+                <a href="/docs" class="nav-link">API Docs</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>VCP Wiring <span class="vcp-badge">SECURE</span></h1>
+                    <p>Explicit Structural Coupling (Ambient AI VCP Pattern)</p>
+                </div>
+                <div class="header-badge">LIVE</div>
+            </header>
+
+            <main class="main-grid">
+
+                <!-- Controls Section: Changes based on Auth state -->
+                <section class="card" id="control-section">
+
+                    <!-- View for Authenticated Users -->
+                    <div id="authenticated-view" class="hidden">
+                        <div class="status-bar">
+                            <span class="user-info">Logged in as: <span id="current-user"></span></span>
+                            <button id="logout-btn" class="btn btn-sm btn-danger">Logout</button>
+                        </div>
+
+                        <h2 class="card-title">Manage Connection</h2>
+                        <div class="coupling-controls">
+                            <div>
+                                <label>Source Node ID</label>
+                                <input type="number" id="source-id" class="param-input" placeholder="Select node...">
+                            </div>
+                            <div>
+                                <label>Target Node ID</label>
+                                <input type="number" id="target-id" class="param-input" placeholder="Select node...">
+                            </div>
+                            <div>
+                                <label>Coupling Strength (K)</label>
+                                <input type="number" id="coupling-strength" class="param-input" value="1.0" step="0.1">
+                            </div>
+                        </div>
+                        <div class="coupling-btn-group">
+                            <button id="add-coupling-btn" class="btn btn-primary">Wire Connection</button>
+                            <button id="remove-coupling-btn" class="btn btn-danger">Unwire Connection</button>
+                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
+                            * Select nodes by clicking on the graph below.
+                        </p>
+                    </div>
+
+                    <!-- View for Unauthenticated Users -->
+                    <div id="unauthenticated-view">
+                        <h2 class="card-title">Wiring Controls (Locked)</h2>
+                        <div class="login-panel">
+                            <h3>Sign In to Configure Wiring</h3>
+                            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1rem;">
+                                Node topology viewing is public. Structural mutations require authentication.
+                            </p>
+                            <form id="login-form" style="width: 100%;">
+                                <input type="text" id="username" class="auth-input" placeholder="Username" required>
+                                <input type="password" id="password" class="auth-input" placeholder="Password" required>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock Controls</button>
+                            </form>
+                            <p id="login-error" style="color: #ff4444; margin-top: 1rem; font-size: 0.9rem;" class="hidden"></p>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- Wiring Graph -->
+                <section class="card">
+                    <h2 class="card-title">Network Topology</h2>
+                    <div class="graph-wrapper">
+                        <div id="cy" class="graph-container"></div>
+                    </div>
+                </section>
+
+            </main>
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>Powered by FEEN Core (C++17) &amp; Ambient AI VCP System</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+        // --- Authentication Logic ---
+        const authView = document.getElementById('authenticated-view');
+        const unauthView = document.getElementById('unauthenticated-view');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const currentUserSpan = document.getElementById('current-user');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/status');
+                const data = await res.json();
+                if (data.authenticated) {
+                    showAuthenticated(data.user);
+                } else {
+                    showUnauthenticated();
+                }
+            } catch (e) {
+                console.error("Auth check failed", e);
+                showUnauthenticated();
+            }
+        }
+
+        function showAuthenticated(user) {
+            unauthView.classList.add('hidden');
+            authView.classList.remove('hidden');
+            currentUserSpan.textContent = user;
+        }
+
+        function showUnauthenticated() {
+            authView.classList.add('hidden');
+            unauthView.classList.remove('hidden');
+            currentUserSpan.textContent = '';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showAuthenticated(data.user);
+                    loginError.classList.add('hidden');
+                    // Clear password field
+                    document.getElementById('password').value = '';
+                } else {
+                    loginError.textContent = data.error || 'Login failed';
+                    loginError.classList.remove('hidden');
+                }
+            } catch (e) {
+                loginError.textContent = 'Network error';
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await fetch('/api/auth/logout', {method: 'POST'});
+            showUnauthenticated();
+        });
+
+        // --- Cytoscape & Wiring Logic ---
+
+        // Prevent scroll capture
+        document.getElementById('cy').addEventListener('wheel', function(e) {
+            e.stopImmediatePropagation();
+        }, { capture: true });
+
+        let cy = cytoscape({
+            container: document.getElementById('cy'),
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#00ff9d',
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-family': 'JetBrains Mono',
+                        'width': 40,
+                        'height': 40,
+                        'border-width': 1,
+                        'border-color': '#000'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#666',
+                        'target-arrow-color': '#666',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'label': 'data(strength)',
+                        'color': '#aaa',
+                        'font-size': '10px',
+                        'text-background-color': '#111',
+                        'text-background-opacity': 0.8,
+                        'text-background-padding': '2px'
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'border-width': 2,
+                        'border-color': '#fff',
+                        'background-color': '#00cc7d'
+                    }
+                }
+            ]
+        });
+
+        // Refresh Graph Data
+        async function refreshGraph() {
+            try {
+                const nodesRes = await fetch('/api/network/nodes');
+                const nodesData = await nodesRes.json();
+
+                const couplingsRes = await fetch('/api/network/couplings');
+                const couplingsData = await couplingsRes.json();
+
+                const elements = [];
+
+                if (nodesData.nodes) {
+                    nodesData.nodes.forEach(n => {
+                        elements.push({
+                            data: { id: n.id.toString(), label: n.name || n.id.toString() }
+                        });
+                    });
+                }
+
+                if (couplingsData.couplings) {
+                    couplingsData.couplings.forEach(c => {
+                        elements.push({
+                            data: {
+                                source: c.source.toString(),
+                                target: c.target.toString(),
+                                strength: c.strength.toFixed(2)
+                            }
+                        });
+                    });
+                }
+
+                // Simple stabilization: only update and re-layout if topology changed (node or edge count)
+                // This preserves user dragging/positioning when the network is static.
+                const currentNodes = cy.nodes().length;
+                const currentEdges = cy.edges().length;
+                const newNodes = nodesData.nodes ? nodesData.nodes.length : 0;
+                const newEdges = couplingsData.couplings ? couplingsData.couplings.length : 0;
+
+                if (currentNodes !== newNodes || currentEdges !== newEdges) {
+                    cy.json({ elements: elements });
+                    cy.layout({
+                        name: 'circle',
+                        animate: true,
+                        animationDuration: 500
+                    }).run();
+                }
+
+            } catch (e) {
+                console.error("Failed to refresh graph:", e);
+            }
+        }
+
+        // Tap to select source/target
+        cy.on('tap', 'node', function(evt){
+            // If authenticated, populate the fields.
+            // If unauthenticated, maybe just highlight?
+            // Actually, we can populate the fields even if hidden, so when they log in it's ready.
+            const node = evt.target;
+            const currentSource = document.getElementById('source-id').value;
+
+            if (!currentSource) {
+                document.getElementById('source-id').value = node.id();
+            } else {
+                document.getElementById('target-id').value = node.id();
+            }
+        });
+
+        // Wiring Actions
+        document.getElementById('add-coupling-btn').addEventListener('click', async () => {
+            const source = document.getElementById('source-id').value;
+            const target = document.getElementById('target-id').value;
+            const strength = document.getElementById('coupling-strength').value;
+
+            if (source === "" || target === "") return;
+
+            const res = await fetch('/api/network/couplings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_id: parseInt(source),
+                    target_id: parseInt(target),
+                    strength: parseFloat(strength)
+                })
+            });
+
+            if (res.ok) {
+                refreshGraph();
+            } else {
+                const err = await res.json();
+                alert('Error: ' + (err.error || 'Failed to wire'));
+            }
+        });
+
+        document.getElementById('remove-coupling-btn').addEventListener('click', async () => {
+            const source = document.getElementById('source-id').value;
+            const target = document.getElementById('target-id').value;
+
+            if (source === "" || target === "") return;
+
+            const res = await fetch('/api/network/couplings', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_id: parseInt(source),
+                    target_id: parseInt(target)
+                })
+            });
+
+            if (res.ok) {
+                refreshGraph();
+            } else {
+                const err = await res.json();
+                alert('Error: ' + (err.error || 'Failed to unwire'));
+            }
+        });
+
+        // Init
+        checkAuth();
+        refreshGraph();
+
+        // Auto-refresh graph periodically
+        setInterval(refreshGraph, 5000);
+
+    </script>
+</body>
+</html>

@@ -49,6 +49,12 @@ def coupling():
     return render_template('coupling.html')
 
 
+@app.route('/vcp-wiring')
+def vcp_wiring():
+    """Serve the authenticated VCP Wiring page."""
+    return render_template('vcp_wiring.html')
+
+
 @app.route('/docs')
 def api_docs():
     """Serve the human-readable API documentation page."""

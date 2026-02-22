@@ -32,8 +32,9 @@ Design invariants preserved by this API:
 
 import time as _time
 import threading
+from functools import wraps
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import sys
 import os
@@ -267,7 +268,20 @@ _ailee_metric_lock = threading.Lock()
 
 # Flask app
 app = Flask(__name__)
+# Set secret key for session management. In production, this should be a strong random value.
+app.secret_key = os.environ.get('FEEN_SECRET_KEY', 'feen_vcp_dev_secret_key_2026')
 CORS(app)  # Enable CORS for all routes
+
+
+def login_required(f):
+    """Decorator to require authentication for mutating endpoints."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Authentication required. Please sign in.'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 # ---------------------------------------------------------------------------
 # Plugin registry — initialized eagerly at import time so that all blueprints
@@ -321,6 +335,50 @@ def _ensure_plugins_initialized():
 
 # Eagerly initialize plugins so blueprints are registered before any request.
 _ensure_plugins_initialized()
+
+# ---------------------------------------------------------------------------
+# AUTHENTICATION endpoints
+# Minimal sign-in support to gate mutating actions.
+# ---------------------------------------------------------------------------
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Authenticate user and start session."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+
+    username = data.get('username')
+    password = data.get('password')
+
+    # Minimal credential check via environment variables
+    # In production, use a proper auth backend (LDAP, OAuth, etc.)
+    valid_user = os.environ.get('FEEN_VCP_USER', 'admin')
+    valid_pass = os.environ.get('FEEN_VCP_PASSWORD', 'feen_vcp')
+
+    if username == valid_user and password == valid_pass:
+        session['logged_in'] = True
+        session['user'] = username
+        return jsonify({'message': 'Logged in successfully', 'user': username})
+
+    return jsonify({'error': 'Invalid credentials'}), 401
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """End user session."""
+    session.clear()
+    return jsonify({'message': 'Logged out successfully'})
+
+
+@app.route('/api/auth/status', methods=['GET'])
+def auth_status():
+    """Check current authentication status."""
+    return jsonify({
+        'authenticated': session.get('logged_in', False),
+        'user': session.get('user')
+    })
+
 
 # ---------------------------------------------------------------------------
 # READ-ONLY OBSERVER endpoints
@@ -499,6 +557,7 @@ def reset_network():
 
 
 @app.route('/api/network/couplings', methods=['POST'])
+@login_required
 def add_coupling():
     """Create a coupling between two nodes."""
     data = request.get_json()
@@ -516,6 +575,7 @@ def add_coupling():
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/network/couplings', methods=['DELETE'])
+@login_required
 def remove_coupling():
     """Remove a coupling between two nodes."""
     data = request.get_json()
