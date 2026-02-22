@@ -16,6 +16,8 @@ dfeen87@gmail.com | ORCID: 0009-0003-1350-4160
 > Spiral‑Time is implemented as an observer module in include/feen/spiral_time/.
 It consumes FEEN state but does not alter core dynamics unless explicitly enabled.
 
+
+
 ---
 
 ## Abstract
@@ -43,7 +45,8 @@ We formalize FEEN, a distributed phononic mesh network that performs timing, sen
 13. [Experimental Roadmap (Prototype)](#13-experimental-roadmap-prototype)
 14. [Discussion](#14-discussion)
 15. [Conclusion](#15-conclusion)
-16. [References](#references)
+16. [Open-Source Implementation and Repository](#16-open-source-implementation-and-repository)
+17. [References](#references)
 
 ---
 
@@ -601,16 +604,39 @@ We provided a rigorous, testable formulation of FEEN as a phononic mesh network 
 
 ---
 
+## 16 Open-Source Implementation and Repository
+
+An open-source reference implementation of the FEEN simulation core, language components, and experimental evaluation tools is publicly available.
+
+The development repository is hosted at:
+
+> **https://github.com/dfeen87/FEEN**
+
+A versioned, citable release of the programming language framework is archived on Zenodo [1].
+
+The repository includes:
+
+- Numerical integration of the coupled-mode model (Eq. 1)
+- Phase-reduced simulations (Eq. 14)
+- Optional intrinsic memory extensions (Eqs. 16–18)
+- Evaluation scripts implementing the protocol in Sec. 11
+
+This separation between theoretical formulation (this manuscript) and implementation layer ensures reproducibility without altering the underlying physical model.
+
+---
+
 ## References
 
-[1] Y. Kuramoto, *Self-entrainment of a population of coupled non-linear oscillators*, in International Symposium on Mathematical Problems in Theoretical Physics, Lecture Notes in Physics 39, Springer (1975).
+[1] D. Feeney, *FEEN: A Wave-Native Programming Language (Version 2)*, Zenodo (2026). https://doi.org/10.5281/zenodo.18622860
 
-[2] S. H. Strogatz, *From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators*, Physica D **143**, 1–20 (2000).
+[2] Y. Kuramoto, *Self-entrainment of a population of coupled non-linear oscillators*, in International Symposium on Mathematical Problems in Theoretical Physics, Lecture Notes in Physics 39, Springer (1975).
 
-[3] J. A. Acebrón et al., *The Kuramoto model: A simple paradigm for synchronization phenomena*, Rev. Mod. Phys. **77**, 137–185 (2005).
+[3] S. H. Strogatz, *From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators*, Physica D **143**, 1–20 (2000).
 
-[4] W. Suh, Z. Wang, and S. Fan, *Temporal coupled-mode theory and the Fano resonance in optical resonators* (classic coupled-mode formalism; cite your preferred standard reference).
+[4] J. A. Acebrón et al., *The Kuramoto model: A simple paradigm for synchronization phenomena*, Rev. Mod. Phys. **77**, 137–185 (2005).
 
-[5] G. Tanaka et al., *Recent advances in physical reservoir computing: A review*, Neural Networks **115**, 100–123 (2019).
+[5] W. Suh, Z. Wang, and S. Fan, *Temporal coupled-mode theory and the Fano resonance in optical resonators* (classic coupled-mode formalism; cite your preferred standard reference).
 
-[6] H.-P. Breuer, E.-M. Laine, J. Piilo, and B. Vacchini, *Colloquium: Non-Markovian dynamics in open quantum systems*, Rev. Mod. Phys. **88**, 021002 (2016).
+[6] G. Tanaka et al., *Recent advances in physical reservoir computing: A review*, Neural Networks **115**, 100–123 (2019).
+
+[7] H.-P. Breuer, E.-M. Laine, J. Piilo, and B. Vacchini, *Colloquium: Non-Markovian dynamics in open quantum systems*, Rev. Mod. Phys. **88**, 021002 (2016).
