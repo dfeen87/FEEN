@@ -112,6 +112,18 @@ public:
     }
 
     // -------------------------------------------------------------------------
+    // Direct State Access (for integrators)
+    // -------------------------------------------------------------------------
+
+    // Directly overwrite resonator state and timestamp.
+    // Does NOT inject energy or apply forcing.
+    void set_state(double x, double v, double t) {
+        state_.x = x;
+        state_.v = v;
+        state_.t = t;
+    }
+
+    // -------------------------------------------------------------------------
     // Read-only State Accessors (for networks/tools/analysis)
     // -------------------------------------------------------------------------
 
@@ -162,7 +174,9 @@ public:
     // RK4 Integration
     // -------------------------------------------------------------------------
 
-    void tick(double dt, double F = 0.0, double omega_d = -1.0) {
+    // internal_force: deterministic coupling contributions derived from the network.
+    //                 This is NOT an external stochastic drive.
+    void tick(double dt, double F = 0.0, double omega_d = -1.0, double internal_force = 0.0) {
         if (omega_d < 0.0) omega_d = omega0_;
 
         auto rhs = [&](double x, double v, double t) {
@@ -174,12 +188,14 @@ public:
                 acc = -2.0 * gamma_ * v
                       + omega0_ * omega0_ * x
                       - absb * x * x * x
-                      + drive;
+                      + drive
+                      + internal_force;
             } else {
                 acc = -2.0 * gamma_ * v
                       - omega0_ * omega0_ * x
                       - cfg_.beta * x * x * x
-                      + drive;
+                      + drive
+                      + internal_force;
             }
             return acc;
         };

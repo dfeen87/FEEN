@@ -141,7 +141,7 @@ public:
 
         // Advance all nodes using those forces
         for (index_t i = 0; i < n; ++i) {
-            nodes_[i].tick(dt, F[i], -1.0);
+            nodes_[i].tick(dt, 0.0, -1.0, F[i]);
         }
 
         t_ += dt;
