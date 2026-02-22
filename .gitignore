@@ -26,3 +26,7 @@ _codeql_detected_source_root
 
 # Test binary
 phys_test
+
+# Python
+__pycache__/
+*.pyc
