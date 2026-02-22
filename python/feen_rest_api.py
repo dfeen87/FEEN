@@ -242,8 +242,10 @@ class ResonatorNetworkManager:
             ]
         }
 
-    def add_coupling(self, i, j, strength):
-        self.network.add_coupling(i, j, strength)
+    def set_coupling(self, i, j, strength):
+        """Set (overwrite) coupling strength from j to i. Idempotent: repeated calls
+        with the same arguments always produce the same coupling state."""
+        self.network.set_coupling(i, j, strength)
 
     def remove_coupling(self, i, j):
         self.network.set_coupling(i, j, 0.0)
@@ -261,6 +263,11 @@ class ResonatorNetworkManager:
 
 # Global network manager
 network = ResonatorNetworkManager()
+
+# Global network coupling lock — guards structural mutations (add/remove coupling).
+# Mirrors the _ailee_metric_lock pattern so concurrent REST requests cannot
+# corrupt the coupling matrix.
+_network_lock = threading.Lock()
 
 # Global AILEE Metric instance (protected by _ailee_metric_lock)
 ailee_metric = None
@@ -559,7 +566,13 @@ def reset_network():
 @app.route('/api/network/couplings', methods=['POST'])
 @login_required
 def add_coupling():
-    """Create a coupling between two nodes."""
+    """Create or overwrite a coupling between two nodes.
+
+    STATE-MUTATING COMMAND: Structural change — sets coupling strength (idempotent).
+    Uses set_coupling (overwrite) semantics so repeated calls with the same pair
+    always result in the last-specified strength, never accumulate.
+    Protected by _network_lock to prevent concurrent coupling matrix corruption.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
@@ -569,7 +582,8 @@ def add_coupling():
         j = int(data.get('source_id'))
         strength = float(data.get('strength'))
 
-        network.add_coupling(i, j, strength)
+        with _network_lock:
+            network.set_coupling(i, j, strength)
         return jsonify({'message': 'Coupling added', 'coupling': {'source': j, 'target': i, 'strength': strength}})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -577,7 +591,11 @@ def add_coupling():
 @app.route('/api/network/couplings', methods=['DELETE'])
 @login_required
 def remove_coupling():
-    """Remove a coupling between two nodes."""
+    """Remove a coupling between two nodes.
+
+    STATE-MUTATING COMMAND: Structural change — zeroes coupling strength.
+    Protected by _network_lock to prevent concurrent coupling matrix corruption.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
@@ -586,7 +604,8 @@ def remove_coupling():
         i = int(data.get('target_id'))
         j = int(data.get('source_id'))
 
-        network.remove_coupling(i, j)
+        with _network_lock:
+            network.remove_coupling(i, j)
         return jsonify({'message': 'Coupling removed'})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
