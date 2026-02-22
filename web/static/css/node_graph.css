@@ -1,147 +1,151 @@
-/* Node Graph page styles — extends base style.css theme */
+/* Node Graph page — supplements style.css (inherits all CSS custom properties) */
 
-/* ----- Layout ----- */
+/* ---- Page header extra ---- */
+.header-node-count {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--clr-text-muted);
+    align-self: flex-start;
+    margin-top: 6px;
+    background: var(--clr-surface-2);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+}
+
+/* ---- Graph layout ---- */
 .node-graph-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
-.page-nav {
-    display: flex;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-    margin-bottom: 4px;
-}
-
-.page-nav a {
-    color: #888;
-    font-size: 0.9em;
-}
-
-.page-nav a.active {
-    color: #03dac6;
-    font-weight: bold;
-}
-
-/* ----- Toolbar ----- */
+/* ---- Toolbar ---- */
 .graph-toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    background: #2c2c2c;
-    padding: 10px 14px;
-    border-radius: 6px;
+    padding: 12px 16px;
 }
 
-.graph-toolbar label {
-    font-size: 0.85em;
-    color: #aaa;
+.toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    user-select: none;
 }
 
-/* ----- Canvas ----- */
+.toggle-label input[type="checkbox"] {
+    accent-color: var(--clr-accent);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+/* ---- Canvas card ---- */
+.canvas-card {
+    padding: 10px;
+}
+
 #graph-canvas {
-    background: #0a0a0a;
-    border: 1px solid #333;
-    border-radius: 6px;
-    cursor: default;
+    background: #070709;
+    border-radius: var(--radius-md);
     display: block;
     width: 100%;
-    height: 520px;
+    height: 480px;
+    cursor: default;
 }
 
-/* ----- Side panel ----- */
-.graph-side-panel {
-    display: flex;
-    gap: 12px;
+/* ---- Side panels ---- */
+.side-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
 }
 
 .panel-box {
-    flex: 1;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 0.85em;
-    font-family: monospace;
+    padding: 14px 16px;
+    min-height: 120px;
 }
 
-.panel-box h3 {
-    margin: 0 0 8px 0;
-    color: #03dac6;
-    font-size: 0.95em;
-    font-weight: normal;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+.empty-hint {
+    color: var(--clr-text-faint);
+    font-size: 0.82rem;
 }
 
-.panel-box ul {
-    margin: 0;
-    padding: 0 0 0 14px;
-    color: #aaa;
-}
-
-.panel-box li {
-    margin: 3px 0;
-}
-
-/* Selected node info */
-#selected-info {
-    color: #ccc;
-}
-
+/* ---- Selected node info ---- */
 #selected-info .field {
     display: flex;
     justify-content: space-between;
-    padding: 2px 0;
-    border-bottom: 1px solid #2a2a2a;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--clr-border);
+    font-size: 0.82rem;
 }
 
-#selected-info .field .label {
-    color: #777;
+#selected-info .label { color: var(--clr-text-muted); }
+#selected-info .value { color: var(--clr-text); font-family: var(--font-mono); }
+
+/* ---- Plugin list ---- */
+#plugin-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-#selected-info .field .value {
-    color: #e0e0e0;
-}
-
-/* Plugin list */
 .plugin-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
-    border-bottom: 1px solid #222;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--clr-border);
+    font-size: 0.82rem;
 }
 
-.plugin-row .name {
-    color: #bb86fc;
+.plugin-row .name  { color: var(--clr-purple); font-weight: 500; }
+.plugin-row .type  { color: var(--clr-text-faint); font-size: 0.75rem; margin-left: 5px; }
+
+.state-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
-.plugin-row .type {
-    font-size: 0.8em;
-    color: #666;
-    margin-left: 6px;
+.state-badge.active     { background: rgba(5,150,105,0.18); color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+.state-badge.registered { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.25); }
+.state-badge.loaded     { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+.state-badge.failed     { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+
+/* ---- Graph log ---- */
+#graph-log {
+    font-family: var(--font-mono);
+    font-size: 0.77rem;
+    max-height: 100px;
+    overflow-y: auto;
 }
 
-.plugin-row .state-badge {
-    font-size: 0.75em;
-    padding: 1px 6px;
-    border-radius: 3px;
-}
-
-.state-badge.active    { background: #1a3a1a; color: #4caf50; }
-.state-badge.registered{ background: #1a2a3a; color: #64b5f6; }
-.state-badge.loaded    { background: #2a2a1a; color: #fff176; }
-.state-badge.failed    { background: #3a1a1a; color: #ef9a9a; }
-
-/* Status bar */
-#graph-status {
-    font-family: monospace;
-    font-size: 0.8em;
-    color: #555;
+/* ---- Status bar ---- */
+.graph-status-bar {
+    margin: 0;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--clr-text-faint);
     text-align: right;
-    padding: 4px 0;
+    padding: 0 2px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 800px) {
+    .side-panels { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .graph-toolbar { gap: 6px; }
+    #graph-canvas  { height: 320px; }
 }

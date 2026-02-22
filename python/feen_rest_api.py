@@ -198,12 +198,20 @@ def _ensure_plugins_initialized():
     plugin_registry.activate_all()
 
     # Register Flask blueprints from active plugins.
+    import logging as _logging
+    _bp_logger = _logging.getLogger(__name__)
     for bp in plugin_registry.active_blueprints():
         try:
             app.register_blueprint(bp)
-        except Exception as exc:  # noqa: BLE001
-            import logging
-            logging.getLogger(__name__).error("Failed to register blueprint %r: %s", bp, exc)
+        except ValueError as exc:
+            # Blueprint already registered (e.g. hot-reload) — not fatal.
+            _bp_logger.warning("Blueprint %r already registered: %s", getattr(bp, 'name', bp), exc)
+        except Exception as exc:  # noqa: BLE001  # intentional: plugin failure must never crash the server
+            _bp_logger.error(
+                "Failed to register blueprint %r: %s — plugin will be unavailable. "
+                "FEEN core is unaffected; the plugin is isolated.",
+                getattr(bp, 'name', bp), exc,
+            )
 
 
 # ---------------------------------------------------------------------------

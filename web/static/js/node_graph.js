@@ -103,7 +103,9 @@ async function fetchFEENNodes() {
         const data = await r.json();
         nodes = data.nodes || [];
         updateNetworkInfo(data);
-    } catch (_) { /* network unavailable — keep stale data */ }
+    } catch (err) {
+        console.warn('[FEEN] fetchFEENNodes failed:', err.message);
+    }
 }
 
 async function fetchPlugins() {
@@ -113,7 +115,10 @@ async function fetchPlugins() {
         const data = await r.json();
         pluginNodes = (data.plugins || []).filter(p => p.state === 'active');
         renderPluginList(data.plugins || []);
-    } catch (_) { pluginNodes = []; }
+    } catch (err) {
+        console.warn('[FEEN] fetchPlugins failed:', err.message);
+        pluginNodes = [];
+    }
 }
 
 // ---------------------------------------------------------------------------
