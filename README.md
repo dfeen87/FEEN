@@ -1,4 +1,4 @@
-# FEEN Wave Engine
+# FEEN
 
 <div align="center">
 
