@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN - Node Coupling</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        .graph-container {
+            width: 100%;
+            height: 600px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .coupling-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .param-input {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #eee;
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/coupling" class="nav-link active">Coupling</a>
+                <a href="/node-graph" class="nav-link">Node Graph</a>
+                <a href="/docs" class="nav-link">API Docs</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>Node Coupling</h1>
+                    <p>Physics-Based Resonator Network Topology</p>
+                </div>
+                <div class="header-badge">LIVE</div>
+            </header>
+
+            <main class="main-grid">
+
+                <!-- Coupling Graph -->
+                <section class="card" style="grid-column: span 3;">
+                    <h2 class="card-title">Topology</h2>
+                    <div id="cy" class="graph-container"></div>
+                </section>
+
+                <!-- Connection Panel -->
+                <section class="card" style="grid-column: span 3;">
+                    <h2 class="card-title">Manage Connection</h2>
+                    <div class="coupling-controls">
+                        <div>
+                            <label>Source Node ID</label>
+                            <input type="number" id="source-id" class="param-input" placeholder="Select node...">
+                        </div>
+                        <div>
+                            <label>Target Node ID</label>
+                            <input type="number" id="target-id" class="param-input" placeholder="Select node...">
+                        </div>
+                        <div>
+                            <label>Coupling Strength (K)</label>
+                            <input type="number" id="coupling-strength" class="param-input" value="1.0" step="0.1">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button id="add-coupling-btn" class="btn btn-primary">Add / Update Connection</button>
+                        <button id="remove-coupling-btn" class="btn btn-danger">Remove Connection</button>
+                    </div>
+                </section>
+
+            </main>
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>Powered by FEEN Core (C++17) &amp; Ambient AI VCP Concepts</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+        let cy = cytoscape({
+            container: document.getElementById('cy'),
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#00ff9d',
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-family': 'JetBrains Mono',
+                        'width': 40,
+                        'height': 40
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#444',
+                        'target-arrow-color': '#444',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'label': 'data(strength)',
+                        'color': '#888',
+                        'font-size': '10px'
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'border-width': 2,
+                        'border-color': '#fff'
+                    }
+                }
+            ]
+        });
+
+        // Load data
+        async function refreshGraph() {
+            try {
+                // Fetch nodes
+                const nodesRes = await fetch('/api/network/nodes');
+                const nodesData = await nodesRes.json();
+
+                // Fetch couplings
+                const couplingsRes = await fetch('/api/network/couplings');
+                const couplingsData = await couplingsRes.json();
+
+                const elements = [];
+
+                // Add nodes
+                nodesData.nodes.forEach(n => {
+                    elements.push({
+                        data: { id: n.id.toString(), label: n.name || n.id.toString() }
+                    });
+                });
+
+                // Add edges
+                if (couplingsData.couplings) {
+                    couplingsData.couplings.forEach(c => {
+                        elements.push({
+                            data: {
+                                source: c.source.toString(),
+                                target: c.target.toString(),
+                                strength: c.strength.toFixed(2)
+                            }
+                        });
+                    });
+                }
+
+                cy.json({ elements: elements });
+                cy.layout({ name: 'circle' }).run();
+
+            } catch (e) {
+                console.error("Failed to refresh graph:", e);
+            }
+        }
+
+        // Interaction
+        cy.on('tap', 'node', function(evt){
+            const node = evt.target;
+            const currentSource = document.getElementById('source-id').value;
+
+            if (!currentSource) {
+                document.getElementById('source-id').value = node.id();
+            } else {
+                document.getElementById('target-id').value = node.id();
+            }
+        });
+
+        // Add Coupling
+        document.getElementById('add-coupling-btn').addEventListener('click', async () => {
+            const source = document.getElementById('source-id').value;
+            const target = document.getElementById('target-id').value;
+            const strength = document.getElementById('coupling-strength').value;
+
+            if (source === "" || target === "") return;
+
+            await fetch('/api/network/couplings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_id: parseInt(source),
+                    target_id: parseInt(target),
+                    strength: parseFloat(strength)
+                })
+            });
+
+            refreshGraph();
+        });
+
+        // Remove Coupling
+        document.getElementById('remove-coupling-btn').addEventListener('click', async () => {
+            const source = document.getElementById('source-id').value;
+            const target = document.getElementById('target-id').value;
+
+            if (source === "" || target === "") return;
+
+            await fetch('/api/network/couplings', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_id: parseInt(source),
+                    target_id: parseInt(target)
+                })
+            });
+
+            refreshGraph();
+        });
+
+        // Initial load
+        refreshGraph();
+
+    </script>
+</body>
+</html>

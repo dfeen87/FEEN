@@ -43,6 +43,12 @@ def ailee_metric():
     return render_template('ailee_metric.html')
 
 
+@app.route('/coupling')
+def coupling():
+    """Serve the Node Coupling visualization page."""
+    return render_template('coupling.html')
+
+
 @app.route('/docs')
 def api_docs():
     """Serve the human-readable API documentation page."""

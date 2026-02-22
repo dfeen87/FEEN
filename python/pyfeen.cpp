@@ -5,6 +5,7 @@
 // Core FEEN physics
 // ------------------------------------------------------------------
 #include <feen/resonator.h>
+#include <feen/network.h>
 
 // ------------------------------------------------------------------
 // AILEE trust primitives
@@ -44,6 +45,22 @@ PYBIND11_MODULE(pyfeen, m) {
         .def("x", &Resonator::x)
         .def("v", &Resonator::v)
         .def("t", &Resonator::t);
+
+    py::class_<ResonatorNetwork>(m, "ResonatorNetwork")
+        .def(py::init<>())
+        .def("add_node", py::overload_cast<const Resonator&>(&ResonatorNetwork::add_node))
+        .def("add_coupling", &ResonatorNetwork::add_coupling,
+             py::arg("i"), py::arg("j"), py::arg("strength"))
+        .def("set_coupling", &ResonatorNetwork::set_coupling,
+             py::arg("i"), py::arg("j"), py::arg("strength"))
+        .def("coupling", &ResonatorNetwork::coupling)
+        .def("clear_couplings", &ResonatorNetwork::clear_couplings)
+        .def("tick_parallel", &ResonatorNetwork::tick_parallel, py::arg("dt"))
+        .def("get_state_vector", &ResonatorNetwork::get_state_vector)
+        .def("node", static_cast<const Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t) const>(&ResonatorNetwork::node))
+        .def("size", &ResonatorNetwork::size)
+        .def("time_s", &ResonatorNetwork::time_s)
+        .def("ticks", &ResonatorNetwork::ticks);
 
     // ================================================================
     // AILEE Trust Primitives (Submodule)
