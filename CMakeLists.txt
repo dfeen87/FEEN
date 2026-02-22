@@ -22,22 +22,44 @@ target_include_directories(feen
 )
 
 # ---------------------------------------------------------------------------
-# Optional Dependencies (via vcpkg or system)
-# ---------------------------------------------------------------------------
-
-find_package(pybind11 CONFIG QUIET)
-
-# ---------------------------------------------------------------------------
 # Python Bindings (optional)
 # ---------------------------------------------------------------------------
 
 option(FEEN_BUILD_PYTHON "Build Python bindings (pyfeen)" ON)
 
-if (FEEN_BUILD_PYTHON AND pybind11_FOUND)
+if (FEEN_BUILD_PYTHON)
+    # Python3 with Development.Module is required to compile extension modules.
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+
+    # Try standard cmake search paths first (vcpkg, system, user-installed).
+    find_package(pybind11 CONFIG QUIET)
+
+    # Fallback: locate pybind11 via the active Python interpreter.
+    # This handles the common case where pybind11 was installed with pip.
+    if (NOT pybind11_FOUND)
+        execute_process(
+            COMMAND "${Python3_EXECUTABLE}" -m pybind11 --cmakedir
+            OUTPUT_VARIABLE _pybind11_cmake_dir
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+            RESULT_VARIABLE _pybind11_result
+        )
+        if (_pybind11_result EQUAL 0 AND _pybind11_cmake_dir)
+            set(pybind11_DIR "${_pybind11_cmake_dir}")
+            find_package(pybind11 CONFIG QUIET)
+        endif()
+    endif()
+
+    # Hard failure: missing pybind11 is caught at configure time, not runtime.
+    if (NOT pybind11_FOUND)
+        message(FATAL_ERROR
+            "FEEN_BUILD_PYTHON=ON but pybind11 was not found.\n"
+            "Install pybind11 (e.g. 'pip install pybind11') and re-run cmake, "
+            "or disable Python bindings with -DFEEN_BUILD_PYTHON=OFF.")
+    endif()
+
     message(STATUS "Building Python bindings (pyfeen)")
     add_subdirectory(python)
-elseif (FEEN_BUILD_PYTHON)
-    message(WARNING "pybind11 not found — Python bindings disabled")
 endif()
 
 # ---------------------------------------------------------------------------
