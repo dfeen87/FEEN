@@ -11,10 +11,12 @@ dfeen87@gmail.com | ORCID: 0009-0003-1350-4160
 
 *February 22, 2026*
 
-> Spiral‑Time is a semantic and observational framework for FEEN trajectories and does not alter the underlying physical dynamics unless explicitly enabled.
+> **Spiral‑Time is an optional observer module that annotates FEEN trajectories without modifying core dynamics. It is not required for any core functionality.**
 >
-> Spiral‑Time is implemented as an observer module in include/feen/spiral_time/.
-It consumes FEEN state but does not alter core dynamics unless explicitly enabled.
+> Spiral‑Time is a semantic and observational framework for FEEN trajectories. It is observer-only and non-participatory in physical evolution — it does not alter the underlying physical dynamics.
+>
+> Spiral‑Time is implemented as an optional observer module in `include/feen/spiral_time/`.
+> It consumes FEEN state but does not modify core dynamics or FEEN state evolution.
 
 
 

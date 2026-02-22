@@ -42,7 +42,7 @@ This live instance is intended for exploration, demonstration, and validation of
 
 - **Computational Primitive**: Duffing resonators with tunable nonlinearity
 - **Information Encoding**: Frequency, amplitude, and phase of mechanical oscillations
-- **Parallelism**: Spectral orthogonality enables thousands of independent channels
+- **Parallelism**: The spectral multiplexing model supports theoretical scalability to O(10³) channels; current validated implementations operate reliably at O(10²)
 - **Power Efficiency**: High-Q resonators sustain computation with minimal energy dissipation
 
 ```cpp
@@ -97,14 +97,14 @@ feen/
 
 ---
 
-## AILEE Trust Acceleration
+## AILEE Integration
 
-FEEN provides hardware‑ready primitives that accelerate **AILEE (Adaptive Inference & Evaluation Engine)** — a modular trust layer designed to evaluate confidence, consensus, safety, and fallback behavior in AI systems.
+FEEN exposes read-only telemetry signals that **AILEE (Adaptive Inference & Evaluation Engine)** — a modular trust layer — can consume for confidence, consensus, safety, and fallback evaluation. FEEN does not depend on AILEE in any direction.
 
 AILEE defines *trust semantics and policy*.  
-FEEN provides *physics‑native signal primitives* that AILEE can optionally offload to hardware.
+FEEN provides *physics‑native signal primitives* that AILEE reads.
 
-### What FEEN Accelerates for AILEE
+### What FEEN Provides to AILEE
 
 FEEN exposes deterministic, policy‑free trust signals that map cleanly to phononic and resonator‑based hardware:
 
@@ -121,14 +121,14 @@ FEEN exposes deterministic, policy‑free trust signals that map cleanly to phon
   Median / mean / last‑value aggregation for recovery paths
 
 - **Δv Metric** (`AileeMetric`)  
-  Energy-weighted optimization gain functional accumulated over time [0, T]:  
+  Energy-weighted efficiency metric accumulated over time [0, T] — a read-only observer functional that never feeds back into FEEN state evolution:  
   Δv = Isp · η · e^(-αv₀²) · ∫₀ᵀ [ P(t) · e^(-αw(t)²) · e^(2αv₀v(t)) / M(t) ] dt  
   where: **Isp** = structural efficiency, **η** = integrity coefficient, **α** = risk sensitivity,  
   **v₀** = fixed reference velocity, **v(t)** = instantaneous decision velocity (v₀ sets the operating point; v(t) is the time-varying signal),  
   **P(t)** = input energy, **w(t)** = workload, **M(t)** = system mass (inertia).  
   Call `integrate(sample)` per timestep and read `delta_v()` for the running total. See [`include/feen/ailee/metric.h`](include/feen/ailee/metric.h).
 
-These primitives are exposed via a stable C++ ABI and Python bindings, allowing AILEE to transparently switch between software and FEEN‑accelerated execution.
+These primitives are exposed via a stable C++ ABI and Python bindings, allowing AILEE to read FEEN signals transparently in software or hardware-backed deployments.
 
 ### Clean Separation of Responsibilities
 
@@ -235,9 +235,9 @@ This paper defines the coupled-mode network model, stability and synchronization
 
 ### Spiral-Time Observer Layer
 
-Spiral-Time is a semantic and observational framework for FEEN trajectories. It does **not** alter the underlying physical dynamics unless explicitly enabled.
+**Spiral-Time is an optional observer module that annotates FEEN trajectories without modifying core dynamics. It is not required for any core functionality.**
 
-It is implemented as an optional observer module (`include/feen/spiral_time/`) that consumes FEEN state without modifying core dynamics.
+Spiral-Time consumes FEEN state as a read-only, non-participatory layer — it never influences physical state evolution. It is implemented in `include/feen/spiral_time/` and can be omitted entirely without affecting FEEN operation.
 
 See **[docs/SPIRAL_TIME.md](docs/SPIRAL_TIME.md)** for the full specification.
 
@@ -265,13 +265,13 @@ feen/
 │   ├── memory.h                           # Resonator-backed memory management
 │   ├── transducer.h                       # Electrical ↔ phononic conversion
 │   │
-│   ├── 📁 ailee/                          # AILEE trust-acceleration primitives
+│   ├── 📁 ailee/                          # AILEE telemetry signal primitives
 │   │   ├── ailee_types.h                  # Shared FEEN–AILEE signal types & enums
 │   │   ├── confidence.h                   # Confidence decomposition (stability/agreement/likelihood)
 │   │   ├── safety_gate.h                  # Bistable safety gating (LOW/HIGH/NEAR-BARRIER)
 │   │   ├── consensus.h                    # Peer coherence & spectral agreement
 │   │   ├── fallback.h                     # Stabilization & recovery aggregation
-│   │   └── metric.h                       # Δv optimization gain metric (AileeMetric)
+│   │   └── metric.h                       # Δv efficiency metric (read-only observer)
 │   │
 │   ├── 📁 sim/                            # Simulation infrastructure
 │   │   ├── integrators.h                  # RK4, RK45, Verlet integration schemes
@@ -795,7 +795,7 @@ Special thanks to:
 
 - A single FEEN resonator at 1 kHz with Q=1000 can store information for **~300 milliseconds** with zero active power
 - At room temperature, a typical bistable resonator has a bit-flip probability of **< 10⁻⁵⁰** per second
-- You can pack **~1000 independent frequency channels** in a 1 kHz bandwidth with Q=10,000
+- The spectral multiplexing model projects **~1000 independent frequency channels** as theoretically achievable in a 1 kHz bandwidth with Q=10,000; validated implementations currently operate reliably at O(10²) channels
 - The energy barrier in a bistable resonator is **~10 billion times** larger than thermal noise (k_B T)
 
 ---
