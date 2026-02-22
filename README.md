@@ -7,7 +7,7 @@
 *A Physics-First Phononic Computing Framework*
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.0.0-green.svg?style=flat-square)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-3.2.0-green.svg?style=flat-square)](CITATION.cff)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
