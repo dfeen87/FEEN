@@ -30,6 +30,11 @@ from pyfeen.ailee import (
     FallbackMode,
     FallbackConfig,
     PhononicFallback,
+
+    # Delta v Metric
+    AileeParams,
+    AileeSample,
+    AileeMetric,
 )
 
 __all__ = [
@@ -56,4 +61,9 @@ __all__ = [
     "FallbackMode",
     "FallbackConfig",
     "PhononicFallback",
+
+    # Delta v Metric
+    "AileeParams",
+    "AileeSample",
+    "AileeMetric",
 ]

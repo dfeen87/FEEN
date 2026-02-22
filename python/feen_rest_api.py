@@ -31,6 +31,7 @@ Design invariants preserved by this API:
 """
 
 import time as _time
+import threading
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -260,8 +261,9 @@ class ResonatorNetworkManager:
 # Global network manager
 network = ResonatorNetworkManager()
 
-# Global AILEE Metric instance
+# Global AILEE Metric instance (protected by _ailee_metric_lock)
 ailee_metric = None
+_ailee_metric_lock = threading.Lock()
 
 # Flask app
 app = Flask(__name__)
@@ -489,8 +491,9 @@ def reset_network():
     network = ResonatorNetworkManager()
 
     global ailee_metric
-    if ailee_metric:
-        ailee_metric.reset()
+    with _ailee_metric_lock:
+        if ailee_metric:
+            ailee_metric.reset()
 
     return jsonify({'message': 'Network reset successfully'})
 
@@ -544,14 +547,15 @@ def configure_ailee_metric():
         return jsonify({'error': 'No JSON data provided'}), 400
 
     try:
-        params = pyfeen.AileeParams()
+        params = pyfeen.ailee.AileeParams()
         params.alpha = float(data.get('alpha', 0.1))
         params.eta = float(data.get('eta', 1.0))
         params.isp = float(data.get('isp', 1.0))
         params.v0 = float(data.get('v0', 1.0))
 
         global ailee_metric
-        ailee_metric = pyfeen.AileeMetric(params)
+        with _ailee_metric_lock:
+            ailee_metric = pyfeen.ailee.AileeMetric(params)
 
         return jsonify({
             'message': 'AILEE Metric configured',
@@ -572,32 +576,37 @@ def push_ailee_sample():
     STATE-MUTATING COMMAND: Updates the integrated metric state.
     """
     global ailee_metric
-    if ailee_metric is None:
-        # Auto-initialize with defaults if not configured
-        params = pyfeen.AileeParams()
-        params.alpha = 0.1
-        params.eta = 1.0
-        params.isp = 1.0
-        params.v0 = 1.0
-        ailee_metric = pyfeen.AileeMetric(params)
+    with _ailee_metric_lock:
+        if ailee_metric is None:
+            # Auto-initialize with defaults if not configured
+            params = pyfeen.ailee.AileeParams()
+            params.alpha = 0.1
+            params.eta = 1.0
+            params.isp = 1.0
+            params.v0 = 1.0
+            ailee_metric = pyfeen.ailee.AileeMetric(params)
 
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
 
     try:
-        sample = pyfeen.AileeSample()
+        # Build the sample from request-local data before acquiring the lock.
+        # AileeSample is a value type with no shared state; data is request-local.
+        sample = pyfeen.ailee.AileeSample()
         sample.p_input = float(data.get('p_input', 0.0))
         sample.workload = float(data.get('workload', 0.0))
         sample.velocity = float(data.get('velocity', 0.0))
         sample.mass = float(data.get('mass', 1.0))
         sample.dt = float(data.get('dt', 1e-6))
 
-        ailee_metric.integrate(sample)
+        with _ailee_metric_lock:
+            ailee_metric.integrate(sample)
+            current = ailee_metric.delta_v()
 
         return jsonify({
             'message': 'Sample integrated',
-            'current_delta_v': ailee_metric.delta_v()
+            'current_delta_v': current
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -609,13 +618,14 @@ def get_ailee_metric_value():
     READ-ONLY OBSERVER.
     """
     global ailee_metric
-    if ailee_metric is None:
-        return jsonify({'delta_v': 0.0, 'status': 'uninitialized'})
+    with _ailee_metric_lock:
+        if ailee_metric is None:
+            return jsonify({'delta_v': 0.0, 'status': 'uninitialized'})
 
-    return jsonify({
-        'delta_v': ailee_metric.delta_v(),
-        'status': 'active'
-    })
+        return jsonify({
+            'delta_v': ailee_metric.delta_v(),
+            'status': 'active'
+        })
 
 
 # ---------------------------------------------------------------------------

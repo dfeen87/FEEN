@@ -102,9 +102,9 @@
                     <button id="update-config-btn" class="btn btn-primary" style="width: 100%">Update Configuration</button>
                 </section>
 
-                <!-- Simulation Control -->
+                <!-- Telemetry Input -->
                 <section class="card">
-                    <h2 class="card-title">Telemetry Injection</h2>
+                    <h2 class="card-title">Telemetry Input</h2>
                     <div class="param-grid">
                         <div>
                             <label>Power Input (P)</label>
@@ -125,7 +125,7 @@
                     </div>
                     <div class="btn-group">
                         <button id="inject-sample-btn" class="btn">Inject Single Sample</button>
-                        <button id="auto-sim-btn" class="btn btn-primary">Start Auto-Sim</button>
+                        <button id="auto-sim-btn" class="btn btn-primary">Start Auto-Feed</button>
                     </div>
                 </section>
 
@@ -247,7 +247,7 @@
             const btn = document.getElementById('auto-sim-btn');
             if (isAutoSim) {
                 clearInterval(simInterval);
-                btn.innerText = "Start Auto-Sim";
+                btn.innerText = "Start Auto-Feed";
                 btn.classList.remove('btn-danger');
                 btn.classList.add('btn-primary');
             } else {
@@ -261,7 +261,7 @@
 
                     injectSample();
                 }, 200);
-                btn.innerText = "Stop Auto-Sim";
+                btn.innerText = "Stop Auto-Feed";
                 btn.classList.remove('btn-primary');
                 btn.classList.add('btn-danger');
             }
