@@ -27,7 +27,14 @@ This repository is a continuous research project under active development.
 
 FEEN is available as a live, interactive web application that lets you explore and control the wave‑based engine in real time. The dashboard provides a visual interface for observing network state, injecting signals, managing nodes, and experimenting with plugins — all backed by the same deterministic physics core exposed through the REST API.
 
-**Live dashboard:** https://feen.onrender.com/dashboard
+| Page | URL | Description |
+|------|-----|-------------|
+| **Dashboard** | [/dashboard](https://feen.onrender.com/dashboard) | Main network monitor — inject signals, manage nodes |
+| **Node Graph** | [/node-graph](https://feen.onrender.com/node-graph) | Visual graph of resonator coupling topology |
+| **AILEE Metric** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
+| **Coupling** | [/coupling](https://feen.onrender.com/coupling) | Interactive node coupling editor |
+| **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Path wiring view |
+| **API Docs** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
 
 This live instance is intended for exploration, demonstration, and validation of FEEN’s architecture and behavior, while the API remains available for programmatic access and integration.
 
@@ -67,16 +74,24 @@ double state = bit.total_energy();  // Read
 - Dense frequency packing with high-Q resonators (Q > 1000)
 - Independent parallel channels in the same physical substrate
 
+### **Hardware-in-the-Loop**
+- Ablatable `HardwareAdapter` layer bridges real sensor/actuator hardware to FEEN state
+- Strict one-way write path: sensor → `set_state()` / `inject()` → resonator physics
+- Latency-explicit calibration (`CalibrationParams`) with scale, offset, and pipeline latency
+- No feedback from observers to dynamics; FEEN core is unmodified
+- See [Hardware-in-the-Loop Guide](docs/HARDWARE_IN_THE_LOOP.md) for full strategy
+
 ### **Rich Ecosystem**
 
 ```
 feen/
 ├── Core Library       → Resonators, networks, gates
 ├── Applications       → Neural nets, filters, oscillator banks
-├── Hardware Support   → FPGA drivers, MEMS calibration
+├── Hardware Support   → FPGA drivers, hardware adapter, MEMS calibration
 ├── Analysis Tools     → Spectrum analyzer, phase portraits
 ├── Python Bindings    → NumPy integration, visualization
 ├── REST API           → HTTP access with global node control
+├── Plugin System      → Observer, tool, and UI plugin lifecycle
 └── Validation Suite   → Physics-enforcing tests
 ```
 
@@ -104,6 +119,13 @@ FEEN exposes deterministic, policy‑free trust signals that map cleanly to phon
 
 - **Fallback stabilization**  
   Median / mean / last‑value aggregation for recovery paths
+
+- **Δv Metric** (`AileeMetric`)  
+  Energy-weighted optimization gain functional:  
+  Δv = Isp · η · e^(-αv₀²) · ∫(P·e^(-αw²)·e^(2αv₀v) / M) dt  
+  where: **Isp** = structural efficiency, **η** = integrity coefficient, **α** = risk sensitivity,  
+  **v₀** = reference velocity, **P** = input energy, **w** = workload, **v** = decision velocity, **M** = system mass.  
+  Integrates `AileeSample` telemetry in real time to quantify system optimization gain.
 
 These primitives are exposed via a stable C++ ABI and Python bindings, allowing AILEE to transparently switch between software and FEEN‑accelerated execution.
 
@@ -198,6 +220,8 @@ SNR: 89234.2
 
 - **[Physical Model](docs/FEEN_WAVE_ENGINE.md)** - Mathematical foundations and Duffing equation
 - **[Technical Analysis](docs/FEEN.md)** - Complete system architecture
+- **[Hardware-in-the-Loop](docs/HARDWARE_IN_THE_LOOP.md)** - HIL integration strategy and hardware adapter contract
+- **[REST API Reference](docs/REST_API.md)** - Complete endpoint documentation
 - **API Reference** - Full class documentation (Doxygen)
 
 ### Physical Specification
@@ -245,7 +269,8 @@ feen/
 │   │   ├── confidence.h          # Confidence decomposition
 │   │   ├── safety_gate.h         # Bistable safety gating
 │   │   ├── consensus.h           # Peer coherence measurement
-│   │   └── fallback.h            # Stabilization & recovery
+│   │   ├── fallback.h            # Stabilization & recovery
+│   │   └── metric.h              # Δv optimization gain metric
 │   │
 │   ├── 📁 sim/                   # Simulation infrastructure
 │   │   ├── integrators.h         # RK4, RK45, Verlet schemes
@@ -259,6 +284,7 @@ feen/
 │   │
 │   └── 📁 hardware/              # Physical device interfaces
 │       ├── fpga_driver.h         # FPGA control
+│       ├── hardware_adapter.h    # Hardware-in-the-loop adapter
 │       └── mems_calibration.h
 │
 ├── 📁 apps/                      # High-level applications
@@ -276,6 +302,12 @@ feen/
 ├── 📁 python/                    # Python bindings
 │   ├── pyfeen.cpp                # pybind11 interface (FEEN + AILEE)
 │   ├── ailee.py                  # Python façade for AILEE primitives
+│   ├── feen_rest_api.py          # Flask REST API server
+│   ├── plugin_registry.py        # Plugin lifecycle manager
+│   ├── 📁 plugins/               # Built-in plugin modules
+│   │   ├── ui_dashboard.py       # Read-only energy-history panel (UI)
+│   │   ├── observer_logger.py    # State logging observer (OBSERVER)
+│   │   └── hardware_monitor.py   # Hardware telemetry monitor (TOOL)
 │   └── examples/
 │       └── plot_bifurcation.py
 │
@@ -434,6 +466,43 @@ curl http://localhost:5000/api/network/state
 - Real-time state monitoring and control
 
 See [REST API Documentation](docs/REST_API.md) for complete endpoint reference.
+
+---
+
+## Plugin System
+
+FEEN includes a sandboxed plugin architecture that lets you extend the REST API and dashboard without touching the physics core.
+
+### Plugin Types
+
+| Type | HTTP Access | Use Case |
+|------|-------------|----------|
+| **UI** | None | Serve static assets / template panels |
+| **OBSERVER** | GET only | Read-only analysis, logging, monitoring |
+| **TOOL** | GET + POST | Command-capable automation and control |
+
+### Plugin Lifecycle
+
+```
+load → register → activate → (running) → deactivate → unload
+```
+
+- **Observer boundary enforcement**: OBSERVER/UI plugins that attempt POST requests raise `ObserverBoundaryViolation`
+- **Isolation**: every plugin runs inside a `try/except` guard; failures are contained
+- **Flask Blueprints**: plugins optionally return a Blueprint, mounted at `/plugins/<name>/`
+- **API versioning**: each plugin declares a compatible FEEN API range; incompatible plugins are rejected at load time
+
+### Built-in Plugins
+
+```python
+from plugin_registry import PluginRegistry
+
+registry = PluginRegistry()
+registry.load_plugin("python/plugins/ui_dashboard.py")    # UI — energy-history panel
+registry.load_plugin("python/plugins/observer_logger.py") # OBSERVER — state logger
+registry.load_plugin("python/plugins/hardware_monitor.py")# TOOL — hardware telemetry
+registry.activate_all()
+```
 
 ---
 
