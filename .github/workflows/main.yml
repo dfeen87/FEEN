@@ -50,6 +50,7 @@ jobs:
             -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DFEEN_BUILD_PYTHON=OFF \
             -DFEEN_BUILD_TESTS=ON \
             -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror"
 
