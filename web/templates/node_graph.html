@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN Node Graph</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/node_graph.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FEEN Node Graph</h1>
+            <p>Visual graph of resonator nodes and active plugins</p>
+        </header>
+
+        <nav class="page-nav">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/node-graph" class="active">Node Graph</a>
+            <a href="/">API Docs</a>
+        </nav>
+
+        <main class="node-graph-page">
+
+            <!-- Toolbar: explicit labelled actions only -->
+            <section class="graph-toolbar">
+                <button id="refresh-btn">Refresh</button>
+
+                <label>
+                    <input type="checkbox" id="auto-refresh-toggle" checked>
+                    Auto-refresh
+                </label>
+
+                <button id="inject-selected-btn" class="primary">
+                    Inject → Selected Node
+                </button>
+
+                <button id="reset-layout-btn">Reset Layout</button>
+
+                <span id="graph-net-info" style="margin-left:auto;color:#888;font-size:0.85em;font-family:monospace"></span>
+            </section>
+
+            <!-- Canvas: visual graph only — no hidden physics effects -->
+            <canvas id="graph-canvas"
+                    title="Click a node to select it. Edges are visual only — they do not represent physical coupling.">
+            </canvas>
+
+            <!-- Side panels -->
+            <section class="graph-side-panel">
+
+                <div class="panel-box">
+                    <h3>Selected Node</h3>
+                    <div id="selected-info">
+                        <span style="color:#555">No node selected</span>
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <h3>Active Plugins</h3>
+                    <ul id="plugin-list">
+                        <li style="color:#555">Loading…</li>
+                    </ul>
+                </div>
+
+                <div class="panel-box">
+                    <h3>Graph Log</h3>
+                    <div id="graph-log">
+                        <p class="log-entry">Graph ready.</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <div id="graph-status"></div>
+
+        </main>
+
+        <footer>
+            <p>
+                Edges shown are <strong>visual only</strong> — they do not
+                represent FEEN physical coupling.
+                All physics changes are triggered by explicit labelled buttons.
+            </p>
+            <p>Powered by FEEN Core (C++17) &amp; Python Bindings</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/node_graph.js"></script>
+</body>
+</html>
