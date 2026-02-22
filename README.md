@@ -23,6 +23,14 @@ FEEN (Frequency-Encoded Elastic Network) is a revolutionary computing paradigm t
 
 This repository is a continuous research project under active development.
 
+### Live Application
+
+FEEN is available as a live, interactive web application that lets you explore and control the wave‑based engine in real time. The dashboard provides a visual interface for observing network state, injecting signals, managing nodes, and experimenting with plugins — all backed by the same deterministic physics core exposed through the REST API.
+
+**Live dashboard:** https://feen.onrender.com/dashboard
+
+This live instance is intended for exploration, demonstration, and validation of FEEN’s architecture and behavior, while the API remains available for programmatic access and integration.
+
 ## Key Innovation
 
 - **Computational Primitive**: Duffing resonators with tunable nonlinearity
