@@ -34,7 +34,7 @@ from flask_cors import CORS
 import sys
 import os
 
-# Add parent directory to path to import pyfeen
+# Add parent directory to path to import pyfeen and plugin_registry
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
@@ -163,6 +163,55 @@ network = ResonatorNetworkManager()
 # Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# ---------------------------------------------------------------------------
+# Plugin registry — loaded lazily; plugins may be added before or after
+# the Flask app starts.  Blueprints from active plugins are registered on
+# first access of the /api/plugins/* endpoints so that the app remains
+# importable even when optional plugin files are absent.
+# ---------------------------------------------------------------------------
+try:
+    from plugin_registry import PluginRegistry
+    plugin_registry = PluginRegistry()
+    _plugin_registry_available = True
+except ImportError:
+    plugin_registry = None  # type: ignore[assignment]
+    _plugin_registry_available = False
+
+_plugins_initialized = False
+
+
+def _ensure_plugins_initialized():
+    """Lazy-initialize plugins once and register their blueprints."""
+    global _plugins_initialized
+    if _plugins_initialized or not _plugin_registry_available:
+        return
+    _plugins_initialized = True
+
+    # Discover and load built-in example plugins from the plugins/ sub-package.
+    plugins_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plugins")
+    if os.path.isdir(plugins_dir):
+        for fname in sorted(os.listdir(plugins_dir)):
+            if fname.endswith(".py") and not fname.startswith("_"):
+                plugin_registry.load_plugin(os.path.join(plugins_dir, fname))
+
+    plugin_registry.activate_all()
+
+    # Register Flask blueprints from active plugins.
+    import logging as _logging
+    _bp_logger = _logging.getLogger(__name__)
+    for bp in plugin_registry.active_blueprints():
+        try:
+            app.register_blueprint(bp)
+        except ValueError as exc:
+            # Blueprint already registered (e.g. hot-reload) — not fatal.
+            _bp_logger.warning("Blueprint %r already registered: %s", getattr(bp, 'name', bp), exc)
+        except Exception as exc:  # noqa: BLE001  # intentional: plugin failure must never crash the server
+            _bp_logger.error(
+                "Failed to register blueprint %r: %s — plugin will be unavailable. "
+                "FEEN core is unaffected; the plugin is isolated.",
+                getattr(bp, 'name', bp), exc,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +378,86 @@ def reset_network():
     return jsonify({'message': 'Network reset successfully'})
 
 
+# ---------------------------------------------------------------------------
+# PLUGIN endpoints — READ-ONLY OBSERVER (plugin introspection only)
+# These endpoints expose the plugin registry state and enforce that
+# plugin management actions are explicit, not implicit.
+# ---------------------------------------------------------------------------
+
+@app.route('/api/plugins', methods=['GET'])
+def list_plugins():
+    """List all registered plugins and their lifecycle state.
+
+    READ-ONLY OBSERVER: Returns plugin registry snapshot; no mutation.
+    Initializes the plugin registry on first call.
+    """
+    _ensure_plugins_initialized()
+    if not _plugin_registry_available:
+        return jsonify({'plugins': [], 'registry_available': False})
+    return jsonify({
+        'plugins': plugin_registry.list_plugins(),
+        'feen_plugin_api_version': list(
+            __import__('plugin_registry').FEEN_PLUGIN_API_VERSION
+        ),
+        'registry_available': True,
+    })
+
+
+@app.route('/api/plugins/<plugin_name>', methods=['GET'])
+def get_plugin(plugin_name):
+    """Get details for a specific plugin.
+
+    READ-ONLY OBSERVER: Returns plugin metadata and state; no mutation.
+    """
+    _ensure_plugins_initialized()
+    if not _plugin_registry_available:
+        return jsonify({'error': 'Plugin registry unavailable'}), 503
+    entry = plugin_registry.get_plugin(plugin_name)
+    if entry is None:
+        return jsonify({'error': f'Plugin {plugin_name!r} not found'}), 404
+    return jsonify(entry.to_dict())
+
+
+@app.route('/api/plugins/<plugin_name>/activate', methods=['POST'])
+def activate_plugin(plugin_name):
+    """Activate a registered plugin.
+
+    STATE-MUTATING COMMAND (plugin state only): Transitions plugin to ACTIVE.
+    Does NOT touch FEEN simulation state.
+    """
+    _ensure_plugins_initialized()
+    if not _plugin_registry_available:
+        return jsonify({'error': 'Plugin registry unavailable'}), 503
+    entry = plugin_registry.get_plugin(plugin_name)
+    if entry is None:
+        return jsonify({'error': f'Plugin {plugin_name!r} not found'}), 404
+    ok = plugin_registry.activate_plugin(plugin_name)
+    updated = plugin_registry.get_plugin(plugin_name)
+    if ok:
+        return jsonify({'message': f'Plugin {plugin_name!r} activated', 'plugin': updated.to_dict()})
+    return jsonify({'error': f'Could not activate {plugin_name!r}', 'plugin': updated.to_dict()}), 400
+
+
+@app.route('/api/plugins/<plugin_name>/deactivate', methods=['POST'])
+def deactivate_plugin(plugin_name):
+    """Deactivate an active plugin.
+
+    STATE-MUTATING COMMAND (plugin state only): Transitions plugin to REGISTERED.
+    Does NOT touch FEEN simulation state.
+    """
+    _ensure_plugins_initialized()
+    if not _plugin_registry_available:
+        return jsonify({'error': 'Plugin registry unavailable'}), 503
+    entry = plugin_registry.get_plugin(plugin_name)
+    if entry is None:
+        return jsonify({'error': f'Plugin {plugin_name!r} not found'}), 404
+    ok = plugin_registry.deactivate_plugin(plugin_name)
+    updated = plugin_registry.get_plugin(plugin_name)
+    if ok:
+        return jsonify({'message': f'Plugin {plugin_name!r} deactivated', 'plugin': updated.to_dict()})
+    return jsonify({'error': f'Could not deactivate {plugin_name!r}', 'plugin': updated.to_dict()}), 400
+
+
 @app.route('/', methods=['GET'])
 def index():
     """API documentation."""
@@ -344,12 +473,16 @@ def index():
                 'GET /api/network/nodes/<id>',
                 'GET /api/network/state',
                 'GET /api/config/snapshot',
+                'GET /api/plugins',
+                'GET /api/plugins/<name>',
             ],
             'state_mutating_command': [
                 'POST /api/network/nodes',
                 'POST /api/network/nodes/<id>/inject',
                 'POST /api/network/tick',
                 'POST /api/network/reset',
+                'POST /api/plugins/<name>/activate',
+                'POST /api/plugins/<name>/deactivate',
             ]
         },
         'endpoints': {
@@ -363,6 +496,10 @@ def index():
             'GET /api/network/state': 'Get global network state vector (read-only)',
             'GET /api/config/snapshot': 'Get config snapshot for auditing (read-only)',
             'POST /api/network/reset': 'Reset the network (mutating)',
+            'GET /api/plugins': 'List all plugins and their state (read-only)',
+            'GET /api/plugins/<name>': 'Get a specific plugin (read-only)',
+            'POST /api/plugins/<name>/activate': 'Activate a plugin (plugin state only)',
+            'POST /api/plugins/<name>/deactivate': 'Deactivate a plugin (plugin state only)',
         },
         'example_node_config': {
             'frequency_hz': 1000.0,

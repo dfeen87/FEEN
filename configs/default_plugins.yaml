@@ -1,0 +1,63 @@
+# FEEN Default Plugin Configuration
+# ===================================
+#
+# This file declares which plugins are enabled for the live FEEN service.
+# Plugins listed here are loaded and activated at server startup by the
+# PluginRegistry.  Plugins not listed here are ignored regardless of whether
+# they are present in the python/plugins/ directory.
+#
+# Versioning rules:
+#   • Each plugin declares a min_feen_api / max_feen_api range in its MANIFEST.
+#   • If the running FEEN Plugin API version falls outside that range the plugin
+#     is rejected at load time and placed in FAILED state; the server continues.
+#   • Breaking changes to the plugin API increment the major version.
+#     Backward-compatible additions increment the minor version.
+#   • Plugins may be enabled/disabled per deployment by editing this file;
+#     no code changes are required.
+#
+# Safety notes:
+#   • observer and ui plugins may NOT issue any command (POST) endpoint.
+#     The PluginRegistry enforces this via assert_observer_safe().
+#   • A plugin failure never propagates to FEEN core; each plugin is wrapped
+#     in a try/except at every lifecycle stage.
+#   • Physics invariants (determinism, energy dissipation, observer separation,
+#     ablatability) are preserved: plugins interact only via the REST API.
+
+feen_plugin_api_version: [1, 0]
+
+plugins:
+
+  # --- UI plugins (read-only, visualization only) ---
+
+  - name: ui_dashboard
+    enabled: true
+    description: >
+      Read-only energy-history panel.
+      Serves GET /plugins/ui_dashboard/info.
+    type: ui
+
+  # --- Observer plugins (read-only analysis / logging) ---
+
+  - name: observer_logger
+    enabled: true
+    description: >
+      Rolling in-memory snapshot log.
+      Serves GET /plugins/observer_logger/log and /info.
+    type: observer
+
+  - name: hardware_monitor
+    enabled: true
+    description: >
+      Hardware-adjacent SNR-headroom and energy-drift tracker.
+      Serves GET /plugins/hardware_monitor/metrics and /info.
+    type: observer
+
+  # --- Tool plugins (command-capable) — disabled by default in this config ---
+  # To enable a tool plugin, set enabled: true and ensure it is loaded.
+  # Tool plugins must document every POST they issue in their MANIFEST via
+  # commands_issued.  Example:
+  #
+  # - name: spiral_time_injector
+  #   enabled: false
+  #   description: Injects Spiral-Time variant signals on a schedule.
+  #   type: tool

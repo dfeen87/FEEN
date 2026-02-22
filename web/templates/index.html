@@ -3,53 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FEEN Resonator Network - Live Demo</title>
+    <title>FEEN Wave Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Using Chart.js for easy visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>FEEN Wave Engine - Live Demo</h1>
-            <p>Interactive Phononic Computing Simulation running on Render</p>
-        </header>
 
-        <main>
-            <section class="controls">
-                <button id="tick-btn" class="primary">Start Simulation</button>
-                <button id="inject-btn">Inject Pulse (Node 0)</button>
-                <button id="add-node-btn">Add Node</button>
-                <button id="reset-btn" class="danger">Reset Network</button>
+    <div class="app-shell">
 
-                <div class="slider-container">
-                    <label for="speed-control">Speed (Steps/Frame):</label>
-                    <input type="range" id="speed-control" min="1" max="50" value="5">
-                    <span id="speed-val">5</span>
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                <a href="/node-graph" class="nav-link">Node Graph</a>
+                <a href="/" class="nav-link">API Docs</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>FEEN Wave Engine</h1>
+                    <p>Interactive Phononic Computing Engine</p>
                 </div>
-            </section>
+                <div class="header-badge">LIVE</div>
+            </header>
 
-            <section class="visualization">
-                <canvas id="resonatorChart"></canvas>
-            </section>
-
-            <section class="status">
-                <div id="network-info">
-                    Nodes: <span id="node-count">0</span> |
-                    Time: <span id="sim-time">0.000</span> s |
-                    Ticks: <span id="sim-ticks">0</span>
+            <!-- Stat cards -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Nodes</span>
+                    <span class="stat-value" id="node-count">0</span>
                 </div>
-                <div id="log-console">
-                    <p class="log-entry">System ready.</p>
+                <div class="stat-card">
+                    <span class="stat-label">Sim Time</span>
+                    <span class="stat-value mono"><span id="sim-time">0.000</span> <span class="stat-unit">s</span></span>
                 </div>
-            </section>
-        </main>
+                <div class="stat-card">
+                    <span class="stat-label">Ticks</span>
+                    <span class="stat-value mono" id="sim-ticks">0</span>
+                </div>
+            </div>
 
-        <footer>
-            <p>Powered by FEEN Core (C++17) & Python Bindings</p>
-            <p><a href="/">API Documentation</a></p>
+            <main class="main-grid">
+
+                <!-- Control panel -->
+                <section class="card controls-card">
+                    <h2 class="card-title">Controls</h2>
+
+                    <div class="btn-group">
+                        <button id="tick-btn" class="btn btn-primary">
+                            <span class="btn-icon">▶</span> Start Simulation
+                        </button>
+                        <button id="inject-btn" class="btn">
+                            <span class="btn-icon">⚡</span> Inject Pulse
+                        </button>
+                        <button id="add-node-btn" class="btn">
+                            <span class="btn-icon">＋</span> Add Node
+                        </button>
+                        <button id="reset-btn" class="btn btn-danger">
+                            <span class="btn-icon">↺</span> Reset
+                        </button>
+                    </div>
+
+                    <div class="speed-row">
+                        <label class="speed-label" for="speed-control">
+                            Steps / frame
+                        </label>
+                        <input type="range" id="speed-control" class="slider" min="1" max="50" value="5">
+                        <span class="speed-val mono" id="speed-val">5</span>
+                    </div>
+                </section>
+
+                <!-- Chart -->
+                <section class="card chart-card">
+                    <h2 class="card-title">Resonator State</h2>
+                    <div class="chart-wrap">
+                        <canvas id="resonatorChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Log -->
+                <section class="card log-card">
+                    <h2 class="card-title">Event Log</h2>
+                    <div id="log-console">
+                        <p class="log-entry">System ready.</p>
+                    </div>
+                </section>
+
+            </main>
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>Powered by FEEN Core (C++17) &amp; Python Bindings</span>
+            <a href="/">API Documentation</a>
         </footer>
-    </div>
+
+    </div><!-- /app-shell -->
+
     <script src="/static/js/main.js"></script>
 </body>
 </html>

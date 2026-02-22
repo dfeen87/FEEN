@@ -24,6 +24,12 @@ def dashboard():
     """Serve the main dashboard page."""
     return render_template('index.html')
 
+
+@app.route('/node-graph')
+def node_graph():
+    """Serve the node-graph plugin visualization page."""
+    return render_template('node_graph.html')
+
 @app.route('/static/<path:filename>')
 def custom_static(filename):
     """Serve static files from web/static."""
