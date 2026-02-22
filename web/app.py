@@ -36,6 +36,12 @@ def node_graph():
     """Serve the node-graph plugin visualization page."""
     return render_template('node_graph.html')
 
+
+@app.route('/docs')
+def api_docs():
+    """Serve the human-readable API documentation page."""
+    return render_template('docs.html')
+
 @app.route('/static/<path:filename>')
 def custom_static(filename):
     """Serve static files from web/static."""
