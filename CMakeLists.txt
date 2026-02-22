@@ -64,4 +64,12 @@ if (FEEN_BUILD_TESTS)
         NAME SpiralTimeObserverValidation
         COMMAND spiral_time_test
     )
+
+    add_executable(hardware_adapter_test tests/test_hardware_adapter.cpp)
+    target_link_libraries(hardware_adapter_test PRIVATE feen)
+
+    add_test(
+        NAME HardwareAdapterValidation
+        COMMAND hardware_adapter_test
+    )
 endif()

@@ -2,7 +2,32 @@
 """
 FEEN REST API Server
 Provides HTTP REST API access to FEEN resonator network with global node access.
+
+Endpoint classification (enforced by HTTP method and documented contract):
+
+  READ-ONLY OBSERVER endpoints (safe for keep-alive, monitoring, and dashboards):
+    GET  /api/health              — infrastructure liveness; no simulation access
+    GET  /api/network/status      — tick/time counters; no state mutation
+    GET  /api/network/nodes       — snapshot of all node states; no mutation
+    GET  /api/network/nodes/<id>  — single node snapshot; no mutation
+    GET  /api/network/state       — full state vector; no mutation
+    GET  /api/config/snapshot     — serialized network configuration; no mutation
+
+  STATE-MUTATING COMMAND endpoints (must be explicit and auditable):
+    POST /api/network/nodes            — adds a node (structural change)
+    POST /api/network/nodes/<id>/inject — injects energy (dynamics change)
+    POST /api/network/tick             — advances simulation time (dynamics change)
+    POST /api/network/reset            — resets all state (destructive)
+
+Design invariants preserved by this API:
+  • Observer endpoints NEVER call tick(), inject(), set_state(), or reset().
+  • Keep-alive traffic MUST only hit GET /api/health or GET /api/network/status.
+  • Energy injection is always a named, explicit POST — never implicit in a read.
+  • Hardware adapter writes arrive only via /inject (energy) or a future
+    /api/network/nodes/<id>/set_state (state overwrite); no silent side-effects.
 """
+
+import time as _time
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -22,12 +47,12 @@ except ImportError:
 
 class ResonatorNetworkManager:
     """Manages a global FEEN resonator network accessible via REST API."""
-    
+
     def __init__(self):
         self.nodes = []
         self.time = 0.0
         self.ticks = 0
-        
+
     def add_node(self, config_dict):
         """Add a new resonator node to the network."""
         config = pyfeen.ResonatorConfig()
@@ -35,7 +60,7 @@ class ResonatorNetworkManager:
         config.q_factor = config_dict.get('q_factor', 200.0)
         config.beta = config_dict.get('beta', 1e-4)
         config.name = config_dict.get('name', f'node_{len(self.nodes)}')
-        
+
         resonator = pyfeen.Resonator(config)
         self.nodes.append({
             'id': len(self.nodes),
@@ -43,19 +68,19 @@ class ResonatorNetworkManager:
             'config': config_dict
         })
         return len(self.nodes) - 1
-    
+
     def get_node(self, node_id):
         """Get a specific node by ID."""
         if node_id < 0 or node_id >= len(self.nodes):
             return None
         return self.nodes[node_id]
-    
+
     def get_node_state(self, node_id):
         """Get the state of a specific node."""
         node = self.get_node(node_id)
         if node is None:
             return None
-        
+
         res = node['resonator']
         return {
             'id': node_id,
@@ -66,7 +91,7 @@ class ResonatorNetworkManager:
             'energy': res.energy(),
             'snr': res.snr()  # Now uses default temperature
         }
-    
+
     def get_all_nodes_state(self):
         """Get the state of all nodes."""
         states = []
@@ -75,16 +100,16 @@ class ResonatorNetworkManager:
             if state is not None:
                 states.append(state)
         return states
-    
+
     def inject_node(self, node_id, amplitude, phase=0.0):
         """Inject a signal into a specific node."""
         node = self.get_node(node_id)
         if node is None:
             return False
-        
+
         node['resonator'].inject(amplitude, phase)
         return True
-    
+
     def tick_network(self, dt):
         """Evolve all nodes by timestep dt."""
         for node in self.nodes:
@@ -92,7 +117,7 @@ class ResonatorNetworkManager:
         self.time += dt
         self.ticks += 1
         return True
-    
+
     def get_network_status(self):
         """Get overall network status."""
         return {
@@ -100,7 +125,7 @@ class ResonatorNetworkManager:
             'time': self.time,
             'ticks': self.ticks
         }
-    
+
     def get_state_vector(self):
         """Get global state vector [x0, v0, x1, v1, ...]."""
         state_vector = []
@@ -108,6 +133,28 @@ class ResonatorNetworkManager:
             res = node['resonator']
             state_vector.extend([res.x(), res.v()])
         return state_vector
+
+    def get_config_snapshot(self):
+        """Return a read-only serialized snapshot of the network configuration.
+
+        Captures only static configuration (frequency, Q, beta) and node count.
+        Does NOT include dynamic state (x, v, t).
+        Suitable for reproducibility auditing and session replay.
+        """
+        return {
+            'snapshot_wall_time': _time.time(),
+            'num_nodes': len(self.nodes),
+            'nodes': [
+                {
+                    'id': i,
+                    'name': node['config'].get('name', f'node_{i}'),
+                    'frequency_hz': node['config'].get('frequency_hz', 1000.0),
+                    'q_factor': node['config'].get('q_factor', 200.0),
+                    'beta': node['config'].get('beta', 1e-4),
+                }
+                for i, node in enumerate(self.nodes)
+            ]
+        }
 
 
 # Global network manager
@@ -118,34 +165,94 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 
+# ---------------------------------------------------------------------------
+# READ-ONLY OBSERVER endpoints
+# These endpoints MUST NOT call tick(), inject(), set_state(), or reset().
+# They are safe for keep-alive traffic, monitoring, and dashboard polling.
+# ---------------------------------------------------------------------------
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint."""
+    """Infrastructure liveness probe.
+
+    READ-ONLY OBSERVER: Does not access or advance simulation state.
+    Safe for keep-alive polling by hosting platforms and load balancers.
+    """
     return jsonify({'status': 'ok', 'service': 'FEEN REST API'})
 
 
 @app.route('/api/network/status', methods=['GET'])
 def get_network_status():
-    """Get network status."""
+    """Get network tick/time counters.
+
+    READ-ONLY OBSERVER: Returns counters only; no simulation mutation.
+    """
     return jsonify(network.get_network_status())
+
+
+@app.route('/api/config/snapshot', methods=['GET'])
+def get_config_snapshot():
+    """Return a read-only configuration snapshot for reproducibility auditing.
+
+    READ-ONLY OBSERVER: Captures static node configuration, not dynamic state.
+    Suitable for session replay, diff-based audit, and multi-user isolation checks.
+    """
+    return jsonify(network.get_config_snapshot())
 
 
 @app.route('/api/network/nodes', methods=['GET'])
 def list_nodes():
-    """List all nodes in the network."""
+    """List all nodes in the network.
+
+    READ-ONLY OBSERVER: Returns a snapshot of all node states; no mutation.
+    """
     return jsonify({
         'nodes': network.get_all_nodes_state(),
         'count': len(network.nodes)
     })
 
 
+@app.route('/api/network/nodes/<int:node_id>', methods=['GET'])
+def get_node(node_id):
+    """Get a specific node's state.
+
+    READ-ONLY OBSERVER: Returns a snapshot; no simulation mutation.
+    """
+    state = network.get_node_state(node_id)
+    if state is None:
+        return jsonify({'error': f'Node {node_id} not found'}), 404
+    return jsonify(state)
+
+
+@app.route('/api/network/state', methods=['GET'])
+def get_state_vector():
+    """Get the global state vector of all nodes.
+
+    READ-ONLY OBSERVER: Returns a snapshot; no simulation mutation.
+    """
+    return jsonify({
+        'state_vector': network.get_state_vector(),
+        'format': 'Interleaved [x0, v0, x1, v1, ...]',
+        'num_nodes': len(network.nodes)
+    })
+
+
+# ---------------------------------------------------------------------------
+# STATE-MUTATING COMMAND endpoints
+# Each endpoint documents what it mutates and why the mutation is explicit.
+# ---------------------------------------------------------------------------
+
 @app.route('/api/network/nodes', methods=['POST'])
 def add_node():
-    """Add a new node to the network."""
+    """Add a new resonator node to the network.
+
+    STATE-MUTATING COMMAND: Structural change — adds a node.
+    Must be explicit; must not be reachable from observer/keep-alive paths.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
-    
+
     try:
         node_id = network.add_node(data)
         return jsonify({
@@ -157,28 +264,26 @@ def add_node():
         return jsonify({'error': str(e)}), 400
 
 
-@app.route('/api/network/nodes/<int:node_id>', methods=['GET'])
-def get_node(node_id):
-    """Get a specific node's state."""
-    state = network.get_node_state(node_id)
-    if state is None:
-        return jsonify({'error': f'Node {node_id} not found'}), 404
-    return jsonify(state)
-
-
 @app.route('/api/network/nodes/<int:node_id>/inject', methods=['POST'])
 def inject_signal(node_id):
-    """Inject a signal into a specific node."""
+    """Inject a signal into a specific node.
+
+    STATE-MUTATING COMMAND: Energy injection — explicit, named, auditable.
+    This is the ONLY path through which external energy enters a node.
+    Amplitude and phase must be provided explicitly in the request body.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
-    
+
     amplitude = data.get('amplitude', 1.0)
     phase = data.get('phase', 0.0)
-    
+
     if network.inject_node(node_id, amplitude, phase):
         return jsonify({
             'message': f'Signal injected into node {node_id}',
+            'amplitude': amplitude,
+            'phase': phase,
             'state': network.get_node_state(node_id)
         })
     else:
@@ -187,18 +292,23 @@ def inject_signal(node_id):
 
 @app.route('/api/network/tick', methods=['POST'])
 def tick_network():
-    """Evolve the network by a timestep."""
+    """Evolve the network by a timestep.
+
+    STATE-MUTATING COMMAND: Advances simulation time.
+    dt is supplied explicitly in the request body.
+    Hardware latency MUST NOT be used as dt.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
-    
+
     dt = data.get('dt', 1e-6)
     steps = data.get('steps', 1)
-    
+
     try:
         for _ in range(steps):
             network.tick_network(dt)
-        
+
         return jsonify({
             'message': f'Network evolved by {steps} steps',
             'status': network.get_network_status(),
@@ -208,19 +318,12 @@ def tick_network():
         return jsonify({'error': str(e)}), 400
 
 
-@app.route('/api/network/state', methods=['GET'])
-def get_state_vector():
-    """Get the global state vector of all nodes."""
-    return jsonify({
-        'state_vector': network.get_state_vector(),
-        'format': 'Interleaved [x0, v0, x1, v1, ...]',
-        'num_nodes': len(network.nodes)
-    })
-
-
 @app.route('/api/network/reset', methods=['POST'])
 def reset_network():
-    """Reset the network (clear all nodes)."""
+    """Reset the network (clear all nodes).
+
+    STATE-MUTATING COMMAND: Destructive — removes all nodes and resets time.
+    """
     global network
     network = ResonatorNetworkManager()
     return jsonify({'message': 'Network reset successfully'})
@@ -233,16 +336,33 @@ def index():
         'service': 'FEEN REST API',
         'version': '1.0.0',
         'description': 'REST API for FEEN Wave Engine with global node access',
+        'endpoint_classification': {
+            'read_only_observer': [
+                'GET /api/health',
+                'GET /api/network/status',
+                'GET /api/network/nodes',
+                'GET /api/network/nodes/<id>',
+                'GET /api/network/state',
+                'GET /api/config/snapshot',
+            ],
+            'state_mutating_command': [
+                'POST /api/network/nodes',
+                'POST /api/network/nodes/<id>/inject',
+                'POST /api/network/tick',
+                'POST /api/network/reset',
+            ]
+        },
         'endpoints': {
-            'GET /api/health': 'Health check',
-            'GET /api/network/status': 'Get network status',
-            'GET /api/network/nodes': 'List all nodes',
-            'POST /api/network/nodes': 'Add a new node',
-            'GET /api/network/nodes/<id>': 'Get specific node state',
-            'POST /api/network/nodes/<id>/inject': 'Inject signal to node',
-            'POST /api/network/tick': 'Evolve network by timestep',
-            'GET /api/network/state': 'Get global network state vector',
-            'POST /api/network/reset': 'Reset the network'
+            'GET /api/health': 'Infrastructure liveness (read-only)',
+            'GET /api/network/status': 'Get network status (read-only)',
+            'GET /api/network/nodes': 'List all nodes (read-only)',
+            'POST /api/network/nodes': 'Add a new node (mutating)',
+            'GET /api/network/nodes/<id>': 'Get specific node state (read-only)',
+            'POST /api/network/nodes/<id>/inject': 'Inject signal to node (mutating)',
+            'POST /api/network/tick': 'Evolve network by timestep (mutating)',
+            'GET /api/network/state': 'Get global network state vector (read-only)',
+            'GET /api/config/snapshot': 'Get config snapshot for auditing (read-only)',
+            'POST /api/network/reset': 'Reset the network (mutating)',
         },
         'example_node_config': {
             'frequency_hz': 1000.0,
@@ -256,14 +376,14 @@ def index():
 def main():
     """Main entry point for the REST API server."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='FEEN REST API Server')
     parser.add_argument('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1 for localhost only)')
     parser.add_argument('--port', type=int, default=5000, help='Port to bind to')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
-    
+
     args = parser.parse_args()
-    
+
     print("=" * 80)
     print("FEEN REST API Server - Development/Research Mode")
     print("=" * 80)
@@ -282,7 +402,7 @@ def main():
         print("   This API has no authentication. Use with caution on untrusted networks.")
         print("")
     print("=" * 80)
-    
+
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 
