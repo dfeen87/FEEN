@@ -34,9 +34,10 @@ struct AileeSample {
 /**
  * @brief AILEE Delta v Metric Calculator.
  *
- * Implements the energy-weighted optimization gain functional:
+ * Implements the energy-weighted efficiency metric (read-only observer functional):
  * Δv = Isp · η · e^(-α·v0^2) · ∫ (P_input(t) · e^(-α·w(t)^2) · e^(2·α·v0·v(t)) / M(t)) dt
  *
+ * This metric is a read-only observer: it never feeds back into FEEN state evolution.
  * Exponential terms are clamped to prevent overflow.
  */
 class AileeMetric {
@@ -73,7 +74,7 @@ public:
     /**
      * @brief Returns the current calculated Delta v value.
      *
-     * @return The accumulated optimization gain.
+     * @return The accumulated efficiency metric value.
      */
     double delta_v() const {
         double arg = -params_.alpha * params_.v0 * params_.v0;

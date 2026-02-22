@@ -56,8 +56,7 @@ FEEN (Frequency-Encoded Elastic Network) introduces a fundamentally different ap
 
 #### Spectral Multiplexing
 - >40 dB isolation between channels separated by just 1%
-- Pack 1000+ independent frequency channels in 1 kHz bandwidth (Q=10,000)
-- True parallel computation in the same physical substrate
+- **True parallel computation** in the same physical substrate — the spectral multiplexing model supports theoretical scalability to O(10³) channels; validated implementations operate reliably at O(10²)
 
 ### 4. **Rich Learning Resources** 📚
 The repository is exceptionally well-documented:
@@ -75,11 +74,11 @@ The repository is exceptionally well-documented:
 ✓ Analysis Tools     → Spectrum analyzer, phase portraits
 ✓ Python Bindings    → NumPy integration, visualization
 ✓ Validation Suite   → Physics-enforcing tests
-✓ AILEE Integration  → Trust layer acceleration primitives
+✓ AILEE Integration  → Read-only telemetry primitives consumed by AILEE
 ```
 
-### 6. **AILEE Trust Layer Acceleration** 🛡️
-FEEN provides hardware-ready primitives for AI trust systems:
+### 6. **AILEE Integration** 🛡️
+FEEN exposes read-only telemetry signals that AILEE can consume — FEEN does not depend on AILEE in any direction:
 - **Confidence decomposition** - Temporal stability, peer agreement
 - **Bistable safety gating** - LOW/HIGH/NEAR-BARRIER state classification
 - **Peer consensus coherence** - Spectral agreement measurement
@@ -98,7 +97,7 @@ Clean separation: AILEE owns policy, FEEN provides physics-native signal primiti
 
 #### What Makes It Unique
 - **Energy efficiency**: High-Q resonators sustain computation with minimal dissipation
-- **Natural parallelism**: Spectral orthogonality enables thousands of independent channels
+- **Natural parallelism**: The spectral multiplexing model supports theoretical scalability to O(10³) channels; validated implementations operate reliably at O(10²)
 - **Zero active power**: Q=1000 resonator at 1kHz stores information for ~300ms
 - **Thermal stability**: Bit-flip probability < 10⁻⁵⁰ per second at room temperature
 
@@ -110,7 +109,7 @@ Clean separation: AILEE owns policy, FEEN provides physics-native signal primiti
 - **Signal processors** - Filters, spectrum analyzers
 - **Neural networks** - Analog computing with resonator arrays
 - **Frequency multiplexers** - Parallel communication channels
-- **Trust computation hardware** - AILEE acceleration modules
+- **Trust signal hardware** - physics-native signal primitives for AILEE consumption
 
 ### 9. **Academic & Citation Value** 📝
 - **Citable software** with proper DOI and citation format (CITATION.cff)
@@ -134,7 +133,7 @@ Clean separation: AILEE owns policy, FEEN provides physics-native signal primiti
 
 2. **Energy barrier in bistable resonators is ~10 billion times larger than thermal noise (k_B T)**
 
-3. **You can pack ~1000 independent frequency channels in a 1 kHz bandwidth with Q=10,000**
+3. **The spectral multiplexing model projects ~1000 independent frequency channels as theoretically achievable** in a 1 kHz bandwidth with Q=10,000; validated implementations currently operate reliably at O(10²) channels
 
 4. **Bit-flip probability is < 10⁻⁵⁰ per second** - more reliable than cosmic ray flips in DRAM
 
