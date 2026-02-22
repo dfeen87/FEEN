@@ -10,18 +10,31 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <style>
+        /* Full-width single-column layout for this page */
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+
         .graph-container {
             width: 100%;
             height: 600px;
             background: #111;
             border: 1px solid #333;
             border-radius: 4px;
+            /* Allow touch-based vertical panning to scroll the page */
+            touch-action: pan-y;
         }
         .coupling-controls {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
             margin-bottom: 1rem;
+        }
+        .coupling-controls label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--clr-text-muted, #8a8a96);
+            margin-bottom: 0.35rem;
         }
         .param-input {
             background: #2a2a2a;
@@ -30,6 +43,26 @@
             padding: 0.5rem;
             border-radius: 4px;
             width: 100%;
+        }
+        .coupling-btn-group {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        @media (max-width: 700px) {
+            .coupling-controls {
+                grid-template-columns: 1fr;
+            }
+            .graph-container {
+                height: 380px;
+            }
+        }
+        @media (min-width: 701px) and (max-width: 900px) {
+            .coupling-controls {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -66,13 +99,13 @@
             <main class="main-grid">
 
                 <!-- Coupling Graph -->
-                <section class="card" style="grid-column: span 3;">
+                <section class="card">
                     <h2 class="card-title">Topology</h2>
                     <div id="cy" class="graph-container"></div>
                 </section>
 
                 <!-- Connection Panel -->
-                <section class="card" style="grid-column: span 3;">
+                <section class="card">
                     <h2 class="card-title">Manage Connection</h2>
                     <div class="coupling-controls">
                         <div>
@@ -88,7 +121,7 @@
                             <input type="number" id="coupling-strength" class="param-input" value="1.0" step="0.1">
                         </div>
                     </div>
-                    <div class="btn-group">
+                    <div class="coupling-btn-group">
                         <button id="add-coupling-btn" class="btn btn-primary">Add / Update Connection</button>
                         <button id="remove-coupling-btn" class="btn btn-danger">Remove Connection</button>
                     </div>
@@ -106,6 +139,14 @@
     </div><!-- /app-shell -->
 
     <script>
+        // Prevent Cytoscape from consuming wheel events so the page can scroll normally.
+        // The capture-phase listener runs before Cytoscape's bubble-phase handler;
+        // stopImmediatePropagation keeps preventDefault from ever being called on the event,
+        // allowing the browser's native scroll to proceed uninterrupted.
+        document.getElementById('cy').addEventListener('wheel', function(e) {
+            e.stopImmediatePropagation();
+        }, { capture: true });
+
         let cy = cytoscape({
             container: document.getElementById('cy'),
             style: [
