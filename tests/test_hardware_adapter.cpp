@@ -83,16 +83,16 @@ static void test_ablatable() {
     Resonator r = make_resonator();
     r.inject(1.0);
 
-    const double x0 = r.x();
-    const double v0 = r.v();
-    const double t0 = r.t();
+    [[maybe_unused]] const double x0 = r.x();
+    [[maybe_unused]] const double v0 = r.v();
+    [[maybe_unused]] const double t0 = r.t();
 
     // Tick without any adapter involvement
     r.tick(1e-6);
 
-    const double x1 = r.x();
-    const double v1 = r.v();
-    const double t1 = r.t();
+    [[maybe_unused]] const double x1 = r.x();
+    [[maybe_unused]] const double v1 = r.v();
+    [[maybe_unused]] const double t1 = r.t();
 
     // State must have advanced by exactly one tick
     assert(t1 > t0 && "Resonator time must advance with tick");
@@ -273,7 +273,7 @@ static void test_calibration_validation() {
     CalibrationParams bad;
     bad.scale_x = 0.0;  // Invalid: would silently discard sensor signal
 
-    bool threw = false;
+    [[maybe_unused]] bool threw = false;
     try {
         HardwareAdapter adapter(fpga, bad);
     } catch (const std::invalid_argument&) {
