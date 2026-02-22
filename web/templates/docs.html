@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN API Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* ---- Docs-page specific styles ---- */
+        .docs-content {
+            max-width: 860px;
+        }
+
+        .docs-section {
+            margin-bottom: 32px;
+        }
+
+        .docs-section-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--clr-text-muted);
+            margin: 0 0 12px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .meta-item {
+            background: var(--clr-surface-2);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+        }
+
+        .meta-key {
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--clr-text-muted);
+            margin-bottom: 4px;
+        }
+
+        .meta-val {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--clr-accent);
+        }
+
+        /* ---- Endpoint tables ---- */
+        .endpoint-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .endpoint-table th {
+            text-align: left;
+            padding: 8px 14px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--clr-text-muted);
+            border-bottom: 1px solid var(--clr-border);
+        }
+
+        .endpoint-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--clr-border);
+            vertical-align: top;
+        }
+
+        .endpoint-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .endpoint-table tr:hover td {
+            background: var(--clr-surface-2);
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            min-width: 44px;
+            text-align: center;
+        }
+
+        .method-get {
+            background: var(--clr-accent-dim);
+            color: var(--clr-accent);
+            border: 1px solid rgba(3, 218, 198, 0.25);
+        }
+
+        .method-post {
+            background: var(--clr-purple-dim);
+            color: var(--clr-purple);
+            border: 1px solid rgba(187, 134, 252, 0.25);
+        }
+
+        .endpoint-path {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--clr-text);
+        }
+
+        .observer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .badge-readonly {
+            background: var(--clr-accent-dim);
+            color: var(--clr-accent);
+            border: 1px solid rgba(3, 218, 198, 0.2);
+        }
+
+        .badge-mutating {
+            background: var(--clr-danger-dim);
+            color: var(--clr-danger);
+            border: 1px solid rgba(207, 102, 121, 0.2);
+        }
+
+        /* ---- Example config ---- */
+        .code-block {
+            background: #08080b;
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--clr-text);
+            overflow-x: auto;
+            line-height: 1.7;
+            white-space: pre;
+        }
+
+        /* ---- Machine-readable note ---- */
+        .raw-api-note {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--clr-surface-2);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            color: var(--clr-text-muted);
+        }
+
+        .raw-api-note a {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+        }
+
+        /* ---- Loading / error state ---- */
+        #docs-loading {
+            padding: 48px 0;
+            text-align: center;
+            color: var(--clr-text-muted);
+            font-size: 0.9rem;
+        }
+
+        #docs-error {
+            display: none;
+            padding: 20px;
+            background: var(--clr-danger-dim);
+            border: 1px solid rgba(207, 102, 121, 0.3);
+            border-radius: var(--radius-md);
+            color: var(--clr-danger);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/node-graph" class="nav-link">Node Graph</a>
+                <a href="/docs" class="nav-link active">API Docs</a>
+            </div>
+        </nav>
+
+        <div class="page-content docs-content">
+
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>API Reference</h1>
+                    <p>FEEN REST API — endpoints, invariants, and command boundaries</p>
+                </div>
+            </header>
+
+            <div id="docs-loading">Loading API index…</div>
+            <div id="docs-error"></div>
+            <div id="docs-body" style="display:none"></div>
+
+        </div>
+
+        <footer class="app-footer">
+            <span>Powered by FEEN Core (C++17) &amp; Python Bindings</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div>
+
+    <script>
+    (function () {
+        const loading = document.getElementById('docs-loading');
+        const errorBox = document.getElementById('docs-error');
+        const body    = document.getElementById('docs-body');
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function method(endpoint) {
+            return endpoint.trim().startsWith('POST') ? 'POST' : 'GET';
+        }
+
+        function path(endpoint) {
+            return endpoint.trim().replace(/^(GET|POST)\s+/, '');
+        }
+
+        function endpointRow(ep) {
+            const m = method(ep);
+            const p = escapeHtml(path(ep));
+            const badgeClass = m === 'GET' ? 'method-get' : 'method-post';
+            return `<tr>
+                <td><span class="method-badge ${badgeClass}">${m}</span></td>
+                <td><span class="endpoint-path">${p}</span></td>
+            </tr>`;
+        }
+
+        function renderExampleConfig(cfg) {
+            return escapeHtml(JSON.stringify(cfg, null, 2));
+        }
+
+        function render(data) {
+            const readOnly  = (data.endpoint_classification || {}).read_only_observer      || [];
+            const mutating  = (data.endpoint_classification || {}).state_mutating_command  || [];
+            const example   = data.example_node_config || {};
+
+            body.innerHTML = `
+<div class="docs-section">
+    <h2 class="docs-section-title">Service</h2>
+    <div class="card">
+        <div class="meta-grid">
+            <div class="meta-item">
+                <div class="meta-key">Service</div>
+                <div class="meta-val">${data.service || '—'}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-key">Version</div>
+                <div class="meta-val">${data.version || '—'}</div>
+            </div>
+            <div class="meta-item" style="grid-column: span 2;">
+                <div class="meta-key">Description</div>
+                <div class="meta-val" style="font-family: var(--font-sans); color: var(--clr-text);">${data.description || '—'}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-section-title">
+        <span class="observer-badge badge-readonly">● Read-only Observers</span>
+    </h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="endpoint-table">
+            <thead>
+                <tr>
+                    <th style="width:80px;">Method</th>
+                    <th>Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${readOnly.map(endpointRow).join('')}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-section-title">
+        <span class="observer-badge badge-mutating">⚡ State-mutating Commands</span>
+    </h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="endpoint-table">
+            <thead>
+                <tr>
+                    <th style="width:80px;">Method</th>
+                    <th>Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${mutating.map(endpointRow).join('')}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="docs-section">
+    <h2 class="docs-section-title">Example Node Config</h2>
+    <div class="card">
+        <pre class="code-block">${renderExampleConfig(example)}</pre>
+    </div>
+</div>
+
+<div class="docs-section">
+    <div class="raw-api-note">
+        <span>Machine-readable index:</span>
+        <a href="/api" target="_blank" rel="noopener">/api</a>
+    </div>
+</div>`;
+        }
+
+        fetch('/api')
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                loading.style.display = 'none';
+                body.style.display    = 'block';
+                render(data);
+            })
+            .catch(function (err) {
+                loading.style.display    = 'none';
+                errorBox.style.display   = 'block';
+                errorBox.textContent     = 'Could not load API index: ' + err.message;
+            });
+    })();
+    </script>
+</body>
+</html>
