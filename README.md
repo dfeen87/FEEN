@@ -121,11 +121,12 @@ FEEN exposes deterministic, policy‑free trust signals that map cleanly to phon
   Median / mean / last‑value aggregation for recovery paths
 
 - **Δv Metric** (`AileeMetric`)  
-  Energy-weighted optimization gain functional:  
-  Δv = Isp · η · e^(-αv₀²) · ∫(P·e^(-αw²)·e^(2αv₀v) / M) dt  
+  Energy-weighted optimization gain functional accumulated over time [0, T]:  
+  Δv = Isp · η · e^(-αv₀²) · ∫₀ᵀ [ P(t) · e^(-αw(t)²) · e^(2αv₀v(t)) / M(t) ] dt  
   where: **Isp** = structural efficiency, **η** = integrity coefficient, **α** = risk sensitivity,  
-  **v₀** = reference velocity, **P** = input energy, **w** = workload, **v** = decision velocity, **M** = system mass.  
-  Integrates `AileeSample` telemetry in real time to quantify system optimization gain.
+  **v₀** = fixed reference velocity, **v(t)** = instantaneous decision velocity (v₀ sets the operating point; v(t) is the time-varying signal),  
+  **P(t)** = input energy, **w(t)** = workload, **M(t)** = system mass (inertia).  
+  Call `integrate(sample)` per timestep and read `delta_v()` for the running total. See [`include/feen/ailee/metric.h`](include/feen/ailee/metric.h).
 
 These primitives are exposed via a stable C++ ABI and Python bindings, allowing AILEE to transparently switch between software and FEEN‑accelerated execution.
 
@@ -257,80 +258,122 @@ See **[docs/SPIRAL_TIME.md](docs/SPIRAL_TIME.md)** for the full specification.
 ```
 feen/
 │
-├── 📁 include/feen/              # Core library (header-only)
-│   ├── resonator.h               # Main resonator class
-│   ├── network.h                 # Multi-resonator coupling
-│   ├── gates.h                   # Logic gate primitives
-│   ├── memory.h                  # Memory management
-│   ├── transducer.h              # Electrical ↔ phononic conversion
+├── 📁 include/feen/                       # Core library (header-only)
+│   ├── resonator.h                        # Duffing resonator — state, RK4, energy, SNR
+│   ├── network.h                          # Multi-resonator coupling & parallel tick
+│   ├── gates.h                            # Phononic AND / OR / NOT logic gates
+│   ├── memory.h                           # Resonator-backed memory management
+│   ├── transducer.h                       # Electrical ↔ phononic conversion
 │   │
-│   ├── 📁 ailee/                 # AILEE trust primitives
-│   │   ├── ailee_types.h         # Shared FEEN–AILEE signal types
-│   │   ├── confidence.h          # Confidence decomposition
-│   │   ├── safety_gate.h         # Bistable safety gating
-│   │   ├── consensus.h           # Peer coherence measurement
-│   │   ├── fallback.h            # Stabilization & recovery
-│   │   └── metric.h              # Δv optimization gain metric
+│   ├── 📁 ailee/                          # AILEE trust-acceleration primitives
+│   │   ├── ailee_types.h                  # Shared FEEN–AILEE signal types & enums
+│   │   ├── confidence.h                   # Confidence decomposition (stability/agreement/likelihood)
+│   │   ├── safety_gate.h                  # Bistable safety gating (LOW/HIGH/NEAR-BARRIER)
+│   │   ├── consensus.h                    # Peer coherence & spectral agreement
+│   │   ├── fallback.h                     # Stabilization & recovery aggregation
+│   │   └── metric.h                       # Δv optimization gain metric (AileeMetric)
 │   │
-│   ├── 📁 sim/                   # Simulation infrastructure
-│   │   ├── integrators.h         # RK4, RK45, Verlet schemes
-│   │   ├── scheduler.h           # Adaptive timestep control
-│   │   └── thermal.h             # Thermal noise injection
+│   ├── 📁 sim/                            # Simulation infrastructure
+│   │   ├── integrators.h                  # RK4, RK45, Verlet integration schemes
+│   │   ├── scheduler.h                    # Adaptive timestep control
+│   │   └── thermal.h                      # Boltzmann thermal noise injection
 │   │
-│   ├── 📁 tools/                 # Analysis utilities
-│   │   ├── spectrum_analyzer.h
-│   │   ├── phase_portrait.h
-│   │   └── energy_tracker.h
+│   ├── 📁 tools/                          # Analysis utilities
+│   │   ├── spectrum_analyzer.h            # Frequency-domain spectrum analysis
+│   │   ├── phase_portrait.h               # Phase-space trajectory visualization
+│   │   └── energy_tracker.h               # Per-resonator energy history
 │   │
-│   └── 📁 hardware/              # Physical device interfaces
-│       ├── fpga_driver.h         # FPGA control
-│       ├── hardware_adapter.h    # Hardware-in-the-loop adapter
-│       └── mems_calibration.h
+│   ├── 📁 hardware/                       # Physical device interfaces
+│   │   ├── fpga_driver.h                  # FPGA ADC/DAC I/O control
+│   │   ├── hardware_adapter.h             # Hardware-in-the-loop sensor/actuator bridge
+│   │   └── mems_calibration.h             # MEMS sensor calibration routines
+│   │
+│   └── 📁 spiral_time/                    # Optional Spiral-Time observer layer
+│       ├── spiral_time_observer.h         # Observer that annotates FEEN trajectories
+│       └── spiral_time_state.h            # Spiral-Time semantic state container
 │
-├── 📁 apps/                      # High-level applications
-│   ├── neural_network.h          # Phononic neural nets
-│   ├── signal_processing.h       # Filters and transforms
-│   └── oscillator_bank.h         # Frequency multiplexing
+├── 📁 apps/                               # High-level application templates
+│   ├── neural_network.h                   # Phononic neural network
+│   ├── signal_processing.h                # Filters and spectral transforms
+│   └── oscillator_bank.h                  # Frequency-multiplexed oscillator bank
 │
-├── 📁 examples/                  # Step-by-step tutorials
-│   ├── 01_basic_oscillator.cpp
-│   ├── 02_bistable_bit.cpp
-│   ├── 03_frequency_multiplexing.cpp
-│   ├── 04_logic_gates.cpp
-│   └── 05_neural_network.cpp
+├── 📁 examples/                           # Step-by-step C++ tutorials
+│   ├── 01_basic_oscillator.cpp            # Create and simulate a simple resonator
+│   ├── 02_bistable_bit.cpp                # Build a phononic memory cell
+│   ├── 03_frequency_multiplexing.cpp      # Parallel computation channels
+│   ├── 04_logic_gates.cpp                 # Phononic AND, OR, NOT gates
+│   └── 05_neural_network.cpp              # Analog computing with resonator arrays
 │
-├── 📁 python/                    # Python bindings
-│   ├── pyfeen.cpp                # pybind11 interface (FEEN + AILEE)
-│   ├── ailee.py                  # Python façade for AILEE primitives
-│   ├── feen_rest_api.py          # Flask REST API server
-│   ├── plugin_registry.py        # Plugin lifecycle manager
-│   ├── 📁 plugins/               # Built-in plugin modules
-│   │   ├── ui_dashboard.py       # Read-only energy-history panel (UI)
-│   │   ├── observer_logger.py    # State logging observer (OBSERVER)
-│   │   └── hardware_monitor.py   # Hardware telemetry monitor (TOOL)
-│   └── examples/
-│       └── plot_bifurcation.py
+├── 📁 python/                             # Python layer
+│   ├── pyfeen.cpp                         # pybind11 interface (FEEN core + AILEE)
+│   ├── ailee.py                           # Python façade for AILEE primitives
+│   ├── feen_rest_api.py                   # Flask REST API server
+│   ├── plugin_registry.py                 # Plugin lifecycle manager
+│   ├── requirements.txt                   # Python runtime dependencies
+│   ├── CMakeLists.txt                     # pybind11 build rules
+│   │
+│   ├── 📁 plugins/                        # Built-in plugin modules
+│   │   ├── __init__.py
+│   │   ├── ui_dashboard.py                # Read-only energy-history panel (UI)
+│   │   ├── observer_logger.py             # State logging observer (OBSERVER)
+│   │   └── hardware_monitor.py            # Hardware telemetry monitor (TOOL)
+│   │
+│   ├── 📁 examples/                       # Python usage examples
+│   │   ├── plot_bifurcation.py            # Bifurcation diagram via pyfeen
+│   │   └── rest_api_demo.py               # REST API walkthrough
+│   │
+│   └── 📁 tests/                          # Python test suite
+│       ├── test_ailee_rest_endpoints.py   # AILEE REST endpoint integration tests
+│       ├── test_plugin_registry.py        # Plugin lifecycle & boundary tests
+│       └── test_vcp_wiring_invariants.py  # VCP wiring invariant tests
 │
-├── 📁 tests/                     # Validation & testing
-│   ├── test_resonator.cpp
-│   ├── unit_tests.cpp
-│   └── numerical_accuracy.cpp
+├── 📁 tests/                              # C++ validation & unit tests
+│   ├── CMakeLists.txt                     # CTest configuration
+│   ├── test_resonator.cpp                 # Resonator physics validation
+│   ├── unit_tests.cpp                     # Core unit tests
+│   ├── numerical_accuracy.cpp             # Numerical accuracy checks
+│   ├── test_ailee_metric.cpp              # Δv metric unit tests
+│   ├── test_hardware_adapter.cpp          # Hardware adapter contract tests
+│   └── test_spiral_time.cpp               # Spiral-Time observer tests
 │
-├── 📁 benchmarks/                # Performance analysis
-│   └── performance.cpp
+├── 📁 benchmarks/                         # Performance benchmarks
+│   └── performance.cpp                    # Throughput and timing benchmarks
 │
-├── 📁 configs/                   # Example configurations
-│   ├── memory_cell.json
-│   └── filter_bank.yaml
+├── 📁 configs/                            # Example configuration files
+│   ├── memory_cell.json                   # Monostable memory cell config
+│   ├── filter_bank.yaml                   # Filter bank config
+│   └── default_plugins.yaml              # Default plugin load list
 │
-├── 📁 docs/                      # Documentation
-│   ├── FEEN.md
-│   └── FEEN_WAVE_ENGINE.md
+├── 📁 docs/                               # Documentation
+│   ├── FEEN.md                            # Complete system architecture
+│   ├── FEEN_WAVE_ENGINE.md                # Mathematical foundations
+│   ├── HARDWARE_IN_THE_LOOP.md            # HIL integration strategy
+│   ├── REST_API.md                        # REST API endpoint reference
+│   └── SPIRAL_TIME.md                     # Spiral-Time observer specification
 │
-├── CMakeLists.txt                # Build configuration
-├── vcpkg.json                    # Dependencies
-├── CITATION.cff                  # Academic citation
-└── LICENSE                       # MIT License
+├── 📁 web/                                # Web dashboard (Flask)
+│   ├── app.py                             # Dashboard entry point & route definitions
+│   ├── requirements.txt                   # Web runtime dependencies
+│   ├── 📁 templates/                      # Jinja2 HTML templates
+│   │   ├── index.html                     # Main dashboard
+│   │   ├── node_graph.html                # Resonator coupling topology graph
+│   │   ├── ailee_metric.html              # Live Δv metric visualization
+│   │   ├── coupling.html                  # Interactive coupling editor
+│   │   ├── vcp_wiring.html                # Verified Control Path wiring view
+│   │   └── docs.html                      # Human-readable API docs page
+│   └── 📁 static/                         # Frontend assets
+│       ├── css/style.css                  # Global stylesheet
+│       ├── css/node_graph.css             # Node-graph panel styles
+│       ├── js/main.js                     # Dashboard JavaScript
+│       └── js/node_graph.js               # Node-graph visualization logic
+│
+├── CMakeLists.txt                         # Root CMake build configuration
+├── vcpkg.json                             # C++ dependencies (vcpkg manifest)
+├── Dockerfile                             # Container image definition
+├── render.yaml                            # Render.com deployment config
+├── CITATION.cff                           # Academic citation metadata
+├── BENEFITS.md                            # Summary of repository benefits
+└── LICENSE                                # MIT License
 
 ```
 
