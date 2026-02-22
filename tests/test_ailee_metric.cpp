@@ -1,13 +1,23 @@
 
 #include <feen/ailee/metric.h>
 #include <iostream>
-#include <cassert>
 #include <cmath>
+#include <cstdlib>
+
+// Simple check macro to replace assert, ensuring tests run in Release mode
+#define CHECK(condition, message) \
+    do { \
+        if (!(condition)) { \
+            std::cerr << "Check failed: " << message << "\n" \
+                      << "File: " << __FILE__ << ", Line: " << __LINE__ << std::endl; \
+            std::exit(1); \
+        } \
+    } while (0)
 
 void test_initialization() {
     feen::ailee::AileeParams params{0.1, 1.0, 1.0, 1.0};
     feen::ailee::AileeMetric metric(params);
-    assert(metric.delta_v() == 0.0);
+    CHECK(metric.delta_v() == 0.0, "Initial delta_v should be 0.0");
     std::cout << "Test 1: Initialization passed." << std::endl;
 }
 
@@ -21,7 +31,7 @@ void test_single_step() {
     // integral = (1.0 * exp(0) * exp(0) / 1.0) * 1.0 = 1.0
     // delta_v = 1.0 * 1.0 * exp(-0.1) * 1.0 = exp(-0.1)
     double expected = std::exp(-0.1);
-    assert(std::abs(metric.delta_v() - expected) < 1e-6);
+    CHECK(std::abs(metric.delta_v() - expected) < 1e-6, "Single step delta_v mismatch");
     std::cout << "Test 2: Single step passed." << std::endl;
 }
 
@@ -35,7 +45,7 @@ void test_overflow_protection() {
     metric.integrate(sample_large_pos);
 
     // Check if result is finite (not inf)
-    assert(std::isfinite(metric.delta_v()));
+    CHECK(std::isfinite(metric.delta_v()), "Result should be finite (overflow protection)");
 
     metric.reset();
 
@@ -44,7 +54,7 @@ void test_overflow_protection() {
     // w=1000, -alpha*w^2 = -1000000 < -700 (limit)
     metric.integrate(sample_large_neg);
 
-    assert(std::isfinite(metric.delta_v()));
+    CHECK(std::isfinite(metric.delta_v()), "Result should be finite (underflow protection)");
 
     std::cout << "Test 3: Overflow protection passed." << std::endl;
 }
