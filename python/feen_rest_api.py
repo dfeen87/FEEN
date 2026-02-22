@@ -165,10 +165,10 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # ---------------------------------------------------------------------------
-# Plugin registry — loaded lazily; plugins may be added before or after
-# the Flask app starts.  Blueprints from active plugins are registered on
-# first access of the /api/plugins/* endpoints so that the app remains
-# importable even when optional plugin files are absent.
+# Plugin registry — initialized eagerly at import time so that all blueprints
+# are registered before the first request is handled.  Flask 2.x does not
+# permit blueprint registration after the first request, so lazy registration
+# at /api/plugins/* access time caused "Failed to register blueprint" errors.
 # ---------------------------------------------------------------------------
 try:
     from plugin_registry import PluginRegistry
@@ -182,7 +182,7 @@ _plugins_initialized = False
 
 
 def _ensure_plugins_initialized():
-    """Lazy-initialize plugins once and register their blueprints."""
+    """Initialize plugins once and register their blueprints with the app."""
     global _plugins_initialized
     if _plugins_initialized or not _plugin_registry_available:
         return
@@ -213,6 +213,9 @@ def _ensure_plugins_initialized():
                 getattr(bp, 'name', bp), exc,
             )
 
+
+# Eagerly initialize plugins so blueprints are registered before any request.
+_ensure_plugins_initialized()
 
 # ---------------------------------------------------------------------------
 # READ-ONLY OBSERVER endpoints
