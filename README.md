@@ -600,13 +600,13 @@ We welcome contributions! Here's how to get started:
 
 The items below are exploratory and forward-looking. They represent potential research directions and platform maturity goals, not committed or scheduled work. All items are subject to experimental validation and may evolve as the project matures.
 
-### v3.1 — Scaling & Instrumentation
+### v3.2 — Scaling & Instrumentation
 - [ ] GPU‑accelerated network simulations (CUDA/OpenCL)
 - [ ] Real‑time visualization and diagnostics dashboard
 - [ ] MATLAB/Simulink co‑simulation interface
 - [ ] Extended harmonic mode and coupling support
 
-### v3.2 — Hybrid & Experimental Regimes
+### v3.3 — Hybrid & Experimental Regimes
 - [ ] Quantum‑regime phonon modeling (ground‑state dynamics) — exploratory, subject to experimental validation
 - [ ] Machine learning model training on resonator networks — research-oriented
 - [ ] Hardware‑in‑the‑loop testing framework
