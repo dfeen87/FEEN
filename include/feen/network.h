@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <algorithm>
+#include <cmath>
 
 #include "resonator.h"
 

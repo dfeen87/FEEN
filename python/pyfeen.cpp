@@ -5,6 +5,7 @@
 // Core FEEN physics
 // ------------------------------------------------------------------
 #include <feen/resonator.h>
+#include <feen/network.h>
 
 // ------------------------------------------------------------------
 // AILEE trust primitives
@@ -14,6 +15,7 @@
 #include "feen/ailee/safety_gate.h"
 #include "feen/ailee/consensus.h"
 #include "feen/ailee/fallback.h"
+#include "feen/ailee/metric.h"
 
 namespace py = pybind11;
 using namespace feen;
@@ -43,6 +45,22 @@ PYBIND11_MODULE(pyfeen, m) {
         .def("x", &Resonator::x)
         .def("v", &Resonator::v)
         .def("t", &Resonator::t);
+
+    py::class_<ResonatorNetwork>(m, "ResonatorNetwork")
+        .def(py::init<>())
+        .def("add_node", py::overload_cast<const Resonator&>(&ResonatorNetwork::add_node))
+        .def("add_coupling", &ResonatorNetwork::add_coupling,
+             py::arg("i"), py::arg("j"), py::arg("strength"))
+        .def("set_coupling", &ResonatorNetwork::set_coupling,
+             py::arg("i"), py::arg("j"), py::arg("strength"))
+        .def("coupling", &ResonatorNetwork::coupling)
+        .def("clear_couplings", &ResonatorNetwork::clear_couplings)
+        .def("tick_parallel", &ResonatorNetwork::tick_parallel, py::arg("dt"))
+        .def("get_state_vector", &ResonatorNetwork::get_state_vector)
+        .def("node", static_cast<Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t)>(&ResonatorNetwork::node), py::return_value_policy::reference_internal)
+        .def("size", &ResonatorNetwork::size)
+        .def("time_s", &ResonatorNetwork::time_s)
+        .def("ticks", &ResonatorNetwork::ticks);
 
     // ================================================================
     // AILEE Trust Primitives (Submodule)
@@ -167,4 +185,29 @@ PYBIND11_MODULE(pyfeen, m) {
              &PhononicFallback::evaluate,
              py::arg("history"),
              py::arg("last_good_value") = 0.0);
+
+    // ----------------------------------------------------------------
+    // Delta v Metric
+    // ----------------------------------------------------------------
+
+    py::class_<AileeParams>(ailee, "AileeParams")
+        .def(py::init<>())
+        .def_readwrite("alpha", &AileeParams::alpha)
+        .def_readwrite("eta", &AileeParams::eta)
+        .def_readwrite("isp", &AileeParams::isp)
+        .def_readwrite("v0", &AileeParams::v0);
+
+    py::class_<AileeSample>(ailee, "AileeSample")
+        .def(py::init<>())
+        .def_readwrite("p_input", &AileeSample::p_input)
+        .def_readwrite("workload", &AileeSample::workload)
+        .def_readwrite("velocity", &AileeSample::velocity)
+        .def_readwrite("mass", &AileeSample::mass)
+        .def_readwrite("dt", &AileeSample::dt);
+
+    py::class_<AileeMetric>(ailee, "AileeMetric")
+        .def(py::init<const AileeParams&>())
+        .def("integrate", &AileeMetric::integrate, py::arg("sample"))
+        .def("delta_v", &AileeMetric::delta_v)
+        .def("reset", &AileeMetric::reset);
 }
