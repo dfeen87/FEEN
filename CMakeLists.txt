@@ -56,4 +56,12 @@ if (FEEN_BUILD_TESTS)
         NAME ResonatorPhysicsValidation
         COMMAND phys_test
     )
+
+    add_executable(spiral_time_test tests/test_spiral_time.cpp)
+    target_link_libraries(spiral_time_test PRIVATE feen)
+
+    add_test(
+        NAME SpiralTimeObserverValidation
+        COMMAND spiral_time_test
+    )
 endif()
