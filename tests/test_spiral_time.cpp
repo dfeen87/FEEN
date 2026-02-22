@@ -16,7 +16,7 @@ int main() {
     // 1. SpiralTimeState default-initializes to zero
     // -------------------------------------------------------------------------
     std::cout << "[Step 1] Default initialization...\n";
-    SpiralTimeState s{};
+    [[maybe_unused]] SpiralTimeState s{};
     assert(s.t   == 0.0 && "t must initialize to 0");
     assert(s.phi == 0.0 && "phi must initialize to 0");
     assert(s.chi == 0.0 && "chi must initialize to 0");
@@ -142,7 +142,7 @@ int main() {
         obs.update(phases, nullptr, N, 0.1, 0.1);
         obs.reset();
 
-        const auto& psi = obs.state();
+        [[maybe_unused]] const auto& psi = obs.state();
         assert(psi.t   == 0.0 && "t must reset to 0");
         assert(psi.phi == 0.0 && "phi must reset to 0");
         assert(psi.chi == 0.0 && "chi must reset to 0");
