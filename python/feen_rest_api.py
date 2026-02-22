@@ -458,7 +458,7 @@ def deactivate_plugin(plugin_name):
     return jsonify({'error': f'Could not deactivate {plugin_name!r}', 'plugin': updated.to_dict()}), 400
 
 
-@app.route('/', methods=['GET'])
+@app.route('/api', methods=['GET'])
 def index():
     """API documentation."""
     return jsonify({
