@@ -37,6 +37,12 @@ def node_graph():
     return render_template('node_graph.html')
 
 
+@app.route('/ailee-metric')
+def ailee_metric():
+    """Serve the AILEE Delta v Metric visualization page."""
+    return render_template('ailee_metric.html')
+
+
 @app.route('/docs')
 def api_docs():
     """Serve the human-readable API documentation page."""

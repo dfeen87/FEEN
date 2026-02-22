@@ -160,6 +160,9 @@ class ResonatorNetworkManager:
 # Global network manager
 network = ResonatorNetworkManager()
 
+# Global AILEE Metric instance
+ailee_metric = None
+
 # Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -378,7 +381,101 @@ def reset_network():
     """
     global network
     network = ResonatorNetworkManager()
+
+    global ailee_metric
+    if ailee_metric:
+        ailee_metric.reset()
+
     return jsonify({'message': 'Network reset successfully'})
+
+
+# ---------------------------------------------------------------------------
+# AILEE Metric endpoints
+# ---------------------------------------------------------------------------
+
+@app.route('/api/ailee/metric/config', methods=['POST'])
+def configure_ailee_metric():
+    """Configure the AILEE Delta v Metric parameters.
+
+    STATE-MUTATING COMMAND: Re-initializes the global metric instance.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+
+    try:
+        params = pyfeen.AileeParams()
+        params.alpha = float(data.get('alpha', 0.1))
+        params.eta = float(data.get('eta', 1.0))
+        params.isp = float(data.get('isp', 1.0))
+        params.v0 = float(data.get('v0', 1.0))
+
+        global ailee_metric
+        ailee_metric = pyfeen.AileeMetric(params)
+
+        return jsonify({
+            'message': 'AILEE Metric configured',
+            'config': {
+                'alpha': params.alpha,
+                'eta': params.eta,
+                'isp': params.isp,
+                'v0': params.v0
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/ailee/metric/sample', methods=['POST'])
+def push_ailee_sample():
+    """Push a telemetry sample to the AILEE Metric.
+
+    STATE-MUTATING COMMAND: Updates the integrated metric state.
+    """
+    global ailee_metric
+    if ailee_metric is None:
+        # Auto-initialize with defaults if not configured
+        params = pyfeen.AileeParams()
+        params.alpha = 0.1
+        params.eta = 1.0
+        params.isp = 1.0
+        params.v0 = 1.0
+        ailee_metric = pyfeen.AileeMetric(params)
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+
+    try:
+        sample = pyfeen.AileeSample()
+        sample.p_input = float(data.get('p_input', 0.0))
+        sample.workload = float(data.get('workload', 0.0))
+        sample.velocity = float(data.get('velocity', 0.0))
+        sample.mass = float(data.get('mass', 1.0))
+        sample.dt = float(data.get('dt', 1e-6))
+
+        ailee_metric.integrate(sample)
+
+        return jsonify({
+            'message': 'Sample integrated',
+            'current_delta_v': ailee_metric.delta_v()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/ailee/metric/value', methods=['GET'])
+def get_ailee_metric_value():
+    """Get the current accumulated Delta v value.
+
+    READ-ONLY OBSERVER.
+    """
+    global ailee_metric
+    if ailee_metric is None:
+        return jsonify({'delta_v': 0.0, 'status': 'uninitialized'})
+
+    return jsonify({
+        'delta_v': ailee_metric.delta_v(),
+        'status': 'active'
+    })
 
 
 # ---------------------------------------------------------------------------

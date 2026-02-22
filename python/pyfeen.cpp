@@ -14,6 +14,7 @@
 #include "feen/ailee/safety_gate.h"
 #include "feen/ailee/consensus.h"
 #include "feen/ailee/fallback.h"
+#include "feen/ailee/metric.h"
 
 namespace py = pybind11;
 using namespace feen;
@@ -167,4 +168,29 @@ PYBIND11_MODULE(pyfeen, m) {
              &PhononicFallback::evaluate,
              py::arg("history"),
              py::arg("last_good_value") = 0.0);
+
+    // ----------------------------------------------------------------
+    // Delta v Metric
+    // ----------------------------------------------------------------
+
+    py::class_<AileeParams>(ailee, "AileeParams")
+        .def(py::init<>())
+        .def_readwrite("alpha", &AileeParams::alpha)
+        .def_readwrite("eta", &AileeParams::eta)
+        .def_readwrite("isp", &AileeParams::isp)
+        .def_readwrite("v0", &AileeParams::v0);
+
+    py::class_<AileeSample>(ailee, "AileeSample")
+        .def(py::init<>())
+        .def_readwrite("p_input", &AileeSample::p_input)
+        .def_readwrite("workload", &AileeSample::workload)
+        .def_readwrite("velocity", &AileeSample::velocity)
+        .def_readwrite("mass", &AileeSample::mass)
+        .def_readwrite("dt", &AileeSample::dt);
+
+    py::class_<AileeMetric>(ailee, "AileeMetric")
+        .def(py::init<const AileeParams&>())
+        .def("integrate", &AileeMetric::integrate, py::arg("sample"))
+        .def("delta_v", &AileeMetric::delta_v)
+        .def("reset", &AileeMetric::reset);
 }

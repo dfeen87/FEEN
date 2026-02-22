@@ -94,4 +94,6 @@ if (FEEN_BUILD_TESTS)
         NAME HardwareAdapterValidation
         COMMAND hardware_adapter_test
     )
+
+    add_subdirectory(tests)
 endif()
