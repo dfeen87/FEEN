@@ -192,6 +192,22 @@ SNR: 89234.2
 - **[Technical Analysis](docs/FEEN.md)** - Complete system architecture
 - **API Reference** - Full class documentation (Doxygen)
 
+### Physical Specification
+
+The authoritative specification for FEEN as a wave-native, clockless phononic mesh architecture is:
+
+**[FEEN: A Phononic Mesh Network Without a Central Clock](docs/paper/FEEN_Phononic_Mesh_Clockless.pdf)**
+
+This paper defines the coupled-mode network model, stability and synchronization criteria, measurable performance metrics (energy-per-operation, coherence time, synchronization error), and the falsification program against which this implementation is validated.
+
+### Spiral-Time Observer Layer
+
+Spiral-Time is a semantic and observational framework for FEEN trajectories. It does **not** alter the underlying physical dynamics unless explicitly enabled.
+
+It is implemented as an optional observer module (`include/feen/spiral_time/`) that consumes FEEN state without modifying core dynamics.
+
+See **[docs/SPIRAL_TIME.md](docs/SPIRAL_TIME.md)** for the full specification.
+
 ### Tutorials
 
 | Level | Tutorial | Description |
