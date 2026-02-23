@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     canvas.width  = Math.max(600, rect.width - 2);
-    canvas.height = 520;
+    canvas.height = 480;
     renderGraph();
 }
 
@@ -88,6 +88,13 @@ function resizeCanvas() {
 async function refreshAll() {
     await Promise.all([fetchFEENNodes(), fetchPlugins()]);
     renderGraph();
+    // Keep the selected node info panel in sync with freshly-fetched data so
+    // that live resonator values (energy, x, v) are always current.
+    if (selectedId && selectedId.startsWith('feen_')) {
+        const nodeId = parseInt(selectedId.replace('feen_', ''), 10);
+        const fresh  = nodes.find(n => n.id === nodeId);
+        if (fresh) updateSelectedInfo(fresh, 'feen');
+    }
     if (autoRefresh) scheduleRefresh();
 }
 
@@ -287,6 +294,9 @@ async function injectSelected() {
             log(`Injected into node ${nodeId}.`);
             await fetchFEENNodes();
             renderGraph();
+            // Refresh the selected-node panel with the updated state
+            const fresh = nodes.find(n => n.id === parseInt(nodeId, 10));
+            if (fresh) updateSelectedInfo(fresh, 'feen');
         } else {
             const d = await r.json();
             log(`Error: ${d.error}`);
@@ -335,12 +345,15 @@ function updateSelectedInfo(data, kind) {
 function renderPluginList(plugins) {
     const el = document.getElementById('plugin-list');
     if (!el) return;
-    if (!plugins.length) { el.innerHTML = '<li style="color:#555">No plugins loaded</li>'; return; }
-    el.innerHTML = plugins.map(p => `
+    const newHtml = !plugins.length
+        ? '<li style="color:#555">No plugins loaded</li>'
+        : plugins.map(p => `
       <li class="plugin-row">
         <span><span class="name">${p.name}</span><span class="type">${p.type}</span></span>
         <span class="state-badge ${p.state}">${p.state}</span>
       </li>`).join('');
+    // Only touch the DOM when content actually changes to prevent flicker.
+    if (el.innerHTML !== newHtml) el.innerHTML = newHtml;
 }
 
 function fmt(v) {
