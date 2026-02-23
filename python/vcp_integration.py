@@ -51,15 +51,24 @@ def get_vcp_network_view():
     if not nodes:
         num_nodes = 6
         t = time.time()
+        # Amplitude constants: base 0.5 keeps energy in (0, 1]; slow drift
+        # frequency 0.3 rad/s means amplitudes evolve visibly but not jerkily;
+        # per-node phase offset 1.3 rad (≈ 74°) spreads 6 nodes across the full
+        # sine cycle so adjacent nodes almost never share the same energy,
+        # producing non-trivial resonance values on every edge.
+        _AMP_BASE  = 0.5   # centre of amplitude range
+        _AMP_DRIFT = 0.3   # slow time-varying drift frequency (rad/s)
+        _NODE_SEP  = 1.3   # per-node phase offset (rad); 6 × 1.3 ≈ 2π, full spread
         for i in range(num_nodes):
             phase = t * 2.0 + i
-            x = math.sin(phase)
-            v = math.cos(phase)
+            amplitude = _AMP_BASE + _AMP_BASE * math.sin(t * _AMP_DRIFT + i * _NODE_SEP)
+            x = amplitude * math.sin(phase)
+            v = amplitude * math.cos(phase)
 
             nodes.append({
                 'id': i + 1,
                 'name': f'VCP Node {i + 1}',
-                'type': 'feen_resonator',
+                'type': 'vcp_agent',
                 'state': {'x': x, 'v': v, 't': t},
                 'status': 'active'
             })

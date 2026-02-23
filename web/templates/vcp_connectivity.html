@@ -3,18 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FEEN - VCP Connectivity</title>
+    <title>FEEN — VCP Connectivity</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <style>
+        /* Expand the visualization to use the full viewport width and height.
+           Width: remove the 1080 px cap so the graph uses the full browser width.
+           Height: topbar 52 + pad-top 12 + page-header ~81 + footer 43
+                   + bottom-gap 12 = 200 px of non-graph chrome. */
+        .page-content {
+            max-width: 100%;
+            padding: 12px 20px 0;
+        }
+
+        .page-header {
+            margin-bottom: 12px;
+        }
+
         .main-grid {
             display: grid;
             grid-template-columns: 3fr 1fr;
-            gap: 1.5rem;
-            height: calc(100vh - 140px);
+            gap: 1rem;
+            height: calc(100vh - 200px);
         }
 
         .graph-wrapper {
@@ -104,7 +117,7 @@
             <header class="page-header">
                 <div class="page-header-text">
                     <h1>VCP Connectivity</h1>
-                    <p>Live visualization of the distributed VCP graph &amp; FEEN metrics</p>
+                    <p>FEEN read-only physics view of the VCP distributed graph · FEEN observes, VCP orchestrates</p>
                 </div>
                 <div class="header-badge">LIVE</div>
             </header>
