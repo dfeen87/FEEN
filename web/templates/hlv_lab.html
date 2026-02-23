@@ -595,6 +595,54 @@
                         <div class="artifact-block" id="artifact-preview"></div>
                     </section>
 
+                    <!-- Results Export Panel (auto-shown after each simulation) -->
+                    <section class="card" id="export-panel" style="display:none;">
+                        <h2 class="card-title">Results Export</h2>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.7rem;">
+                            Download or share the full artifact bundle from the last run.
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.9rem;">
+                            <a class="btn btn-primary btn-sm" id="btn-download-bundle" href="/api/hlv/artifacts/download" download="hlv_artifact_bundle.zip">
+                                ⬇ Download Results
+                            </a>
+                        </div>
+                        <div class="section-label">Email Results</div>
+                        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                            <input class="field-input" id="export-email" type="email" placeholder="recipient@example.com" style="flex:1; min-width:180px;">
+                            <button class="btn btn-sm" id="btn-email-bundle">Send</button>
+                        </div>
+                        <div id="export-email-status" style="font-size:0.75rem; margin-top:0.4rem; color:var(--clr-text-muted);"></div>
+                    </section>
+
+                    <!-- Persistent Simulation Log -->
+                    <section class="card">
+                        <h2 class="card-title">Simulation Log</h2>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.5rem;">
+                            Persistent record of all past runs (stored in browser)
+                        </div>
+                        <div style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
+                            <button class="btn btn-sm" id="btn-log-clear">Clear Log</button>
+                        </div>
+                        <div class="sweep-table-wrapper" style="max-height:220px;">
+                            <table class="sweep-table" id="sim-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Plugin</th>
+                                        <th>N</th>
+                                        <th>κ</th>
+                                        <th>Seed</th>
+                                        <th>⟨R⟩</th>
+                                        <th>SHA-256</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sim-log-tbody">
+                                    <tr><td colspan="7" style="color:var(--clr-text-muted); font-size:0.8rem;">No runs recorded yet</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
                 </div><!-- /hlv-right -->
             </div><!-- /hlv-grid -->
         </div><!-- /page-content -->
@@ -1122,6 +1170,144 @@
                 }
             } catch (_) {}
         }
+
+        // ── Simulation Log (persisted in localStorage) ────────────────────────
+        const SIM_LOG_KEY = 'feen_hlv_sim_log';
+
+        function loadSimLog() {
+            try {
+                return JSON.parse(localStorage.getItem(SIM_LOG_KEY) || '[]');
+            } catch (_) { return []; }
+        }
+
+        function saveSimLog(entries) {
+            try {
+                localStorage.setItem(SIM_LOG_KEY, JSON.stringify(entries));
+            } catch (_) {}
+        }
+
+        function renderSimLog() {
+            const entries = loadSimLog();
+            const tbody = document.getElementById('sim-log-tbody');
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="color:var(--clr-text-muted); font-size:0.8rem;">No runs recorded yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = entries.slice().reverse().map(e => `
+                <tr>
+                    <td style="white-space:nowrap;">${e.timestamp}</td>
+                    <td class="mono">${e.plugin || '—'}</td>
+                    <td>${e.N ?? '—'}</td>
+                    <td>${e.kappa !== undefined ? Number(e.kappa).toFixed(2) : '—'}</td>
+                    <td>${e.seed ?? '—'}</td>
+                    <td class="mono">${e.mean_R !== undefined ? Number(e.mean_R).toFixed(4) : '—'}</td>
+                    <td class="mono" style="font-size:0.7rem; max-width:80px; overflow:hidden; text-overflow:ellipsis;" title="${e.hash || ''}">${(e.hash || '—').slice(0, 12)}…</td>
+                </tr>
+            `).join('');
+        }
+
+        function appendSimLogEntry(summary, hash, sweepCfg) {
+            const entries = loadSimLog();
+            const entry = {
+                timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                plugin: summary.plugin || '—',
+                N: summary.N,
+                kappa: summary.kappa,
+                seed: summary.seed,
+                mean_R: summary.mean_R_final,
+                hash: hash || '',
+            };
+            if (sweepCfg) {
+                entry.sweep_kappa_range = `[${sweepCfg.kappa_min},${sweepCfg.kappa_max}] Δ${sweepCfg.kappa_step}`;
+                entry.sweep_seeds = sweepCfg.num_seeds;
+            }
+            entries.push(entry);
+            // Keep at most SIM_LOG_MAX entries
+            if (entries.length > SIM_LOG_MAX) entries.splice(0, entries.length - SIM_LOG_MAX);
+            saveSimLog(entries);
+            renderSimLog();
+        }
+
+        document.getElementById('btn-log-clear').addEventListener('click', () => {
+            if (confirm('Clear the entire simulation log?')) {
+                saveSimLog([]);
+                renderSimLog();
+            }
+        });
+
+        // ── Export Panel helpers ──────────────────────────────────────────────
+        const SIM_LOG_MAX = 200;
+
+        function showExportPanel() {
+            document.getElementById('export-panel').style.display = '';
+        }
+
+        document.getElementById('btn-email-bundle').addEventListener('click', async () => {
+            const toAddr = document.getElementById('export-email').value.trim();
+            const statusEl = document.getElementById('export-email-status');
+            if (!toAddr) {
+                statusEl.textContent = 'Please enter a recipient email address.';
+                statusEl.style.color = 'var(--clr-danger)';
+                return;
+            }
+            statusEl.textContent = 'Sending…';
+            statusEl.style.color = 'var(--clr-text-muted)';
+            try {
+                const res = await fetch('/api/hlv/artifacts/email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: toAddr }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    statusEl.textContent = data.message || 'Sent successfully.';
+                    statusEl.style.color = '#00ff9d';
+                } else {
+                    statusEl.textContent = data.error || 'Failed to send.';
+                    statusEl.style.color = 'var(--clr-danger)';
+                }
+            } catch (err) {
+                statusEl.textContent = 'Network error: ' + err;
+                statusEl.style.color = 'var(--clr-danger)';
+            }
+        });
+
+        // ── Intercept run results to populate log and show export panel ───────
+        // MutationObserver on artifact-hash detects when a new hash is written;
+        // disconnect immediately to avoid duplicate log entries within a single run.
+        const _hashEl = document.getElementById('artifact-hash');
+        let _hashObserver = null;
+
+        function _attachHashObserver() {
+            if (_hashObserver) _hashObserver.disconnect();
+            _hashObserver = new MutationObserver(() => {
+                const hash = _hashEl.textContent.trim();
+                if (hash && hash !== '—') {
+                    _hashObserver.disconnect();
+                    showExportPanel();
+                    // Read summary from stat cards to build log entry
+                    const summary = {
+                        plugin: document.getElementById('stat-plugin').textContent,
+                        N: parseInt(document.getElementById('param-N').value),
+                        kappa: parseFloat(document.getElementById('stat-kappa').textContent),
+                        seed: parseInt(document.getElementById('param-seed').value),
+                        mean_R_final: parseFloat(document.getElementById('stat-mean-r').textContent),
+                    };
+                    appendSimLogEntry(summary, hash, null);
+                }
+            });
+            _hashObserver.observe(_hashEl, { childList: true, subtree: true, characterData: true });
+        }
+
+        // Re-arm observer before each run so each completed run gets one log entry
+        document.getElementById('btn-run').addEventListener('click', () => {
+            _attachHashObserver();
+        });
+
+        _attachHashObserver();
+
+        // Render log on page load
+        renderSimLog();
 
         pollStatus();
         setInterval(pollStatus, 5000);

@@ -36,9 +36,75 @@ FEEN is available as a live, interactive web application that lets you explore a
 | **VCP Connectivity** | [/vcp-connectivity](https://feen.onrender.com/vcp-connectivity) | Live graph of distributed VCP nodes & FEEN physics metrics |
 | **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Path wiring view |
 | **AILEE Metrics** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
+| **HLV Dynamics Lab** | [/hlv-lab](https://feen.onrender.com/hlv-lab) | Structured phase-memory dynamics experiments |
 | **API Reference** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
 
 This live instance is intended for exploration, demonstration, and validation of FEEN’s architecture and behavior, while the API remains available for programmatic access and integration.
+
+---
+
+## HLV Dynamics Lab
+
+The **HLV Dynamics Lab** (`/hlv-lab`) is a self-contained experimental environment for testing structured phase-memory dynamics on Kuramoto oscillator networks. It is implemented as a FEEN `TOOL` plugin (`python/plugins/hlv_dynamics.py`) and exposes its own Flask Blueprint at `/api/hlv/*`.
+
+### Phased Implementation Plan
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1 - Control Layer** | Complete (frozen) | P1 baseline, O1 order parameter, unified logging, reproducible k-sweep on ring (N=32, k in [0,6]), all null tests passed |
+| **Phase 2 - Memory Kernel** | Incremental extension | P2 exponential memory kernel, eta/tau_m parameter sweep |
+| **Phase 3 - Phase Offsets** | Incremental extension | P3 chiral coupling, phi_0 sweep, attractor characterization |
+| **Phase 4 - DeltaPhi Observer** | Incremental extension | O2 instability functional, regime-detection benchmark (E3) |
+
+> Phase 1 is frozen. Extensions are added incrementally without modifying the core integrator.
+
+### Plugin / Observer Architecture
+
+FEEN exposes two orthogonal extension hooks:
+
+```
+Physics Hook:   dtheta_i/dt = F(t, x; G, theta)     -->  plugins P1, P2, P3
+Observer Hook:  y(t) = O(t, x(t); G, theta)          -->  modules O1 (R, psi, sigma_theta), O2 (DeltaPhi)
+```
+
+| Plugin | Equation | Parameters |
+|--------|----------|------------|
+| **P1** Kuramoto baseline | `dtheta_i = omega_i + kappa * sum_j A_ij sin(theta_j - theta_i) + sigma*xi_i` | kappa, sigma, seed |
+| **P2** Memory kernel | `dtheta_i = ... + eta*m_i`, `dm_i = -m_i/tau_m + sum sin(...)` | kappa, eta, tau_m, sigma |
+| **P3** Phase offsets | `dtheta_i = omega_i + kappa * sum_j A_ij sin(theta_j - theta_i + phi_ij) + sigma*xi_i` | kappa, phi_0, offset_mode |
+
+| Observer | Output | Purpose |
+|----------|--------|---------|
+| **O1** | R(t), psi(t), sigma_theta(t) | Kuramoto synchronization order parameter |
+| **O2** | DeltaPhi(t) | Deterministic instability functional |
+
+### Artifact Format
+
+Every simulation run produces a reproducible artifact bundle (HLV.md Appendix A.2):
+
+```
+hlv_artifact_bundle.zip
++-- config.json    -- full run configuration (plugin, graph, sim params, seeds)
++-- metrics.csv    -- time series: t, R, psi, sigma_theta, DeltaPhi
++-- events.jsonl   -- perturbation event log with timestamps
++-- hash.txt       -- SHA-256 over config.json + metrics.csv + events.jsonl
+```
+
+The Results Export Panel (shown automatically after each run) provides:
+- **Download Results** - one-click ZIP download of the full bundle
+- **Email Results** - send the bundle to a specified address via SMTP
+- **Simulation Log** - browser-persistent record of all past runs (timestamps, parameters, seeds, sweep ranges, artifact hashes)
+
+### Dashboard Layout
+
+The FEEN dashboard uses a 3-column tile grid:
+
+| Row | Tiles |
+|-----|-------|
+| 1 | Simulation, Nodes, Coupling |
+| 2 | VCP Connectivity, VCP Wiring, AILEE Metrics |
+| 3 | HLV Dynamics Lab, API Reference |
+
 
 ## Key Innovation
 
@@ -368,7 +434,8 @@ feen/
 │   │   ├── __init__.py
 │   │   ├── ui_dashboard.py                # Read-only energy-history panel (UI)
 │   │   ├── observer_logger.py             # State logging observer (OBSERVER)
-│   │   └── hardware_monitor.py            # Hardware telemetry monitor (TOOL)
+│   │   ├── hardware_monitor.py            # Hardware telemetry monitor (TOOL)
+│   │   └── hlv_dynamics.py                # HLV Dynamics Lab — Kuramoto P1/P2/P3 + O1/O2 (TOOL)
 │   │
 │   ├── 📁 examples/                       # Python usage examples
 │   │   ├── plot_bifurcation.py            # Bifurcation diagram via pyfeen
@@ -415,6 +482,7 @@ feen/
 │   │   ├── vcp_connectivity.html          # VCP Connectivity — live VCP graph & FEEN metrics
 │   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Path view
 │   │   ├── ailee_metric.html              # AILEE Metrics — live Δv visualization
+│   │   ├── hlv_lab.html                   # HLV Dynamics Lab — Kuramoto experiments & results export
 │   │   └── docs.html                      # API Reference — human-readable REST docs
 │   └── 📁 static/                         # Frontend assets
 │       ├── css/style.css                  # Global stylesheet

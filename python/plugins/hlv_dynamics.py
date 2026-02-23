@@ -35,12 +35,15 @@ import io
 import json
 import logging
 import math
+import smtplib
 import threading
 import time as _time
+import zipfile
+from email.message import EmailMessage
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 
 from plugin_registry import FEEN_PLUGIN_API_VERSION, PluginManifest, PluginType
 
@@ -815,6 +818,101 @@ def sweep_results_endpoint():
             return jsonify({"error": "No sweep results yet."}), 404
         return jsonify(_latest_sweep)
 
+
+@_blueprint.route("/artifacts/download", methods=["GET"])
+def artifacts_download_endpoint():
+    """Download the artifact bundle as a ZIP file.
+
+    Returns a zip archive containing config.json, metrics.csv, events.jsonl,
+    and hash.txt for the most recent simulation run.
+    READ-ONLY OBSERVER: does not modify simulation state.
+    """
+    with _lock:
+        if _latest_result is None:
+            return jsonify({"error": "No results yet."}), 404
+        bundle = build_artifact_bundle(_latest_result)
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for filename, content in bundle.items():
+            zf.writestr(filename, content)
+    zip_buf.seek(0)
+
+    return Response(
+        zip_buf.read(),
+        mimetype="application/zip",
+        headers={"Content-Disposition": "attachment; filename=hlv_artifact_bundle.zip"},
+    )
+
+
+@_blueprint.route("/artifacts/email", methods=["POST"])
+def artifacts_email_endpoint():
+    """Send the artifact bundle to a user-specified email address.
+
+    Request body (JSON):
+        to       : str   recipient email address (required)
+        from_addr: str   sender address            (default "feen-hlv@noreply.localhost")
+        smtp_host: str   SMTP server host          (default "localhost")
+        smtp_port: int   SMTP server port          (default 25)
+        use_tls  : bool  whether to use STARTTLS   (default false)
+        smtp_user: str   SMTP login (optional)
+        smtp_pass: str   SMTP password (optional)
+        subject  : str   Email subject (optional)
+
+    READ-ONLY OBSERVER: does not modify simulation state.
+    """
+    with _lock:
+        if _latest_result is None:
+            return jsonify({"error": "No results yet."}), 404
+        bundle = build_artifact_bundle(_latest_result)
+
+    data = request.get_json(silent=True) or {}
+    to_addr = data.get("to", "").strip()
+    if not to_addr:
+        return jsonify({"error": "'to' email address is required."}), 400
+
+    from_addr = data.get("from_addr", "feen-hlv@noreply.localhost")
+    smtp_host = data.get("smtp_host", "localhost")
+    smtp_port = int(data.get("smtp_port", 25))
+    use_tls = bool(data.get("use_tls", False))
+    smtp_user = data.get("smtp_user", "")
+    smtp_pass = data.get("smtp_pass", "")
+    subject = data.get("subject", "FEEN HLV Artifact Bundle")
+
+    # Build zip attachment in memory
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for filename, content in bundle.items():
+            zf.writestr(filename, content)
+    zip_bytes = zip_buf.getvalue()
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    msg.set_content(
+        "Please find attached the FEEN HLV artifact bundle.\n\n"
+        f"SHA-256: {bundle['hash.txt']}\n"
+    )
+    msg.add_attachment(
+        zip_bytes,
+        maintype="application",
+        subtype="zip",
+        filename="hlv_artifact_bundle.zip",
+    )
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            if use_tls:
+                server.starttls()
+            if smtp_user and smtp_pass:
+                server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+    except Exception as exc:
+        logger.warning("HLV email delivery failed: %s", exc)
+        return jsonify({"error": f"Email delivery failed: {exc}"}), 502
+
+    return jsonify({"message": f"Artifact bundle sent to {to_addr}."})
 
 # ---------------------------------------------------------------------------
 # Lifecycle hooks
