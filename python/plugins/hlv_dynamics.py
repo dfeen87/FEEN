@@ -46,6 +46,18 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from flask import Blueprint, Response, jsonify, request
 
+try:
+    from fpdf import FPDF
+    _FPDF_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _FPDF_AVAILABLE = False
+
+try:
+    from docx import Document as DocxDocument
+    _DOCX_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _DOCX_AVAILABLE = False
+
 from plugin_registry import FEEN_PLUGIN_API_VERSION, PluginManifest, PluginType
 
 logger = logging.getLogger(__name__)
@@ -614,6 +626,119 @@ def build_artifact_bundle(result: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
+def build_artifact_pdf(result: Dict[str, Any]) -> bytes:
+    """Return a PDF report of the simulation results as bytes.
+
+    Requires the ``fpdf2`` package.  Raises ``ImportError`` if unavailable.
+    """
+    if not _FPDF_AVAILABLE:
+        raise ImportError("fpdf2 is required for PDF export: pip install fpdf2")
+
+    bundle = build_artifact_bundle(result)
+    summary = result.get("summary", {})
+    cfg = result.get("config", {})
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "FEEN HLV Simulation Report", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"SHA-256: {bundle['hash.txt']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(4)
+
+    # Configuration section
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Configuration", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 9)
+    for key, val in cfg.items():
+        line = f"  {key}: {val}"
+        if len(line) > 100:
+            line = line[:97] + "..."
+        pdf.cell(0, 5, line, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(3)
+
+    # Summary section
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Summary", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 9)
+    for key, val in summary.items():
+        pdf.cell(0, 5, f"  {key}: {val}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(3)
+
+    # Metrics preview (first 50 rows)
+    metrics = result.get("metrics", [])
+    if metrics:
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 8, "Metrics (first 50 rows)", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Courier", "", 8)
+        header = "t          R        psi      sigma_theta  delta_phi"
+        pdf.cell(0, 5, header, new_x="LMARGIN", new_y="NEXT")
+        for row in metrics[:50]:
+            line = (
+                f"{row.get('t', 0.0):10.4f}  "
+                f"{row.get('R', 0.0):8.5f}  "
+                f"{row.get('psi', 0.0):8.5f}  "
+                f"{row.get('sigma_theta', 0.0):11.5f}  "
+                f"{row.get('delta_phi', 0.0):9.5f}"
+            )
+            pdf.cell(0, 4, line, new_x="LMARGIN", new_y="NEXT")
+        if len(metrics) > 50:
+            pdf.set_font("Helvetica", "I", 8)
+            pdf.cell(0, 5, f"  ... ({len(metrics) - 50} more rows in full metrics.csv)",
+                     new_x="LMARGIN", new_y="NEXT")
+
+    return bytes(pdf.output())
+
+
+def build_artifact_docx(result: Dict[str, Any]) -> bytes:
+    """Return a DOCX report of the simulation results as bytes.
+
+    Requires the ``python-docx`` package.  Raises ``ImportError`` if unavailable.
+    """
+    if not _DOCX_AVAILABLE:
+        raise ImportError("python-docx is required for DOCX export: pip install python-docx")
+
+    bundle = build_artifact_bundle(result)
+    summary = result.get("summary", {})
+    cfg = result.get("config", {})
+
+    doc = DocxDocument()
+    doc.add_heading("FEEN HLV Simulation Report", 0)
+    doc.add_paragraph(f"SHA-256: {bundle['hash.txt']}")
+
+    doc.add_heading("Configuration", level=1)
+    for key, val in cfg.items():
+        doc.add_paragraph(f"{key}: {val}", style="List Bullet")
+
+    doc.add_heading("Summary", level=1)
+    for key, val in summary.items():
+        doc.add_paragraph(f"{key}: {val}", style="List Bullet")
+
+    metrics = result.get("metrics", [])
+    if metrics:
+        doc.add_heading("Metrics (first 50 rows)", level=1)
+        table = doc.add_table(rows=1, cols=5)
+        table.style = "Table Grid"
+        hdr = table.rows[0].cells
+        for i, h in enumerate(["t", "R", "psi", "sigma_theta", "delta_phi"]):
+            hdr[i].text = h
+        for row in metrics[:50]:
+            cells = table.add_row().cells
+            cells[0].text = f"{row.get('t', 0.0):.4f}"
+            cells[1].text = f"{row.get('R', 0.0):.5f}"
+            cells[2].text = f"{row.get('psi', 0.0):.5f}"
+            cells[3].text = f"{row.get('sigma_theta', 0.0):.5f}"
+            cells[4].text = f"{row.get('delta_phi', 0.0):.5f}"
+        if len(metrics) > 50:
+            doc.add_paragraph(f"... ({len(metrics) - 50} more rows in full metrics.csv)")
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
 # ---------------------------------------------------------------------------
 # Plugin-level state (thread-safe)
 # ---------------------------------------------------------------------------
@@ -822,17 +947,47 @@ def sweep_results_endpoint():
 
 @_blueprint.route("/artifacts/download", methods=["GET"])
 def artifacts_download_endpoint():
-    """Download the artifact bundle as a ZIP file.
+    """Download the artifact bundle.
 
-    Returns a zip archive containing config.json, metrics.csv, events.jsonl,
-    and hash.txt for the most recent simulation run.
-    READ-ONLY OBSERVER: does not modify simulation state.
+    Query parameters:
+        format : str  ``zip`` (default), ``pdf``, or ``docx``
+
+    Returns the bundle in the requested format for the most recent simulation
+    run.  READ-ONLY OBSERVER: does not modify simulation state.
     """
+    fmt = request.args.get("format", "zip").lower().strip()
+    if fmt not in ("zip", "pdf", "docx"):
+        return jsonify({"error": "Invalid format. Use zip, pdf, or docx."}), 400
+
     with _lock:
         if _latest_result is None:
             return jsonify({"error": "No results yet."}), 404
-        bundle = build_artifact_bundle(_latest_result)
+        result_snapshot = _latest_result
 
+    if fmt == "pdf":
+        try:
+            data = build_artifact_pdf(result_snapshot)
+        except ImportError as exc:
+            return jsonify({"error": str(exc)}), 503
+        return Response(
+            data,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=hlv_artifact_bundle.pdf"},
+        )
+
+    if fmt == "docx":
+        try:
+            data = build_artifact_docx(result_snapshot)
+        except ImportError as exc:
+            return jsonify({"error": str(exc)}), 503
+        return Response(
+            data,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": "attachment; filename=hlv_artifact_bundle.docx"},
+        )
+
+    # Default: ZIP
+    bundle = build_artifact_bundle(result_snapshot)
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for filename, content in bundle.items():
