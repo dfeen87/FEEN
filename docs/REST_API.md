@@ -434,7 +434,6 @@ All physics is computed using FEEN's validated RK4 integration and thermal noise
 
 This is a development/research API. For production use, consider:
 
-- Adding authentication (API keys, OAuth)
 - Rate limiting
 - Input validation
 - HTTPS encryption
