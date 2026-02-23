@@ -611,6 +611,45 @@
                             <input class="field-input" id="export-email" type="email" placeholder="recipient@example.com" style="flex:1; min-width:180px;">
                             <button class="btn btn-sm" id="btn-email-bundle">Send</button>
                         </div>
+                        <!-- Advanced SMTP Settings (collapsed by default) -->
+                        <div style="margin-top:0.5rem;">
+                            <button class="btn btn-sm" id="btn-toggle-smtp" style="font-size:0.72rem; padding:0.2rem 0.5rem;" type="button">
+                                ▸ Advanced SMTP Settings
+                            </button>
+                        </div>
+                        <div id="smtp-advanced" style="display:none; margin-top:0.5rem; padding:0.6rem; background:var(--clr-surface-3); border:1px solid var(--clr-border); border-radius:var(--radius-sm);">
+                            <div class="param-row" style="margin-bottom:0.4rem;">
+                                <div>
+                                    <label class="section-label" style="margin:0 0 0.2rem;">SMTP Host</label>
+                                    <input class="field-input" id="smtp-host" type="text" placeholder="localhost">
+                                </div>
+                                <div>
+                                    <label class="section-label" style="margin:0 0 0.2rem;">Port</label>
+                                    <input class="field-input" id="smtp-port" type="number" placeholder="25" min="1" max="65535">
+                                </div>
+                            </div>
+                            <div class="param-row" style="margin-bottom:0.4rem;">
+                                <div>
+                                    <label class="section-label" style="margin:0 0 0.2rem;">Username</label>
+                                    <input class="field-input" id="smtp-user" type="text" placeholder="(optional)">
+                                </div>
+                                <div>
+                                    <label class="section-label" style="margin:0 0 0.2rem;">Password</label>
+                                    <input class="field-input" id="smtp-pass" type="password" placeholder="(optional)">
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
+                                <input type="checkbox" id="smtp-tls" style="accent-color:var(--clr-accent); width:14px; height:14px;">
+                                <label for="smtp-tls" style="font-size:0.78rem; color:var(--clr-text-muted);">Use STARTTLS</label>
+                            </div>
+                            <div>
+                                <label class="section-label" style="margin:0 0 0.2rem;">From Address</label>
+                                <input class="field-input" id="smtp-from" type="email" placeholder="feen-hlv@noreply.localhost">
+                            </div>
+                            <div style="font-size:0.7rem; color:var(--clr-text-muted); margin-top:0.35rem;">
+                                Leave blank to use server defaults (configured via <code>FEEN_SMTP_*</code> environment variables).
+                            </div>
+                        </div>
                         <div id="export-email-status" style="font-size:0.75rem; margin-top:0.4rem; color:var(--clr-text-muted);"></div>
                     </section>
 
@@ -1242,6 +1281,18 @@
             document.getElementById('export-panel').style.display = '';
         }
 
+        document.getElementById('btn-toggle-smtp').addEventListener('click', () => {
+            const panel = document.getElementById('smtp-advanced');
+            const btn = document.getElementById('btn-toggle-smtp');
+            if (panel.style.display === 'none') {
+                panel.style.display = '';
+                btn.textContent = '▾ Advanced SMTP Settings';
+            } else {
+                panel.style.display = 'none';
+                btn.textContent = '▸ Advanced SMTP Settings';
+            }
+        });
+
         document.getElementById('btn-email-bundle').addEventListener('click', async () => {
             const toAddr = document.getElementById('export-email').value.trim();
             const statusEl = document.getElementById('export-email-status');
@@ -1252,11 +1303,27 @@
             }
             statusEl.textContent = 'Sending…';
             statusEl.style.color = 'var(--clr-text-muted)';
+
+            // Collect optional SMTP overrides from the advanced panel
+            const payload = { to: toAddr };
+            const smtpHost = document.getElementById('smtp-host').value.trim();
+            const smtpPort = document.getElementById('smtp-port').value.trim();
+            const smtpUser = document.getElementById('smtp-user').value.trim();
+            const smtpPass = document.getElementById('smtp-pass').value;
+            const smtpTls  = document.getElementById('smtp-tls').checked;
+            const smtpFrom = document.getElementById('smtp-from').value.trim();
+            if (smtpHost) payload.smtp_host = smtpHost;
+            if (smtpPort) payload.smtp_port = parseInt(smtpPort, 10);
+            if (smtpUser) payload.smtp_user = smtpUser;
+            if (smtpPass) payload.smtp_pass = smtpPass;
+            if (smtpTls)  payload.use_tls = true;
+            if (smtpFrom) payload.from_addr = smtpFrom;
+
             try {
                 const res = await fetch('/api/hlv/artifacts/email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to: toAddr }),
+                    body: JSON.stringify(payload),
                 });
                 const data = await res.json();
                 if (res.ok) {

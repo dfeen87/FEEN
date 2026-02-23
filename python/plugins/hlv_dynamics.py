@@ -35,6 +35,7 @@ import io
 import json
 import logging
 import math
+import os
 import smtplib
 import threading
 import time as _time
@@ -871,12 +872,17 @@ def artifacts_email_endpoint():
     if not to_addr:
         return jsonify({"error": "'to' email address is required."}), 400
 
-    from_addr = data.get("from_addr", "feen-hlv@noreply.localhost")
-    smtp_host = data.get("smtp_host", "localhost")
-    smtp_port = int(data.get("smtp_port", 25))
-    use_tls = bool(data.get("use_tls", False))
-    smtp_user = data.get("smtp_user", "")
-    smtp_pass = data.get("smtp_pass", "")
+    # Per-request values override environment-variable defaults, which in turn
+    # override hard-coded fallbacks.  This lets operators configure a shared
+    # SMTP relay via environment variables (FEEN_SMTP_*) without exposing
+    # credentials to end-users while still allowing per-request overrides.
+    from_addr = data.get("from_addr") or os.environ.get("FEEN_SMTP_FROM", "feen-hlv@noreply.localhost")
+    smtp_host = data.get("smtp_host") or os.environ.get("FEEN_SMTP_HOST", "localhost")
+    smtp_port = int(data.get("smtp_port") or os.environ.get("FEEN_SMTP_PORT", 25))
+    _tls_env = os.environ.get("FEEN_SMTP_TLS", "").lower() in ("1", "true", "yes")
+    use_tls = bool(data.get("use_tls") if "use_tls" in data else _tls_env)
+    smtp_user = data.get("smtp_user") or os.environ.get("FEEN_SMTP_USER", "")
+    smtp_pass = data.get("smtp_pass") or os.environ.get("FEEN_SMTP_PASS", "")
     subject = data.get("subject", "FEEN HLV Artifact Bundle")
 
     # Build zip attachment in memory
