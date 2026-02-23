@@ -10,11 +10,24 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <style>
+        /* Expand the visualization to use the full viewport width and height.
+           Width: remove the 1080 px cap so the graph uses the full browser width.
+           Height: topbar 52 + pad-top 12 + page-header ~81 + footer 43
+                   + bottom-gap 12 = 200 px of non-graph chrome. */
+        .page-content {
+            max-width: 100%;
+            padding: 12px 20px 0;
+        }
+
+        .page-header {
+            margin-bottom: 12px;
+        }
+
         .main-grid {
             display: grid;
             grid-template-columns: 3fr 1fr;
-            gap: 1.5rem;
-            height: calc(100vh - 140px);
+            gap: 1rem;
+            height: calc(100vh - 200px);
         }
 
         .graph-wrapper {
