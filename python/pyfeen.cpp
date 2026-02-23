@@ -57,7 +57,8 @@ PYBIND11_MODULE(pyfeen, m) {
         .def("clear_couplings", &ResonatorNetwork::clear_couplings)
         .def("tick_parallel", &ResonatorNetwork::tick_parallel, py::arg("dt"))
         .def("get_state_vector", &ResonatorNetwork::get_state_vector)
-        .def("node", static_cast<const Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t) const>(&ResonatorNetwork::node))
+        .def("node", static_cast<Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t)>(&ResonatorNetwork::node),
+             py::return_value_policy::reference_internal)
         .def("size", &ResonatorNetwork::size)
         .def("time_s", &ResonatorNetwork::time_s)
         .def("ticks", &ResonatorNetwork::ticks);
