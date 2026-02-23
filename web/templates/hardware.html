@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN — Hardware Link</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .hw-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.2rem;
+            align-items: start;
+        }
+        .hw-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            background: #555;
+        }
+        .status-dot.idle     { background: #555; }
+        .status-dot.scanning { background: #f5a623; animation: pulse 1s infinite; }
+        .status-dot.connected{ background: #00ff9d; }
+        .status-dot.error    { background: #e74c3c; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .device-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .device-table th,
+        .device-table td {
+            text-align: left;
+            padding: 0.38rem 0.6rem;
+            border-bottom: 1px solid var(--clr-border);
+            font-family: var(--font-mono);
+        }
+        .device-table th {
+            color: var(--clr-text-muted);
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stream-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--clr-border);
+            font-size: 0.82rem;
+        }
+        .stream-key {
+            font-family: var(--font-mono);
+            color: var(--clr-text-muted);
+            min-width: 8rem;
+        }
+        .stream-val {
+            font-family: var(--font-mono);
+            color: var(--clr-accent);
+        }
+        .stream-ts {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: #555;
+        }
+        .console-output {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #ccc;
+        }
+        .console-line { margin: 0; line-height: 1.5; }
+        .console-line.tx { color: #f5a623; }
+        .console-line.rx { color: #00ff9d; }
+        .console-line.err{ color: #e74c3c; }
+        .console-line.sys{ color: #888; }
+        .console-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+        }
+        .field-input {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            color: var(--clr-text);
+            padding: 0.38rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            flex: 1;
+            transition: border-color var(--transition);
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: var(--clr-accent);
+        }
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--clr-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0.8rem 0 0.5rem;
+        }
+        .btn-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/simulation" class="nav-link">Simulation</a>
+                <a href="/node-graph" class="nav-link">Nodes</a>
+                <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/vcp-connectivity" class="nav-link">VCP Connectivity</a>
+                <a href="/vcp-wiring" class="nav-link">VCP Wiring</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/hlv-lab" class="nav-link">HLV Lab</a>
+                <a href="/docs" class="nav-link">API Reference</a>
+                <a href="/hardware" class="nav-link active">Hardware</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>Hardware Link</h1>
+                    <p>Bluetooth bridge · local sensor → FEEN node · FEEN output → actuator</p>
+                </div>
+                <div class="header-badge" id="hw-badge">IDLE</div>
+            </header>
+
+            <main class="hw-grid">
+
+                <!-- Left column: controls -->
+                <div>
+
+                    <!-- Connection Status -->
+                    <section class="card">
+                        <h2 class="card-title">Connection Status</h2>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.8rem;">
+                            <span class="status-dot idle" id="hw-status-dot"></span>
+                            <span id="hw-status-text" style="font-family:var(--font-mono); font-size:0.88rem;">Idle</span>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn" id="btn-scan">Scan</button>
+                            <button class="btn btn--secondary" id="btn-stop-scan" disabled>Stop</button>
+                        </div>
+                        <div class="section-label" style="margin-top:0.9rem;">Scan Results</div>
+                        <div id="scan-results" style="font-size:0.8rem; color:var(--clr-text-muted); font-family:var(--font-mono);">
+                            No devices found yet.
+                        </div>
+                    </section>
+
+                    <!-- Paired Devices -->
+                    <section class="card" style="margin-top:1.2rem;">
+                        <h2 class="card-title">Paired Devices</h2>
+                        <table class="device-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Address</th>
+                                    <th>RSSI</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="paired-device-tbody">
+                                <tr><td colspan="4" style="color:var(--clr-text-muted);">No paired devices.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                </div><!-- /left column -->
+
+                <!-- Right column -->
+                <div class="hw-right">
+
+                    <!-- Live Data Streams -->
+                    <section class="card">
+                        <h2 class="card-title">Live Data Streams</h2>
+                        <div id="stream-list">
+                            <div style="color:var(--clr-text-muted); font-size:0.82rem;">
+                                No active streams. Connect a device to begin receiving data.
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Test Console -->
+                    <section class="card">
+                        <h2 class="card-title">Test Console</h2>
+                        <p style="font-size:0.8rem; color:var(--clr-text-muted); margin-bottom:0.6rem;">
+                            Send raw values to a paired device or inject a received value into a FEEN node state.
+                        </p>
+                        <div class="console-output" id="console-output"></div>
+                        <div class="console-form">
+                            <input class="field-input" id="console-input" type="text"
+                                placeholder="send &lt;addr&gt; &lt;value&gt;  |  inject &lt;node_id&gt; &lt;value&gt;" />
+                            <button class="btn" id="btn-console-send">Send</button>
+                        </div>
+                        <div style="font-size:0.72rem; color:#555; margin-top:0.4rem;">
+                            Commands: <code>send &lt;addr&gt; &lt;value&gt;</code> · <code>inject &lt;node_id&gt; &lt;value&gt;</code> · <code>clear</code> · <code>help</code>
+                        </div>
+                    </section>
+
+                </div><!-- /right column -->
+
+            </main>
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>FEEN — Field-Effect Emulation Network · C++17 Core &amp; Python Bindings</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+    (function () {
+        // ── State ──────────────────────────────────────────────────────────
+        let scanInterval = null;
+        let streamInterval = null;
+        let pairedDevices = {};   // addr -> {name, addr, rssi}
+        let streams = {};         // key -> {value, ts}
+
+        // ── Console helpers ───────────────────────────────────────────────
+        const consoleEl = document.getElementById('console-output');
+        function consoleLine(text, cls) {
+            const p = document.createElement('p');
+            p.className = 'console-line' + (cls ? ' ' + cls : '');
+            p.textContent = text;
+            consoleEl.appendChild(p);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+        consoleLine('[sys] Hardware Link console ready.', 'sys');
+        consoleLine('[sys] Type "help" for available commands.', 'sys');
+
+        // ── Status helpers ────────────────────────────────────────────────
+        function setStatus(state, text) {
+            const dot  = document.getElementById('hw-status-dot');
+            const txt  = document.getElementById('hw-status-text');
+            const badge = document.getElementById('hw-badge');
+            dot.className = 'status-dot ' + state;
+            txt.textContent = text;
+            badge.textContent = text.toUpperCase();
+        }
+
+        // ── Scan ──────────────────────────────────────────────────────────
+        document.getElementById('btn-scan').addEventListener('click', async () => {
+            setStatus('scanning', 'Scanning…');
+            document.getElementById('btn-scan').disabled = true;
+            document.getElementById('btn-stop-scan').disabled = false;
+            document.getElementById('scan-results').textContent = 'Scanning for Bluetooth devices…';
+            consoleLine('[sys] Scan started.', 'sys');
+
+            try {
+                await fetch('/api/hardware/scan/start', { method: 'POST' });
+            } catch (e) { /* offline – simulated */ }
+
+            // Poll scan results
+            scanInterval = setInterval(refreshScan, 1500);
+        });
+
+        document.getElementById('btn-stop-scan').addEventListener('click', async () => {
+            clearInterval(scanInterval);
+            scanInterval = null;
+            try {
+                await fetch('/api/hardware/scan/stop', { method: 'POST' });
+            } catch (e) { /* offline */ }
+            setStatus('idle', 'Idle');
+            document.getElementById('btn-scan').disabled = false;
+            document.getElementById('btn-stop-scan').disabled = true;
+            consoleLine('[sys] Scan stopped.', 'sys');
+        });
+
+        async function refreshScan() {
+            try {
+                const res  = await fetch('/api/hardware/scan/results');
+                const data = await res.json();
+                const devs = data.devices || [];
+                if (devs.length === 0) {
+                    document.getElementById('scan-results').textContent = 'No devices found yet.';
+                } else {
+                    document.getElementById('scan-results').innerHTML = devs.map(d =>
+                        `<div style="padding:0.2rem 0; cursor:pointer;" onclick="pairDevice('${d.addr}','${d.name}')">`+
+                        `⊕ ${d.name || 'Unknown'} <span style="color:#555">(${d.addr})</span> ${d.rssi != null ? d.rssi + ' dBm' : ''}`+
+                        `</div>`
+                    ).join('');
+                }
+            } catch (e) {
+                document.getElementById('scan-results').textContent = 'Scan API unavailable (offline mode).';
+            }
+        }
+
+        // ── Pair ──────────────────────────────────────────────────────────
+        window.pairDevice = async function (addr, name) {
+            consoleLine(`[sys] Pairing ${name || addr}…`, 'sys');
+            try {
+                const res  = await fetch('/api/hardware/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ addr, name })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    pairedDevices[addr] = { name: name || addr, addr, rssi: data.rssi || null };
+                    consoleLine(`[rx] Paired: ${name || addr} (${addr})`, 'rx');
+                    setStatus('connected', 'Connected');
+                    renderPairedDevices();
+                    startStreams();
+                } else {
+                    consoleLine(`[err] Pair failed: ${data.error || 'unknown error'}`, 'err');
+                }
+            } catch (e) {
+                // Offline: add device locally for demo
+                pairedDevices[addr] = { name: name || addr, addr, rssi: -65 };
+                consoleLine(`[rx] Paired (local): ${name || addr} (${addr})`, 'rx');
+                setStatus('connected', 'Connected');
+                renderPairedDevices();
+                startStreams();
+            }
+        };
+
+        function renderPairedDevices() {
+            const tbody = document.getElementById('paired-device-tbody');
+            const devs  = Object.values(pairedDevices);
+            if (devs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color:var(--clr-text-muted);">No paired devices.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = devs.map(d =>
+                `<tr>
+                    <td>${d.name}</td>
+                    <td>${d.addr}</td>
+                    <td>${d.rssi != null ? d.rssi + ' dBm' : '—'}</td>
+                    <td><button class="btn btn--secondary" style="font-size:0.7rem; padding:0.15rem 0.4rem;"
+                        onclick="unpairDevice('${d.addr}')">✕</button></td>
+                </tr>`
+            ).join('');
+        }
+
+        window.unpairDevice = async function (addr) {
+            try {
+                await fetch('/api/hardware/unpair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ addr })
+                });
+            } catch (e) { /* offline */ }
+            consoleLine(`[sys] Unpaired ${addr}`, 'sys');
+            delete pairedDevices[addr];
+            delete streams[addr];
+            renderPairedDevices();
+            if (Object.keys(pairedDevices).length === 0) {
+                setStatus('idle', 'Idle');
+                stopStreams();
+            }
+            renderStreams();
+        };
+
+        // ── Live data streams ─────────────────────────────────────────────
+        function startStreams() {
+            if (streamInterval) return;
+            streamInterval = setInterval(refreshStreams, 1000);
+        }
+
+        function stopStreams() {
+            if (streamInterval) { clearInterval(streamInterval); streamInterval = null; }
+        }
+
+        async function refreshStreams() {
+            try {
+                const res  = await fetch('/api/hardware/streams');
+                const data = await res.json();
+                streams = data.streams || {};
+            } catch (e) {
+                // Offline: synthesize deterministic fake sensor values for demo
+                const t = Date.now();
+                for (const addr of Object.keys(pairedDevices)) {
+                    streams[addr + ':temp']    = { value: (20 + 5 * Math.sin(t / 4000)).toFixed(2), ts: new Date().toISOString() };
+                    streams[addr + ':accel_x'] = { value: (0.1 * Math.sin(t / 1200)).toFixed(4),    ts: new Date().toISOString() };
+                    streams[addr + ':accel_y'] = { value: (0.1 * Math.cos(t / 1200)).toFixed(4),    ts: new Date().toISOString() };
+                    streams[addr + ':rssi']    = { value: String(-65 + Math.round(3 * Math.sin(t / 3000))), ts: new Date().toISOString() };
+                }
+            }
+            renderStreams();
+        }
+
+        function renderStreams() {
+            const el   = document.getElementById('stream-list');
+            const keys = Object.keys(streams);
+            if (keys.length === 0) {
+                el.innerHTML = '<div style="color:var(--clr-text-muted); font-size:0.82rem;">No active streams.</div>';
+                return;
+            }
+            el.innerHTML = keys.map(k =>
+                `<div class="stream-row">
+                    <span class="stream-key">${k}</span>
+                    <span class="stream-val">${streams[k].value}</span>
+                    <span class="stream-ts">${streams[k].ts ? new Date(streams[k].ts).toLocaleTimeString() : ''}</span>
+                </div>`
+            ).join('');
+        }
+
+        // ── Test console ──────────────────────────────────────────────────
+        document.getElementById('btn-console-send').addEventListener('click', runConsoleCommand);
+        document.getElementById('console-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') runConsoleCommand();
+        });
+
+        async function runConsoleCommand() {
+            const inp = document.getElementById('console-input');
+            const cmd = inp.value.trim();
+            if (!cmd) return;
+            inp.value = '';
+            consoleLine('> ' + cmd, 'tx');
+
+            const parts = cmd.split(/\s+/);
+            const verb  = parts[0].toLowerCase();
+
+            if (verb === 'clear') {
+                consoleEl.innerHTML = '';
+                consoleLine('[sys] Console cleared.', 'sys');
+            } else if (verb === 'help') {
+                consoleLine('[sys] Commands:', 'sys');
+                consoleLine('  send <addr> <value>   — write value to paired device characteristic', 'sys');
+                consoleLine('  inject <node_id> <v>  — inject sensor value into FEEN node state', 'sys');
+                consoleLine('  clear                 — clear console output', 'sys');
+                consoleLine('  help                  — show this message', 'sys');
+            } else if (verb === 'send') {
+                const addr = parts[1];
+                const val  = parts.slice(2).join(' ');
+                if (!addr || val === '') { consoleLine('[err] Usage: send <addr> <value>', 'err'); return; }
+                try {
+                    const res  = await fetch('/api/hardware/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ addr, value: val })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        consoleLine(`[tx] Sent to ${addr}: ${val}`, 'tx');
+                    } else {
+                        consoleLine(`[err] ${data.error || 'send failed'}`, 'err');
+                    }
+                } catch (e) {
+                    consoleLine(`[tx] (offline) sent to ${addr}: ${val}`, 'tx');
+                }
+            } else if (verb === 'inject') {
+                const nodeId = parts[1];
+                const val    = parseFloat(parts[2]);
+                if (!nodeId || isNaN(val)) { consoleLine('[err] Usage: inject <node_id> <value>', 'err'); return; }
+                try {
+                    const res  = await fetch(`/api/network/nodes/${nodeId}/state`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ x: val })
+                    });
+                    const data = await res.json();
+                    if (data.ok || data.node_id != null) {
+                        consoleLine(`[rx] Injected ${val} → node ${nodeId}`, 'rx');
+                    } else {
+                        consoleLine(`[err] Inject failed: ${data.error || 'unknown'}`, 'err');
+                    }
+                } catch (e) {
+                    consoleLine(`[rx] (offline) injected ${val} → node ${nodeId}`, 'rx');
+                }
+            } else {
+                consoleLine(`[err] Unknown command: ${verb}. Type "help" for usage.`, 'err');
+            }
+        }
+
+        // ── Initial status poll ───────────────────────────────────────────
+        (async function () {
+            try {
+                const res  = await fetch('/api/hardware/status');
+                const data = await res.json();
+                if (data.scanning) {
+                    setStatus('scanning', 'Scanning');
+                } else if (data.paired_count > 0) {
+                    setStatus('connected', 'Connected');
+                    // Restore paired devices from status
+                    (data.devices || []).forEach(d => {
+                        pairedDevices[d.addr] = d;
+                    });
+                    renderPairedDevices();
+                    startStreams();
+                }
+            } catch (e) { /* offline – default idle state is fine */ }
+        })();
+
+    })();
+    </script>
+
+</body>
+</html>

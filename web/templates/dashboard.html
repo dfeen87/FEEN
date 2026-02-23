@@ -30,6 +30,7 @@
                 <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
                 <a href="/hlv-lab" class="nav-link">HLV Lab</a>
                 <a href="/docs" class="nav-link">API Reference</a>
+                <a href="/hardware" class="nav-link">Hardware</a>
             </div>
         </nav>
 
@@ -212,6 +213,29 @@
                         <div class="tile-stat">
                             <span class="tile-stat-label">Endpoints</span>
                             <span class="tile-stat-value" id="dash-api-endpoints">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 7: Hardware Link -->
+                <a href="/hardware" class="tile tile--observer" id="tile-hardware">
+                    <div class="tile-header">
+                        <span class="tile-title">Hardware Link</span>
+                        <span class="tile-badge">BT</span>
+                    </div>
+                    <div class="tile-preview-static">
+                        <span style="font-size:0.75rem;color:#666;">
+                            Bluetooth bridge · sensor → node · actuator ← output
+                        </span>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Status</span>
+                            <span class="tile-stat-value mono" id="dash-hw-status">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Paired</span>
+                            <span class="tile-stat-value mono" id="dash-hw-paired">—</span>
                         </div>
                     </div>
                 </a>
@@ -519,6 +543,20 @@
             } catch (err) { console.error('Failed to refresh API index:', err); }
         }
 
+        async function refreshHardware() {
+            try {
+                const res = await fetch('/api/hardware/status');
+                const data = await res.json();
+                document.getElementById('dash-hw-status').textContent =
+                    data.scanning ? 'Scanning' : (data.paired_count > 0 ? 'Connected' : 'Idle');
+                document.getElementById('dash-hw-paired').textContent =
+                    data.paired_count != null ? data.paired_count : '—';
+            } catch (err) {
+                document.getElementById('dash-hw-status').textContent = 'Offline';
+                document.getElementById('dash-hw-paired').textContent = '—';
+            }
+        }
+
         // ── Boot & polling ────────────────────────────────────────────────
         function refreshAll() {
             refreshSimulation();
@@ -528,6 +566,7 @@
             refreshVCPConnectivity();
             refreshAILEE();
             refreshAPI();
+            refreshHardware();
         }
 
         refreshAll();
