@@ -186,7 +186,7 @@ a:hover { color: #d0aaff; text-decoration: underline; }
 /* ---- Stat cards ---- */
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
@@ -696,8 +696,7 @@ a:hover { color: #d0aaff; text-decoration: underline; }
 /* ---- Responsive ---- */
 @media (max-width: 700px) {
     .page-content  { padding: 16px 12px; }
-    .stat-grid     { grid-template-columns: 1fr 1fr; }
-    .stat-grid .stat-card:last-child { grid-column: span 2; }
+    .stat-grid     { grid-template-columns: 1fr; }
     .main-grid     { grid-template-columns: 1fr; grid-template-rows: auto; }
     .controls-card { grid-column: 1; grid-row: auto; }
     .chart-card    { grid-column: 1; grid-row: auto; }
