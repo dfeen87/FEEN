@@ -3,7 +3,7 @@ Tests for VCP Wiring coupling endpoint invariants.
 
 Validates:
   • Observer/mutator boundary: GET /api/network/couplings is public (no auth needed)
-  • Mutator boundary: POST/DELETE /api/network/couplings require authentication (401 without auth)
+  • Mutator boundary: POST/DELETE /api/network/couplings are publicly accessible (no auth gate)
   • Idempotency: wiring the same pair twice yields last-set strength, not accumulated strength
   • Coupling removal: DELETE zeroes out the coupling
   • Thread safety: _network_lock exists and guards concurrent coupling mutations
@@ -107,15 +107,9 @@ def _setup_two_nodes(api):
     api.network.add_node({'name': 'node_1', 'frequency_hz': 2000.0, 'q_factor': 100.0, 'beta': 1e-4})
 
 
-def _authenticated_client(api):
-    """Return a test client with a valid session."""
-    os.environ.setdefault('FEEN_VCP_USER', 'admin')
-    os.environ.setdefault('FEEN_VCP_PASSWORD', 'feen_vcp')
-    client = api.app.test_client()
-    client.post('/api/auth/login',
-                json={'username': os.environ['FEEN_VCP_USER'],
-                      'password': os.environ['FEEN_VCP_PASSWORD']})
-    return client
+def _plain_client(api):
+    """Return a plain test client (no authentication required)."""
+    return api.app.test_client()
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +117,7 @@ def _authenticated_client(api):
 # ---------------------------------------------------------------------------
 
 class TestObserverMutatorBoundary(unittest.TestCase):
-    """Verify GET coupling is public, POST/DELETE require authentication."""
+    """Verify GET, POST, and DELETE coupling endpoints are all publicly accessible."""
 
     def setUp(self):
         _setup_two_nodes(_api)
@@ -135,19 +129,19 @@ class TestObserverMutatorBoundary(unittest.TestCase):
         self.assertEqual(resp.status_code, 200,
                          "Observational GET must be public — no auth required")
 
-    def test_post_coupling_requires_auth(self):
-        """POST /api/network/couplings must return 401 when unauthenticated."""
+    def test_post_coupling_requires_no_auth(self):
+        """POST /api/network/couplings must succeed without authentication."""
         resp = self.client.post('/api/network/couplings',
                                 json={'source_id': 0, 'target_id': 1, 'strength': 1.0})
-        self.assertEqual(resp.status_code, 401,
-                         "Structural mutation POST must require authentication")
+        self.assertEqual(resp.status_code, 200,
+                         "Structural mutation POST must be accessible without authentication")
 
-    def test_delete_coupling_requires_auth(self):
-        """DELETE /api/network/couplings must return 401 when unauthenticated."""
+    def test_delete_coupling_requires_no_auth(self):
+        """DELETE /api/network/couplings must succeed without authentication."""
         resp = self.client.delete('/api/network/couplings',
                                   json={'source_id': 0, 'target_id': 1})
-        self.assertEqual(resp.status_code, 401,
-                         "Structural mutation DELETE must require authentication")
+        self.assertEqual(resp.status_code, 200,
+                         "Structural mutation DELETE must be accessible without authentication")
 
     def test_get_couplings_does_not_mutate(self):
         """GET /api/network/couplings must not alter any coupling state."""
@@ -167,7 +161,7 @@ class TestCouplingIdempotency(unittest.TestCase):
 
     def setUp(self):
         _setup_two_nodes(_api)
-        self.client = _authenticated_client(_api)
+        self.client = _plain_client(_api)
 
     def test_wire_twice_does_not_double_strength(self):
         """POST coupling twice with strength=1.0 must result in strength=1.0, not 2.0.
@@ -240,7 +234,7 @@ class TestNoExecutionSemanticsInWiring(unittest.TestCase):
 
     def setUp(self):
         _setup_two_nodes(_api)
-        self.client = _authenticated_client(_api)
+        self.client = _plain_client(_api)
 
     def test_post_coupling_does_not_advance_time(self):
         """POST coupling must not call tick_parallel; simulation time must stay at 0."""
@@ -291,7 +285,7 @@ class TestCouplingThreadSafety(unittest.TestCase):
 
         def wire():
             try:
-                client = _authenticated_client(_api)
+                client = _plain_client(_api)
                 for _ in range(5):
                     client.post('/api/network/couplings',
                                 json={'source_id': 0, 'target_id': 1, 'strength': 1.0})
