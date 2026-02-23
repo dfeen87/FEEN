@@ -25,8 +25,7 @@
 
         .main-grid {
             display: grid;
-            grid-template-columns: 4fr 1fr;
-            gap: 1rem;
+            grid-template-columns: 1fr;
             height: calc(100vh - 200px);
         }
 
@@ -45,43 +44,61 @@
             height: 100%;
         }
 
-        .details-panel {
-            background: #1e1e22;
+        /* In-graph metadata overlay */
+        .info-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(17, 17, 17, 0.88);
             border: 1px solid #333;
-            border-radius: 4px;
-            padding: 1rem;
-            overflow-y: auto;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            min-width: 200px;
+            max-width: 260px;
+            pointer-events: none;
+            z-index: 10;
+            backdrop-filter: blur(4px);
         }
 
-        .details-header {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
+        .info-overlay.hidden {
+            display: none;
+        }
+
+        .info-overlay-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #00ff9d;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
             border-bottom: 1px solid #333;
-            color: #fff;
         }
 
         .metric-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.82rem;
+            gap: 0.5rem;
         }
 
         .metric-label {
             color: #888;
+            white-space: nowrap;
         }
 
         .metric-value {
             font-family: 'JetBrains Mono', monospace;
             color: #00ff9d;
+            text-align: right;
+            word-break: break-all;
         }
 
         .empty-hint {
             color: #666;
             font-style: italic;
-            text-align: center;
-            margin-top: 2rem;
+            font-size: 0.82rem;
         }
 
         /* Cytoscape styles for connectivity visualization */
@@ -127,15 +144,13 @@
                 <!-- Visualization -->
                 <section class="graph-wrapper">
                     <div id="cy" class="graph-container"></div>
-                </section>
 
-                <!-- Details Panel -->
-                <aside class="details-panel" id="details-panel">
-                    <div class="details-header">Selection Details</div>
-                    <div id="details-content">
-                        <div class="empty-hint">Select a node or connection to view live metrics.</div>
+                    <!-- In-graph metadata overlay -->
+                    <div class="info-overlay hidden" id="info-overlay">
+                        <div class="info-overlay-header" id="info-overlay-title">Selection Details</div>
+                        <div id="details-content"></div>
                     </div>
-                </aside>
+                </section>
 
             </main>
 
@@ -201,9 +216,13 @@
         let selectedId = null; // ID of selected element
 
         function updateDetails(ele) {
+            const overlay = document.getElementById('info-overlay');
+            const title = document.getElementById('info-overlay-title');
             const content = document.getElementById('details-content');
+
             if (!ele) {
-                content.innerHTML = '<div class="empty-hint">Select a node or connection to view live metrics.</div>';
+                overlay.classList.add('hidden');
+                content.innerHTML = '';
                 return;
             }
 
@@ -211,7 +230,7 @@
             let html = '';
 
             if (ele.isNode()) {
-                // Node details
+                title.textContent = 'Node Details';
                 const nodeData = lastData.nodes.find(n => String(n.id) === data.id);
                 if (nodeData) {
                     html += `<div class="metric-row"><span class="metric-label">Name</span><span class="metric-value">${nodeData.name}</span></div>`;
@@ -219,13 +238,13 @@
                     html += `<div class="metric-row"><span class="metric-label">Status</span><span class="metric-value">${nodeData.status}</span></div>`;
 
                     if (nodeData.state) {
-                        html += `<hr style="border-color:#333; margin: 1rem 0;">`;
+                        html += `<hr style="border-color:#333; margin: 0.5rem 0;">`;
                         html += `<div class="metric-row"><span class="metric-label">Position (x)</span><span class="metric-value">${nodeData.state.x.toFixed(4)}</span></div>`;
                         html += `<div class="metric-row"><span class="metric-label">Velocity (v)</span><span class="metric-value">${nodeData.state.v.toFixed(4)}</span></div>`;
                     }
                 }
             } else {
-                // Edge details
+                title.textContent = 'Connection Details';
                 const edgeData = lastData.edges.find(e =>
                     String(e.source) === data.source && String(e.target) === data.target
                 );
@@ -236,7 +255,7 @@
                     html += `<div class="metric-row"><span class="metric-label">Strength</span><span class="metric-value">${edgeData.strength.toFixed(3)}</span></div>`;
 
                     if (edgeData.metrics) {
-                        html += `<hr style="border-color:#333; margin: 1rem 0;">`;
+                        html += `<hr style="border-color:#333; margin: 0.5rem 0;">`;
                         html += `<div class="metric-row"><span class="metric-label">Resonance</span><span class="metric-value">${edgeData.metrics.resonance.toFixed(3)}</span></div>`;
                         html += `<div class="metric-row"><span class="metric-label">Interference</span><span class="metric-value">${edgeData.metrics.interference.toFixed(3)}</span></div>`;
                         html += `<div class="metric-row"><span class="metric-label">Stability</span><span class="metric-value">${edgeData.metrics.stability.toFixed(3)}</span></div>`;
@@ -244,7 +263,9 @@
                     }
                 }
             }
+
             content.innerHTML = html;
+            overlay.classList.remove('hidden');
         }
 
         cy.on('tap', function(evt){
