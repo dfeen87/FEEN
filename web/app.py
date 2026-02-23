@@ -21,14 +21,20 @@ app.static_folder = os.path.join(base_dir, 'static')
 
 @app.route('/')
 def root():
-    """Redirect root to the dashboard UI."""
-    return redirect('/dashboard')
+    """Redirect root to the simulation UI."""
+    return redirect('/simulation')
+
+
+@app.route('/simulation')
+def simulation():
+    """Serve the main simulation page."""
+    return render_template('index.html')
 
 
 @app.route('/dashboard')
 def dashboard():
-    """Serve the main dashboard page."""
-    return render_template('index.html')
+    """Redirect legacy /dashboard to /simulation."""
+    return redirect('/simulation')
 
 
 @app.route('/node-graph')
