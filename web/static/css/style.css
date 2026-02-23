@@ -422,6 +422,250 @@ a:hover { color: #d0aaff; text-decoration: underline; }
 /* ---- Mono utility ---- */
 .mono { font-family: var(--font-mono); }
 
+/* ============================================================
+   Dashboard — homepage tile grid
+   ============================================================ */
+
+.dashboard-intro {
+    margin-bottom: 28px;
+}
+
+.dashboard-intro p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--clr-text-muted);
+    max-width: 640px;
+}
+
+.tile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.tile {
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition),
+                transform var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.tile:hover {
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 1px var(--clr-accent), 0 6px 24px rgba(0,0,0,0.45);
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: inherit;
+}
+
+.tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tile-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--clr-text-muted);
+}
+
+.tile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--clr-accent-dim);
+    border: 1px solid rgba(3, 218, 198, 0.3);
+    color: var(--clr-accent);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.tile-badge::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--clr-accent);
+    animation: pulse-dot 2s infinite;
+}
+
+.tile-preview {
+    flex: 1;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #08080b;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+}
+
+.tile-preview canvas {
+    display: block;
+    width: 100%;
+    height: 90px;
+}
+
+.tile-meta {
+    display: flex;
+    gap: 12px;
+}
+
+.tile-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tile-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--clr-text-muted);
+}
+
+.tile-stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--clr-accent);
+    line-height: 1.1;
+}
+
+/* Static tiles (API Ref has no live chart) */
+.tile-preview-static {
+    flex: 1;
+    min-height: 90px;
+    background: #08080b;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--clr-text-muted);
+}
+
+.tile-preview-static .ep-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tile-preview-static .ep-method {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    min-width: 36px;
+    text-align: center;
+}
+
+.ep-get  { background: var(--clr-accent-dim);  color: var(--clr-accent); }
+.ep-post { background: var(--clr-purple-dim);  color: var(--clr-purple); }
+
+/* Node-list preview */
+.tile-node-list {
+    flex: 1;
+    min-height: 90px;
+    background: #08080b;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: flex-start;
+}
+
+.tile-node-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.tile-node-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff9d;
+    flex-shrink: 0;
+}
+
+.tile-node-label {
+    color: var(--clr-text-muted);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tile-node-val {
+    color: var(--clr-accent);
+}
+
+.tile-empty-hint {
+    font-size: 0.78rem;
+    color: var(--clr-text-faint);
+    text-align: center;
+    width: 100%;
+}
+
+/* Wiring preview */
+.tile-wiring-state {
+    flex: 1;
+    min-height: 90px;
+    background: #08080b;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.tile-wiring-state canvas {
+    display: block;
+    width: 100%;
+    height: 90px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 700px) {
+    .tile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+    .tile-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 700px) {
     .page-content  { padding: 16px 12px; }
