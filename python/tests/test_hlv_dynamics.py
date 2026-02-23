@@ -15,6 +15,7 @@ These tests validate:
 """
 
 import importlib.util
+import io
 import json
 import math
 import os
@@ -698,6 +699,85 @@ class TestHLVBlueprint(unittest.TestCase):
                          content_type="application/json")
         resp = self.client.get("/api/hlv/sweep/results")
         self.assertEqual(resp.status_code, 200)
+
+    def test_artifacts_download_endpoint_returns_zip(self):
+        """GET /api/hlv/artifacts/download returns a valid ZIP after a run."""
+        import zipfile as _zipfile
+        self.client.post("/api/hlv/run", json=FAST_SIM_CFG,
+                         content_type="application/json")
+        resp = self.client.get("/api/hlv/artifacts/download")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content_type, "application/zip")
+        # Verify it is a valid ZIP containing all expected files
+        with _zipfile.ZipFile(io.BytesIO(resp.data)) as zf:
+            names = zf.namelist()
+        self.assertIn("config.json", names)
+        self.assertIn("metrics.csv", names)
+        self.assertIn("events.jsonl", names)
+        self.assertIn("hash.txt", names)
+
+    def test_artifacts_download_endpoint_no_results(self):
+        """GET /api/hlv/artifacts/download returns 404 when no run exists."""
+        # Reset plugin state
+        import threading
+        _mod._latest_result = None
+        resp = self.client.get("/api/hlv/artifacts/download")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_artifacts_email_missing_recipient(self):
+        """POST /api/hlv/artifacts/email returns 400 when 'to' is absent."""
+        self.client.post("/api/hlv/run", json=FAST_SIM_CFG,
+                         content_type="application/json")
+        resp = self.client.post(
+            "/api/hlv/artifacts/email",
+            json={},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("error", resp.get_json())
+
+    def test_artifacts_email_no_results(self):
+        """POST /api/hlv/artifacts/email returns 404 when no run exists."""
+        _mod._latest_result = None
+        resp = self.client.post(
+            "/api/hlv/artifacts/email",
+            json={"to": "user@example.com"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_artifacts_email_smtp_failure_returns_502(self):
+        """POST /api/hlv/artifacts/email returns 502 when SMTP is unreachable."""
+        self.client.post("/api/hlv/run", json=FAST_SIM_CFG,
+                         content_type="application/json")
+        resp = self.client.post(
+            "/api/hlv/artifacts/email",
+            json={
+                "to": "user@example.com",
+                "smtp_host": "127.0.0.1",
+                "smtp_port": 1,  # port 1 is almost never listening; expect connection failure
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 502)
+        self.assertIn("error", resp.get_json())
+
+    def test_artifacts_email_env_var_smtp_host(self):
+        """FEEN_SMTP_HOST env var is used when smtp_host not provided in request."""
+        from unittest.mock import patch
+        self.client.post("/api/hlv/run", json=FAST_SIM_CFG,
+                         content_type="application/json")
+        with patch.dict(os.environ, {"FEEN_SMTP_HOST": "testhost.invalid",
+                                     "FEEN_SMTP_PORT": "9"}):
+            resp = self.client.post(
+                "/api/hlv/artifacts/email",
+                json={"to": "user@example.com"},
+                content_type="application/json",
+            )
+        # Should fail with 502 (SMTP unreachable), not 400/500
+        self.assertEqual(resp.status_code, 502)
+        data = resp.get_json()
+        self.assertIn("error", data)
 
 
 # ---------------------------------------------------------------------------
