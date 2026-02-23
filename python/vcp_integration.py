@@ -53,13 +53,17 @@ def get_vcp_network_view():
         t = time.time()
         for i in range(num_nodes):
             phase = t * 2.0 + i
-            x = math.sin(phase)
-            v = math.cos(phase)
+            # Vary amplitude per node so energies differ across nodes, giving
+            # non-trivial resonance values (sin²+cos²=1 would make every node
+            # energy identical and resonance permanently 1.0).
+            amplitude = 0.5 + 0.5 * math.sin(t * 0.3 + i * 1.3)
+            x = amplitude * math.sin(phase)
+            v = amplitude * math.cos(phase)
 
             nodes.append({
                 'id': i + 1,
                 'name': f'VCP Node {i + 1}',
-                'type': 'feen_resonator',
+                'type': 'vcp_agent',
                 'state': {'x': x, 'v': v, 't': t},
                 'status': 'active'
             })

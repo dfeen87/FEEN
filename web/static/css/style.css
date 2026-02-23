@@ -653,16 +653,52 @@ a:hover { color: #d0aaff; text-decoration: underline; }
     height: 90px;
 }
 
+/* Observer tile: VCP Connectivity observes an external system, not FEEN's own network.
+   Purple accent signals the architectural boundary (read-only external view). */
+.tile--observer {
+    border-color: var(--clr-purple-dim);
+}
+
+.tile--observer:hover {
+    border-color: var(--clr-purple);
+    box-shadow: 0 0 0 1px var(--clr-purple), 0 6px 24px rgba(0,0,0,0.45);
+}
+
+.tile--observer .tile-badge {
+    background: var(--clr-purple-dim);
+    border-color: rgba(187, 134, 252, 0.3);
+    color: var(--clr-purple);
+}
+
+.tile--observer .tile-badge::before {
+    background: var(--clr-purple);
+}
+
+.tile--observer .tile-stat-value {
+    color: var(--clr-purple);
+}
+
+/* API Reference tile: full-width anchor row to balance a 7-tile grid */
+#tile-docs {
+    grid-column: 1 / -1;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 700px) {
     .tile-grid {
         grid-template-columns: 1fr;
+    }
+    #tile-docs {
+        grid-column: 1;
     }
 }
 
 @media (min-width: 701px) and (max-width: 900px) {
     .tile-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    #tile-docs {
+        grid-column: 1 / -1;
     }
 }
 
