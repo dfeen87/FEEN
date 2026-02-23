@@ -253,6 +253,92 @@ To guard against circularity:
 
 ---
 
+### A.5 Phase-1 Expected Behavior Checklist
+
+To ensure correct implementation of the baseline control layer (**P1 + O1 + logging**), the following qualitative and quantitative behaviors **MUST** be observed before extending the platform.
+
+#### EB1: Zero-Coupling Regime (κ = 0)
+
+- *R(t)* remains low and fluctuates around *R* ≈ 𝒪(N⁻¹/²)
+- No sustained phase locking
+- *R* does not increase systematically across seeds
+- *t_settle* is undefined or ≈ *T_end*
+
+#### EB2: Low Coupling (κ ≪ 1)
+
+- Partial local clustering may appear transiently
+- *R* increases slowly with κ but remains well below 1
+- Strong seed dependence
+
+#### EB3: Critical Region (κ ∼ κ_c)
+
+- Rapid increase in ⟨R⟩_seeds(κ)
+- Increased variance across seeds
+- Settling time becomes highly sensitive to initial conditions
+
+#### EB4: Strong Coupling (κ ≫ 1)
+
+- *R(t)* → 1 monotonically (up to small fluctuations)
+- *t_settle* decreases with increasing κ
+- *R* ≈ 1 for all seeds
+
+| Behavior | Condition | Expected *R* | Settling Time |
+|---|---|---|---|
+| EB1 | κ = 0 | ≈ 𝒪(N⁻¹/²), no lock | Undefined / ≈ T_end |
+| EB2 | κ ≪ 1 | Slowly increasing, ≪ 1 | Long; seed-dependent |
+| EB3 | κ ∼ κ_c | Rapid rise; high variance | Highly condition-sensitive |
+| EB4 | κ ≫ 1 | → 1 monotonically | Decreases with κ |
+
+> **Note:** Failure to reproduce this monotonic ordering indicates either numerical instability, logging inconsistency, or incorrect normalization of the order parameter.
+
+---
+
+### A.6 Null-Test Suite (Control Integrity Checks)
+
+To guard against circularity, implementation bias, or hidden structural artifacts, the following null tests **must** be performed before enabling memory or offset extensions.
+
+#### NT1: Strict Zero Coupling
+
+Set κ = 0 and verify:
+- No systematic increase in *R*
+- No spontaneous phase locking
+- Order parameter fluctuations scale as N⁻¹/²
+
+#### NT2: Edge Permutation Control
+
+Randomly permute edges while preserving degree sequence. Verify:
+- Comparable synchronization threshold κ_c to the original ring topology (within seed variance)
+- No artificial attractor structures emerge
+
+#### NT3: Frequency Reshuffle Control
+
+Shuffle ωᵢ across nodes without changing the distribution. Verify:
+- Identical statistical synchronization curve ⟨R⟩(κ) within error
+
+#### NT4: Deterministic Reproducibility
+
+Repeat one full sweep with identical seeds and confirm:
+- Bitwise-identical summary metrics
+- Identical SHA-256 artifact hash
+
+#### NT5: Logging Integrity Test
+
+Disable observers and re-enable them to ensure:
+- Observers do not influence state evolution
+- Dynamics remain identical when logging is off
+
+| Test | Procedure | Pass Condition |
+|---|---|---|
+| NT1 | Set κ = 0 | No phase locking; *R* fluctuations ∝ N⁻¹/² |
+| NT2 | Permute edges (degree-preserving) | κ_c within seed variance; no spurious attractors |
+| NT3 | Reshuffle ωᵢ (same distribution) | ⟨R⟩(κ) curve statistically identical |
+| NT4 | Repeat sweep with same seeds | Bitwise-identical metrics + matching SHA-256 hash |
+| NT5 | Toggle observers on/off | No influence on state dynamics |
+
+> **All null tests must pass before activating memory kernels (P2), phase offsets (P3), or instability observers (ΔΦ).**
+
+---
+
 ## Figure 1: APS-Style Implementation Pipeline
 
 ```
