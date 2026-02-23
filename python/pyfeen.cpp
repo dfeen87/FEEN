@@ -38,6 +38,7 @@ PYBIND11_MODULE(pyfeen, m) {
 
     py::class_<Resonator>(m, "Resonator")
         .def(py::init<const ResonatorConfig&>())
+        .def("set_state", &Resonator::set_state, py::arg("x"), py::arg("v"), py::arg("t") = 0.0)
         .def("inject", &Resonator::inject, py::arg("amplitude"), py::arg("phase") = 0.0)
         .def("tick", &Resonator::tick, py::arg("dt"), py::arg("F") = 0.0, py::arg("omega_d") = -1.0, py::arg("internal_force") = 0.0)
         .def("energy", &Resonator::total_energy)

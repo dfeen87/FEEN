@@ -48,6 +48,12 @@ except ImportError:
     print("Run: cd build && cmake .. -DFEEN_BUILD_PYTHON=ON && make")
     sys.exit(1)
 
+try:
+    import vcp_integration
+except ImportError:
+    print("Warning: vcp_integration module not found.")
+    vcp_integration = None
+
 
 class ResonatorNetworkManager:
     """Manages a global FEEN resonator network accessible via REST API."""
@@ -275,6 +281,115 @@ _ailee_metric_lock = threading.Lock()
 # Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+
+# ---------------------------------------------------------------------------
+# VCP Integration & Stateless FEEN Endpoints
+# ---------------------------------------------------------------------------
+
+@app.route('/api/vcp/view', methods=['GET'])
+def get_vcp_view():
+    """Get the VCP network view (nodes, edges, metrics)."""
+    if vcp_integration:
+        return jsonify(vcp_integration.get_vcp_network_view())
+    return jsonify({'error': 'VCP integration module not loaded'}), 503
+
+@app.route('/feen-changes/simulate', methods=['POST'])
+def stateless_simulate():
+    """Stateless simulation step.
+    Input: { config: {...}, state: {x, v}, input: float, dt: float }
+    Output: { state: {x, v} }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data'}), 400
+
+    try:
+        cfg = data.get('config', {})
+        state = data.get('state', {})
+        inp = float(data.get('input', 0.0))
+        dt = float(data.get('dt', 1e-6))
+
+        # Create temporary resonator
+        c = pyfeen.ResonatorConfig()
+        c.frequency_hz = float(cfg.get('frequency_hz', 1000.0))
+        c.q_factor = float(cfg.get('q_factor', 200.0))
+        c.beta = float(cfg.get('beta', 1e-4))
+
+        res = pyfeen.Resonator(c)
+        # Set state (assuming we can inject or set)
+        # Resonator usually starts at 0,0.
+        # If no set_state method is exposed, we might have issues.
+        # But wait, python binding usually exposes set_state or similar?
+        # Let's check memory: "Resonator::set_state is used for direct state overwrites"
+        # So it should be available.
+        res.set_state(
+            float(state.get('x', 0.0)),
+            float(state.get('v', 0.0)),
+            float(state.get('t', 0.0))
+        )
+
+        # Tick
+        res.tick(dt, inp)
+
+        return jsonify({
+            'state': {'x': res.x(), 'v': res.v(), 't': res.t()}
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/feen-changes/coupling', methods=['POST'])
+def stateless_coupling():
+    """Stateless coupling calculation.
+    Input: { state1: {x, v}, state2: {x, v}, strength: float }
+    Output: { force: float }
+    """
+    data = request.get_json()
+    try:
+        s1 = data.get('state1', {})
+        s2 = data.get('state2', {})
+        k = float(data.get('strength', 0.0))
+
+        x1 = float(s1.get('x', 0.0))
+        x2 = float(s2.get('x', 0.0))
+
+        # Linear coupling: F = k * (x2 - x1)
+        force = k * (x2 - x1)
+
+        return jsonify({'force': force})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/feen-changes/delta_v', methods=['POST'])
+def stateless_delta_v():
+    """Stateless Delta v update.
+    Input: { current_delta_v: float, sample: {...}, config: {...} }
+    Output: { new_delta_v: float }
+    """
+    data = request.get_json()
+    try:
+        current_val = float(data.get('current_delta_v', 0.0))
+        sample_data = data.get('sample', {})
+
+        # Create temporary metric to compute increment
+        params = pyfeen.ailee.AileeParams()
+        # Use defaults or provided config
+
+        metric = pyfeen.ailee.AileeMetric(params)
+
+        sample = pyfeen.ailee.AileeSample()
+        sample.p_input = float(sample_data.get('p_input', 0.0))
+        sample.workload = float(sample_data.get('workload', 0.0))
+        sample.velocity = float(sample_data.get('velocity', 0.0))
+        sample.mass = float(sample_data.get('mass', 1.0))
+        sample.dt = float(sample_data.get('dt', 1e-6))
+
+        metric.integrate(sample)
+        increment = metric.delta_v() # Started from 0, so this is the increment
+
+        return jsonify({'new_delta_v': current_val + increment})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 
 # ---------------------------------------------------------------------------

@@ -25,6 +25,7 @@
                 <a href="/simulation" class="nav-link">Simulation</a>
                 <a href="/node-graph" class="nav-link">Nodes</a>
                 <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/vcp-connectivity" class="nav-link">VCP Connectivity</a>
                 <a href="/vcp-wiring" class="nav-link">VCP Wiring</a>
                 <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
                 <a href="/docs" class="nav-link">API Reference</a>
@@ -108,6 +109,27 @@
                         <div class="tile-stat">
                             <span class="tile-stat-label">Connections</span>
                             <span class="tile-stat-value" id="dash-coup-edges">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile: VCP Connectivity -->
+                <a href="/vcp-connectivity" class="tile" id="tile-vcp-conn">
+                    <div class="tile-header">
+                        <span class="tile-title">VCP Connectivity</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-preview">
+                        <canvas id="vcp-conn-mini-canvas"></canvas>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Nodes</span>
+                            <span class="tile-stat-value" id="dash-vcp-conn-nodes">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Links</span>
+                            <span class="tile-stat-value" id="dash-vcp-conn-edges">—</span>
                         </div>
                     </div>
                 </a>
@@ -261,6 +283,10 @@
         const vcpCanvas = document.getElementById('vcp-mini-canvas');
         const vcpCtx2d  = vcpCanvas.getContext('2d');
 
+        // ── Mini canvas: VCP Connectivity snapshot ──────────────────────
+        const vcpConnCanvas = document.getElementById('vcp-conn-mini-canvas');
+        const vcpConnCtx2d  = vcpConnCanvas.getContext('2d');
+
         function drawMiniGraph(ctx, canvas, nodes, edges) {
             const W = canvas.offsetWidth || 240;
             const H = 90;
@@ -406,6 +432,20 @@
             } catch (err) { console.error('Failed to refresh VCP wiring:', err); }
         }
 
+        async function refreshVCPConnectivity() {
+            try {
+                const res = await fetch('/api/vcp/view');
+                const data = await res.json();
+                const nodes = data.nodes || [];
+                const edges = data.edges || [];
+
+                document.getElementById('dash-vcp-conn-nodes').textContent = nodes.length;
+                document.getElementById('dash-vcp-conn-edges').textContent = edges.length;
+
+                drawMiniGraph(vcpConnCtx2d, vcpConnCanvas, nodes, edges);
+            } catch (err) { console.error('Failed to refresh VCP connectivity:', err); }
+        }
+
         async function refreshAILEE() {
             try {
                 const res = await fetch('/api/ailee/metric/value');
@@ -461,6 +501,7 @@
             refreshNodes();
             refreshCoupling();
             refreshVCP();
+            refreshVCPConnectivity();
             refreshAILEE();
             refreshAPI();
         }
