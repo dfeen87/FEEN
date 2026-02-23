@@ -30,3 +30,4 @@ phys_test
 # Python
 __pycache__/
 *.pyc
+*.so
