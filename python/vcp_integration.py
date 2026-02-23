@@ -89,10 +89,10 @@ def get_vcp_network_view():
 
         if n1 and n2:
             metrics = {}
-            x1 = n1['state'].get('x', 0.0)
-            v1 = n1['state'].get('v', 0.0)
-            x2 = n2['state'].get('x', 0.0)
-            v2 = n2['state'].get('v', 0.0)
+            x1 = n1.get('state', {}).get('x', 0.0)
+            v1 = n1.get('state', {}).get('v', 0.0)
+            x2 = n2.get('state', {}).get('x', 0.0)
+            v2 = n2.get('state', {}).get('v', 0.0)
             k = edge.get('strength', 0.0)
 
             if pyfeen:

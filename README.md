@@ -29,9 +29,11 @@ FEEN is available as a live, interactive web application that lets you explore a
 
 | Page | URL | Description |
 |------|-----|-------------|
+| **Dashboard** | [/](https://feen.onrender.com/) | Live overview tiles for all subsystems |
 | **Simulation** | [/simulation](https://feen.onrender.com/simulation) | Primary workspace — resonator state, signal injection, network control |
 | **Nodes** | [/node-graph](https://feen.onrender.com/node-graph) | Resonator nodes and active plugins |
 | **Coupling** | [/coupling](https://feen.onrender.com/coupling) | Interactive node coupling editor |
+| **VCP Connectivity** | [/vcp-connectivity](https://feen.onrender.com/vcp-connectivity) | Live graph of distributed VCP nodes & FEEN physics metrics |
 | **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Path wiring view |
 | **AILEE Metrics** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
 | **API Reference** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
@@ -144,6 +146,55 @@ This separation ensures that FEEN can evolve toward FPGA or ASIC implementations
 
 - **AILEE Trust Layer Repository**  
   https://github.com/dfeen87/AILEE-Trust-Layer
+
+---
+
+## VCP Connectivity
+
+FEEN provides a read-only visualization layer for **VCP (Verified Control Path)** distributed networks. This is a **Phase II integration** — FEEN acts purely as a physics observer; VCP remains the distributed orchestrator and FEEN never modifies VCP state.
+
+### Architecture Boundary
+
+| Responsibility | Owner |
+|----------------|-------|
+| Distributed task orchestration | VCP |
+| Node/edge state and topology | VCP |
+| Physics metrics (resonance, stability, Δv) | FEEN |
+| Visualization of VCP graph | FEEN |
+
+FEEN does not control, schedule, or mutate VCP nodes.
+
+### Backend Module: `vcp_integration.py`
+
+`python/vcp_integration.py` provides a single function, `get_vcp_network_view()`, that:
+
+1. **Fetches real VCP state** from the external coordinator at `VCP_API_URL` (set via environment variable) — read-only GET requests only.
+2. **Falls back to a local FEEN simulation** when `VCP_API_URL` is unset or the coordinator is unreachable, producing a simulated six-node oscillator mesh.
+3. **Computes FEEN physics metrics** for every edge:
+
+| Metric | Definition |
+|--------|-----------|
+| **Resonance** | `1 − |E₁ − E₂| / (E₁ + E₂ + ε)` — energy alignment between coupled nodes |
+| **Interference** | `k · (x₂ − x₁) · v₁` — net power transferred by the coupling force |
+| **Stability** | `1 / (1 + |v₁ − v₂|)` — velocity mismatch between endpoints |
+| **Δv** | AILEE `AileeMetric` integrated over one coupling timestep |
+
+### Stateless Endpoints
+
+Three endpoints allow VCP clients to invoke FEEN physics computations without any shared state:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET  /api/vcp/view` | Current VCP network snapshot with FEEN metrics |
+| `POST /feen-changes/simulate` | Stateless single-step resonator integration |
+| `POST /feen-changes/coupling` | Stateless coupling force calculation |
+| `POST /feen-changes/delta_v` | Stateless Δv increment computation |
+
+All four endpoints are read-only with respect to FEEN's simulation state — they do not call `tick()`, `inject()`, or `reset()`.
+
+### VCP Connectivity Tab
+
+The `/vcp-connectivity` page renders a live Cytoscape.js graph that polls `/api/vcp/view` every two seconds. Selecting a node or edge shows its live FEEN physics metrics in the details panel. No UI element allows the user to modify VCP topology.
 
 ---
 
@@ -308,6 +359,7 @@ feen/
 │   ├── pyfeen.cpp                         # pybind11 interface (FEEN core + AILEE)
 │   ├── ailee.py                           # Python façade for AILEE primitives
 │   ├── feen_rest_api.py                   # Flask REST API server
+│   ├── vcp_integration.py                 # VCP Connectivity backend (read-only observer)
 │   ├── plugin_registry.py                 # Plugin lifecycle manager
 │   ├── requirements.txt                   # Python runtime dependencies
 │   ├── CMakeLists.txt                     # pybind11 build rules
@@ -325,7 +377,8 @@ feen/
 │   └── 📁 tests/                          # Python test suite
 │       ├── test_ailee_rest_endpoints.py   # AILEE REST endpoint integration tests
 │       ├── test_plugin_registry.py        # Plugin lifecycle & boundary tests
-│       └── test_vcp_wiring_invariants.py  # VCP wiring invariant tests
+│       ├── test_vcp_wiring_invariants.py  # VCP wiring invariant tests
+│       └── test_vcp_connectivity_endpoint.py # VCP Connectivity endpoint tests
 │
 ├── 📁 tests/                              # C++ validation & unit tests
 │   ├── CMakeLists.txt                     # CTest configuration
@@ -355,9 +408,11 @@ feen/
 │   ├── app.py                             # Route definitions and entry point
 │   ├── requirements.txt                   # Web runtime dependencies
 │   ├── 📁 templates/                      # Jinja2 HTML templates
+│   │   ├── dashboard.html                 # Dashboard — live overview tiles
 │   │   ├── index.html                     # Simulation — primary workspace
 │   │   ├── node_graph.html                # Nodes — resonator and plugin visualization
 │   │   ├── coupling.html                  # Coupling — interactive coupling editor
+│   │   ├── vcp_connectivity.html          # VCP Connectivity — live VCP graph & FEEN metrics
 │   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Path view
 │   │   ├── ailee_metric.html              # AILEE Metrics — live Δv visualization
 │   │   └── docs.html                      # API Reference — human-readable REST docs

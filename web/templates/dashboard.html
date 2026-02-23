@@ -450,7 +450,7 @@
             try {
                 const res = await fetch('/api/ailee/metric/value');
                 const data = await res.json();
-                const val = data.current_delta_v || 0;
+                const val = data.delta_v || 0;
 
                 document.getElementById('dash-delta-v').textContent = val.toFixed(4);
 
