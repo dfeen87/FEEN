@@ -26,7 +26,9 @@
         .main-grid {
             display: grid;
             grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
             height: calc(100vh - 200px);
+            gap: 0;
         }
 
         .graph-wrapper {
@@ -317,6 +319,9 @@
                         }
                     });
                 });
+
+                // Ensure Cytoscape canvas matches the current container size
+                cy.resize();
 
                 // If this is first load, run layout
                 if (cy.nodes().length > 0 && !window.layoutRun) {
