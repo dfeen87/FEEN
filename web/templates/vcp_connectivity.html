@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN - VCP Connectivity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        .main-grid {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 1.5rem;
+            height: calc(100vh - 140px);
+        }
+
+        .graph-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .details-panel {
+            background: #1e1e22;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .details-header {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+            color: #fff;
+        }
+
+        .metric-row {
+            display: flex;
+            justify_content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .metric-label {
+            color: #888;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff9d;
+        }
+
+        .empty-hint {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        /* Cytoscape styles for connectivity visualization */
+        /* Nodes: Larger, glowing */
+        /* Edges: Thickness based on strength, color based on stability? */
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/simulation" class="nav-link">Simulation</a>
+                <a href="/node-graph" class="nav-link">Nodes</a>
+                <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/vcp-connectivity" class="nav-link active">VCP Connectivity</a>
+                <a href="/vcp-wiring" class="nav-link">VCP Wiring</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/docs" class="nav-link">API Reference</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>VCP Connectivity</h1>
+                    <p>Live visualization of the distributed VCP graph &amp; FEEN metrics</p>
+                </div>
+                <div class="header-badge">LIVE</div>
+            </header>
+
+            <main class="main-grid">
+
+                <!-- Visualization -->
+                <section class="graph-wrapper">
+                    <div id="cy" class="graph-container"></div>
+                </section>
+
+                <!-- Details Panel -->
+                <aside class="details-panel" id="details-panel">
+                    <div class="details-header">Selection Details</div>
+                    <div id="details-content">
+                        <div class="empty-hint">Select a node or connection to view live metrics.</div>
+                    </div>
+                </aside>
+
+            </main>
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>Powered by FEEN Core (C++17) &amp; Python Bindings</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+        let cy = cytoscape({
+            container: document.getElementById('cy'),
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#00ff9d',
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'bottom',
+                        'text-margin-y': 5,
+                        'font-family': 'Inter, sans-serif',
+                        'font-size': 10,
+                        'width': 30,
+                        'height': 30,
+                        'border-width': 2,
+                        'border-color': '#111'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#444',
+                        'target-arrow-shape': 'none',
+                        'curve-style': 'bezier',
+                        'opacity': 0.6
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'border-width': 3,
+                        'border-color': '#fff',
+                        'background-color': '#00cc7d',
+                        'line-color': '#fff',
+                        'target-arrow-color': '#fff',
+                        'opacity': 1
+                    }
+                }
+            ],
+            layout: {
+                name: 'circle', // Initial layout, will update
+                padding: 50
+            }
+        });
+
+        // Store latest data for detail view updates
+        let lastData = null;
+        let selectedId = null; // ID of selected element
+
+        function updateDetails(ele) {
+            const content = document.getElementById('details-content');
+            if (!ele) {
+                content.innerHTML = '<div class="empty-hint">Select a node or connection to view live metrics.</div>';
+                return;
+            }
+
+            const data = ele.data();
+            let html = '';
+
+            if (ele.isNode()) {
+                // Node details
+                const nodeData = lastData.nodes.find(n => String(n.id) === data.id);
+                if (nodeData) {
+                    html += `<div class="metric-row"><span class="metric-label">Name</span><span class="metric-value">${nodeData.name}</span></div>`;
+                    html += `<div class="metric-row"><span class="metric-label">Type</span><span class="metric-value">${nodeData.type}</span></div>`;
+                    html += `<div class="metric-row"><span class="metric-label">Status</span><span class="metric-value">${nodeData.status}</span></div>`;
+
+                    if (nodeData.state) {
+                        html += `<hr style="border-color:#333; margin: 1rem 0;">`;
+                        html += `<div class="metric-row"><span class="metric-label">Position (x)</span><span class="metric-value">${nodeData.state.x.toFixed(4)}</span></div>`;
+                        html += `<div class="metric-row"><span class="metric-label">Velocity (v)</span><span class="metric-value">${nodeData.state.v.toFixed(4)}</span></div>`;
+                    }
+                }
+            } else {
+                // Edge details
+                const edgeData = lastData.edges.find(e =>
+                    String(e.source) === data.source && String(e.target) === data.target
+                );
+
+                if (edgeData) {
+                    html += `<div class="metric-row"><span class="metric-label">Source</span><span class="metric-value">Node ${edgeData.source}</span></div>`;
+                    html += `<div class="metric-row"><span class="metric-label">Target</span><span class="metric-value">Node ${edgeData.target}</span></div>`;
+                    html += `<div class="metric-row"><span class="metric-label">Strength</span><span class="metric-value">${edgeData.strength.toFixed(3)}</span></div>`;
+
+                    if (edgeData.metrics) {
+                        html += `<hr style="border-color:#333; margin: 1rem 0;">`;
+                        html += `<div class="metric-row"><span class="metric-label">Resonance</span><span class="metric-value">${edgeData.metrics.resonance.toFixed(3)}</span></div>`;
+                        html += `<div class="metric-row"><span class="metric-label">Interference</span><span class="metric-value">${edgeData.metrics.interference.toFixed(3)}</span></div>`;
+                        html += `<div class="metric-row"><span class="metric-label">Stability</span><span class="metric-value">${edgeData.metrics.stability.toFixed(3)}</span></div>`;
+                        html += `<div class="metric-row"><span class="metric-label">Δv contrib</span><span class="metric-value">${edgeData.metrics.delta_v.toFixed(5)}</span></div>`;
+                    }
+                }
+            }
+            content.innerHTML = html;
+        }
+
+        cy.on('tap', function(evt){
+            if(evt.target === cy){
+                selectedId = null;
+                updateDetails(null);
+            } else {
+                selectedId = evt.target.id();
+                updateDetails(evt.target);
+            }
+        });
+
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/vcp/view');
+                if (!res.ok) return;
+                const data = await res.json();
+                lastData = data;
+
+                const nodes = data.nodes || [];
+                const edges = data.edges || [];
+
+                // Update Cytoscape
+                // This is a simplified diffing strategy:
+                // 1. Add new nodes/edges
+                // 2. Remove missing ones
+                // 3. Update data (not visual style unless necessary)
+
+                // For simplicity in this demo, since topology is likely static in mock:
+                // We just update the batch.
+
+                cy.batch(() => {
+                    const existingNodes = new Set(cy.nodes().map(n => n.id()));
+                    const existingEdges = new Set(cy.edges().map(e => e.id()));
+
+                    // Add nodes
+                    nodes.forEach(n => {
+                        const nid = String(n.id);
+                        if (!existingNodes.has(nid)) {
+                            cy.add({ group: 'nodes', data: { id: nid, label: n.name } });
+                        }
+                    });
+
+                    // Add edges
+                    edges.forEach(e => {
+                        const eid = `e${e.source}-${e.target}`;
+                        if (!existingEdges.has(eid)) {
+                            cy.add({ group: 'edges', data: { id: eid, source: String(e.source), target: String(e.target) } });
+                        }
+                    });
+                });
+
+                // If this is first load, run layout
+                if (cy.nodes().length > 0 && !window.layoutRun) {
+                    cy.layout({ name: 'circle', animate: true }).run();
+                    window.layoutRun = true;
+                }
+
+                // Update details if something selected
+                if (selectedId) {
+                    const ele = cy.getElementById(selectedId);
+                    if (ele.length > 0) updateDetails(ele);
+                }
+
+            } catch (err) {
+                console.error("Failed to fetch VCP view:", err);
+            }
+        }
+
+        // Poll every 2 seconds
+        fetchData();
+        setInterval(fetchData, 2000);
+
+    </script>
+</body>
+</html>

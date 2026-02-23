@@ -1,0 +1,20 @@
+================================================================================
+FEEN REST API Server - Development/Research Mode
+================================================================================
+
+⚠️  WARNING: This is a DEVELOPMENT server, not for production use!
+   For production deployments, use a production WSGI server like:
+   - Gunicorn: gunicorn -w 4 -b 0.0.0.0:5000 feen_rest_api:app
+   - uWSGI: uwsgi --http 0.0.0.0:5000 --module feen_rest_api:app
+
+Starting FEEN REST API server on 127.0.0.1:5000
+Access the API at: http://127.0.0.1:5000
+API Documentation: http://127.0.0.1:5000/
+
+================================================================================
+ * Serving Flask app 'feen_rest_api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [23/Feb/2026 17:26:39] "[33mGET /vcp-connectivity HTTP/1.1[0m" 404 -

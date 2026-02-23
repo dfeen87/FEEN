@@ -61,6 +61,12 @@ def vcp_wiring():
     return render_template('vcp_wiring.html')
 
 
+@app.route('/vcp-connectivity')
+def vcp_connectivity():
+    """Serve the VCP Connectivity visualization page."""
+    return render_template('vcp_connectivity.html')
+
+
 @app.route('/docs')
 def api_docs():
     """Serve the human-readable API documentation page."""
