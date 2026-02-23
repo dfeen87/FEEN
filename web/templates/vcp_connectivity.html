@@ -25,7 +25,7 @@
 
         .main-grid {
             display: grid;
-            grid-template-columns: 3fr 1fr;
+            grid-template-columns: 4fr 1fr;
             gap: 1rem;
             height: calc(100vh - 200px);
         }
@@ -161,9 +161,9 @@
                         'text-valign': 'bottom',
                         'text-margin-y': 5,
                         'font-family': 'Inter, sans-serif',
-                        'font-size': 10,
-                        'width': 30,
-                        'height': 30,
+                        'font-size': 12,
+                        'width': 44,
+                        'height': 44,
                         'border-width': 2,
                         'border-color': '#111'
                     }
@@ -171,11 +171,11 @@
                 {
                     selector: 'edge',
                     style: {
-                        'width': 2,
+                        'width': 2.5,
                         'line-color': '#444',
                         'target-arrow-shape': 'none',
                         'curve-style': 'bezier',
-                        'opacity': 0.6
+                        'opacity': 0.75
                     }
                 },
                 {
@@ -299,7 +299,9 @@
 
                 // If this is first load, run layout
                 if (cy.nodes().length > 0 && !window.layoutRun) {
-                    cy.layout({ name: 'circle', animate: true }).run();
+                    const n = cy.nodes().length;
+                    const radius = Math.max(n * 55, 160);
+                    cy.layout({ name: 'circle', animate: true, radius: radius }).run();
                     window.layoutRun = true;
                 }
 
