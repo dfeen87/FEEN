@@ -596,14 +596,20 @@
                         <div class="artifact-block" id="artifact-preview"></div>
                     </section>
 
-                    <!-- Results Export Panel (auto-shown after each simulation) -->
-                    <section class="card" id="export-panel" style="display:none;">
+                    <!-- Results Export Panel (always visible) -->
+                    <section class="card" id="export-panel">
                         <h2 class="card-title">Results Export</h2>
                         <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.7rem;">
                             Download or share the full artifact bundle from the last run.
                         </div>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.9rem;">
-                            <a class="btn btn-primary btn-sm" id="btn-download-bundle" href="/api/hlv/artifacts/download" download="hlv_artifact_bundle.zip">
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.9rem;">
+                            <label class="section-label" style="margin:0;">Format</label>
+                            <select class="field-input" id="export-format" style="width:auto; padding:0.2rem 0.5rem;">
+                                <option value="zip">ZIP</option>
+                                <option value="pdf">PDF</option>
+                                <option value="docx">DOCX</option>
+                            </select>
+                            <a class="btn btn-primary btn-sm" id="btn-download-bundle" href="/api/hlv/artifacts/download?format=zip" download="hlv_artifact_bundle.zip">
                                 ⬇ Download Results
                             </a>
                         </div>
@@ -1292,6 +1298,14 @@
                 panel.style.display = 'none';
                 btn.textContent = '▸ Advanced SMTP Settings';
             }
+        });
+
+        // Update download button href/filename when format changes
+        document.getElementById('export-format').addEventListener('change', function () {
+            const fmt = this.value;
+            const btn = document.getElementById('btn-download-bundle');
+            btn.href = `/api/hlv/artifacts/download?format=${fmt}`;
+            btn.download = `hlv_artifact_bundle.${fmt}`;
         });
 
         document.getElementById('btn-email-bundle').addEventListener('click', async () => {
