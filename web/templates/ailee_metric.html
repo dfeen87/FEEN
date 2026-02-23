@@ -253,12 +253,14 @@
                 btn.classList.add('btn-primary');
             } else {
                 simInterval = setInterval(() => {
-                    // Add some noise to simulation
+                    // Add independent noise to each input to show dynamic simulation activity
                     const baseV = parseFloat(document.getElementById('input-v').value);
-                    const noise = (Math.random() - 0.5) * 0.2;
+                    const baseP = parseFloat(document.getElementById('input-p').value);
+                    const baseW = parseFloat(document.getElementById('input-w').value);
 
-                    // Update input visually to show activity
-                    // document.getElementById('input-v').value = (baseV + noise).toFixed(2);
+                    document.getElementById('input-v').value = Math.max(0.1, (baseV + (Math.random() - 0.5) * 0.2)).toFixed(2);
+                    document.getElementById('input-p').value = Math.max(0.1, (baseP + (Math.random() - 0.5) * 0.1)).toFixed(2);
+                    document.getElementById('input-w').value = Math.max(0.1, (baseW + (Math.random() - 0.5) * 0.1)).toFixed(2);
 
                     injectSample();
                 }, 200);

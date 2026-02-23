@@ -22,8 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: [],
                 backgroundColor: 'rgba(255, 99, 132, 0.6)',
                 borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                hidden: true // Hide velocity by default
+                borderWidth: 1
             }]
         },
         options: {
