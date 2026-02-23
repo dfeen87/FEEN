@@ -678,27 +678,18 @@ a:hover { color: #d0aaff; text-decoration: underline; }
     color: var(--clr-purple);
 }
 
-/* API Reference tile: full-width anchor row to balance a 7-tile grid */
-#tile-docs {
-    grid-column: 1 / -1;
-}
+/* API Reference tile: single-width, sits beside HLV tile in the last row */
 
 /* ---- Responsive ---- */
 @media (max-width: 700px) {
     .tile-grid {
         grid-template-columns: 1fr;
     }
-    #tile-docs {
-        grid-column: 1;
-    }
 }
 
 @media (min-width: 701px) and (max-width: 900px) {
     .tile-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-    #tile-docs {
-        grid-column: 1 / -1;
     }
 }
 
