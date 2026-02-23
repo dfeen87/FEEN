@@ -25,16 +25,16 @@ This repository is a continuous research project under active development.
 
 ### Live Application
 
-FEEN is available as a live, interactive web application that lets you explore and control the wave‑based engine in real time. The dashboard provides a visual interface for observing network state, injecting signals, managing nodes, and experimenting with plugins — all backed by the same deterministic physics core exposed through the REST API.
+FEEN is available as a live, interactive web application that lets you explore and control the wave‑based engine in real time. The simulation interface provides a visual workspace for observing network state, injecting signals, managing nodes, and experimenting with plugins — all backed by the same deterministic physics core exposed through the REST API.
 
 | Page | URL | Description |
 |------|-----|-------------|
-| **Dashboard** | [/dashboard](https://feen.onrender.com/dashboard) | Main network monitor — inject signals, manage nodes |
-| **Node Graph** | [/node-graph](https://feen.onrender.com/node-graph) | Visual graph of resonator coupling topology |
-| **AILEE Metric** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
+| **Simulation** | [/simulation](https://feen.onrender.com/simulation) | Primary workspace — resonator state, signal injection, network control |
+| **Nodes** | [/node-graph](https://feen.onrender.com/node-graph) | Resonator nodes and active plugins |
 | **Coupling** | [/coupling](https://feen.onrender.com/coupling) | Interactive node coupling editor |
 | **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Path wiring view |
-| **API Docs** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
+| **AILEE Metrics** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
+| **API Reference** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
 
 This live instance is intended for exploration, demonstration, and validation of FEEN’s architecture and behavior, while the API remains available for programmatic access and integration.
 
@@ -351,16 +351,16 @@ feen/
 │   ├── REST_API.md                        # REST API endpoint reference
 │   └── SPIRAL_TIME.md                     # Spiral-Time observer specification
 │
-├── 📁 web/                                # Web dashboard (Flask)
-│   ├── app.py                             # Dashboard entry point & route definitions
+├── 📁 web/                                # Web application (Flask)
+│   ├── app.py                             # Route definitions and entry point
 │   ├── requirements.txt                   # Web runtime dependencies
 │   ├── 📁 templates/                      # Jinja2 HTML templates
-│   │   ├── index.html                     # Main dashboard
-│   │   ├── node_graph.html                # Resonator coupling topology graph
-│   │   ├── ailee_metric.html              # Live Δv metric visualization
-│   │   ├── coupling.html                  # Interactive coupling editor
-│   │   ├── vcp_wiring.html                # Verified Control Path wiring view
-│   │   └── docs.html                      # Human-readable API docs page
+│   │   ├── index.html                     # Simulation — primary workspace
+│   │   ├── node_graph.html                # Nodes — resonator and plugin visualization
+│   │   ├── coupling.html                  # Coupling — interactive coupling editor
+│   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Path view
+│   │   ├── ailee_metric.html              # AILEE Metrics — live Δv visualization
+│   │   └── docs.html                      # API Reference — human-readable REST docs
 │   └── 📁 static/                         # Frontend assets
 │       ├── css/style.css                  # Global stylesheet
 │       ├── css/node_graph.css             # Node-graph panel styles
