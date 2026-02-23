@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top navigation bar -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/" class="nav-link active">Dashboard</a>
+                <a href="/simulation" class="nav-link">Simulation</a>
+                <a href="/node-graph" class="nav-link">Nodes</a>
+                <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/vcp-wiring" class="nav-link">VCP Wiring</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/docs" class="nav-link">API Reference</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>FEEN Research Instrument</h1>
+                    <p>Wave-native resonator network · live subsystem overview</p>
+                </div>
+                <div class="header-badge">LIVE</div>
+            </header>
+
+            <!-- Dashboard tiles -->
+            <div class="tile-grid">
+
+                <!-- Tile 1: Simulation -->
+                <a href="/simulation" class="tile" id="tile-simulation">
+                    <div class="tile-header">
+                        <span class="tile-title">Simulation</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-preview">
+                        <canvas id="sim-mini-chart"></canvas>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Nodes</span>
+                            <span class="tile-stat-value" id="dash-node-count">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Sim Time</span>
+                            <span class="tile-stat-value mono" id="dash-sim-time">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Ticks</span>
+                            <span class="tile-stat-value mono" id="dash-ticks">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 2: Nodes -->
+                <a href="/node-graph" class="tile" id="tile-nodes">
+                    <div class="tile-header">
+                        <span class="tile-title">Nodes</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-node-list" id="dash-node-list">
+                        <span class="tile-empty-hint">Loading…</span>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Active</span>
+                            <span class="tile-stat-value" id="dash-active-nodes">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Plugins</span>
+                            <span class="tile-stat-value" id="dash-plugins">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 3: Coupling -->
+                <a href="/coupling" class="tile" id="tile-coupling">
+                    <div class="tile-header">
+                        <span class="tile-title">Coupling</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-preview">
+                        <canvas id="coupling-mini-canvas"></canvas>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Nodes</span>
+                            <span class="tile-stat-value" id="dash-coup-nodes">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Connections</span>
+                            <span class="tile-stat-value" id="dash-coup-edges">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 4: VCP Wiring -->
+                <a href="/vcp-wiring" class="tile" id="tile-vcp">
+                    <div class="tile-header">
+                        <span class="tile-title">VCP Wiring</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-preview">
+                        <canvas id="vcp-mini-canvas"></canvas>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Wired</span>
+                            <span class="tile-stat-value" id="dash-vcp-nodes">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Paths</span>
+                            <span class="tile-stat-value" id="dash-vcp-paths">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 5: AILEE Metrics -->
+                <a href="/ailee-metric" class="tile" id="tile-ailee">
+                    <div class="tile-header">
+                        <span class="tile-title">AILEE Metrics</span>
+                        <span class="tile-badge">LIVE</span>
+                    </div>
+                    <div class="tile-preview">
+                        <canvas id="ailee-mini-chart"></canvas>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Δv Now</span>
+                            <span class="tile-stat-value mono" id="dash-delta-v">—</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Tile 6: API Reference -->
+                <a href="/docs" class="tile" id="tile-docs">
+                    <div class="tile-header">
+                        <span class="tile-title">API Reference</span>
+                    </div>
+                    <div class="tile-preview-static" id="dash-api-preview">
+                        <span class="tile-empty-hint">Loading…</span>
+                    </div>
+                    <div class="tile-meta">
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Version</span>
+                            <span class="tile-stat-value mono" id="dash-api-version">—</span>
+                        </div>
+                        <div class="tile-stat">
+                            <span class="tile-stat-label">Endpoints</span>
+                            <span class="tile-stat-value" id="dash-api-endpoints">—</span>
+                        </div>
+                    </div>
+                </a>
+
+            </div><!-- /tile-grid -->
+
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>FEEN — Field-Effect Emulation Network · C++17 Core &amp; Python Bindings</span>
+            <a href="/docs">API Documentation</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+    (function () {
+        // ── Mini chart: Simulation resonator state ──────────────────────
+        const simCtx = document.getElementById('sim-mini-chart').getContext('2d');
+        const simChart = new Chart(simCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'x',
+                        data: [],
+                        backgroundColor: 'rgba(54,162,235,0.55)',
+                        borderColor: 'rgba(54,162,235,0.9)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'v',
+                        data: [],
+                        backgroundColor: 'rgba(255,99,132,0.45)',
+                        borderColor: 'rgba(255,99,132,0.8)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                animation: false,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        suggestedMin: -2, suggestedMax: 2,
+                        grid: { color: '#1e1e22' },
+                        ticks: { color: '#555', font: { size: 9 } }
+                    }
+                }
+            }
+        });
+
+        // ── Mini chart: AILEE Δv sparkline ──────────────────────────────
+        const aileeCtx = document.getElementById('ailee-mini-chart').getContext('2d');
+        const aileeChart = new Chart(aileeCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    borderColor: '#00ff9d',
+                    backgroundColor: 'rgba(0,255,157,0.08)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: false,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: false,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        let aileeStep = 0;
+
+        // ── Mini canvas: coupling topology snapshot ──────────────────────
+        const coupCanvas = document.getElementById('coupling-mini-canvas');
+        const coupCtx2d  = coupCanvas.getContext('2d');
+
+        // ── Mini canvas: VCP wiring snapshot ────────────────────────────
+        const vcpCanvas = document.getElementById('vcp-mini-canvas');
+        const vcpCtx2d  = vcpCanvas.getContext('2d');
+
+        function drawMiniGraph(ctx, canvas, nodes, edges) {
+            const W = canvas.offsetWidth || 240;
+            const H = 90;
+            canvas.width  = W;
+            canvas.height = H;
+            ctx.clearRect(0, 0, W, H);
+
+            if (!nodes || nodes.length === 0) {
+                ctx.fillStyle = '#444';
+                ctx.font = '11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('No nodes', W / 2, H / 2 + 4);
+                return;
+            }
+
+            // Arrange nodes in a circle
+            const cx = W / 2;
+            const cy = H / 2;
+            const r  = Math.min(cx, cy) * 0.72;
+            const angleStep = (2 * Math.PI) / nodes.length;
+
+            const positions = nodes.map((n, i) => ({
+                id: String(n.id),
+                x: cx + r * Math.cos(i * angleStep - Math.PI / 2),
+                y: cy + r * Math.sin(i * angleStep - Math.PI / 2)
+            }));
+            const posById = {};
+            positions.forEach(p => { posById[p.id] = p; });
+
+            // Draw edges
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            if (edges) {
+                edges.forEach(e => {
+                    const s = posById[String(e.source)];
+                    const t = posById[String(e.target)];
+                    if (s && t) {
+                        ctx.beginPath();
+                        ctx.moveTo(s.x, s.y);
+                        ctx.lineTo(t.x, t.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+
+            // Draw nodes
+            positions.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#00ff9d';
+                ctx.fill();
+            });
+        }
+
+        // ── Fetch helpers ────────────────────────────────────────────────
+        async function refreshSimulation() {
+            try {
+                const [nodesRes, statusRes] = await Promise.all([
+                    fetch('/api/network/nodes'),
+                    fetch('/api/network/status')
+                ]);
+                const nodesData  = await nodesRes.json();
+                const statusData = await statusRes.json();
+                const nodes = nodesData.nodes || [];
+
+                document.getElementById('dash-node-count').textContent = nodes.length;
+                document.getElementById('dash-sim-time').textContent =
+                    (statusData.time || 0).toFixed(3) + ' s';
+                document.getElementById('dash-ticks').textContent =
+                    statusData.ticks || 0;
+
+                simChart.data.labels = nodes.map(n => `N${n.id}`);
+                simChart.data.datasets[0].data = nodes.map(n => n.x);
+                simChart.data.datasets[1].data = nodes.map(n => n.v);
+                simChart.update();
+            } catch (err) { console.error('Failed to refresh simulation:', err); }
+        }
+
+        async function refreshNodes() {
+            try {
+                const [nodesRes, pluginsRes] = await Promise.all([
+                    fetch('/api/network/nodes'),
+                    fetch('/api/plugins')
+                ]);
+                const nodesData   = await nodesRes.json();
+                const pluginsData = await pluginsRes.json();
+                const nodes   = nodesData.nodes || [];
+                const plugins = pluginsData.plugins || [];
+
+                document.getElementById('dash-active-nodes').textContent = nodes.length;
+                document.getElementById('dash-plugins').textContent = plugins.length;
+
+                const list = document.getElementById('dash-node-list');
+                if (nodes.length === 0) {
+                    list.innerHTML = '<span class="tile-empty-hint">No nodes yet</span>';
+                } else {
+                    list.innerHTML = nodes.slice(0, 4).map(n => `
+                        <div class="tile-node-row">
+                            <span class="tile-node-dot"></span>
+                            <span class="tile-node-label">${n.name || ('node_' + n.id)}</span>
+                            <span class="tile-node-val">${(n.x || 0).toFixed(3)}</span>
+                        </div>`).join('');
+                    if (nodes.length > 4) {
+                        list.innerHTML += `<span class="tile-empty-hint">+${nodes.length - 4} more</span>`;
+                    }
+                }
+            } catch (err) { console.error('Failed to refresh nodes:', err); }
+        }
+
+        async function refreshCoupling() {
+            try {
+                const [nodesRes, coupRes] = await Promise.all([
+                    fetch('/api/network/nodes'),
+                    fetch('/api/network/couplings')
+                ]);
+                const nodesData = await nodesRes.json();
+                const coupData  = await coupRes.json();
+                const nodes  = nodesData.nodes || [];
+                const edges  = coupData.couplings || [];
+
+                document.getElementById('dash-coup-nodes').textContent = nodes.length;
+                document.getElementById('dash-coup-edges').textContent = edges.length;
+
+                drawMiniGraph(coupCtx2d, coupCanvas, nodes, edges);
+            } catch (err) { console.error('Failed to refresh coupling:', err); }
+        }
+
+        async function refreshVCP() {
+            try {
+                const [nodesRes, coupRes] = await Promise.all([
+                    fetch('/api/network/nodes'),
+                    fetch('/api/network/couplings')
+                ]);
+                const nodesData = await nodesRes.json();
+                const coupData  = await coupRes.json();
+                const nodes  = nodesData.nodes || [];
+                const edges  = coupData.couplings || [];
+
+                document.getElementById('dash-vcp-nodes').textContent = nodes.length;
+                document.getElementById('dash-vcp-paths').textContent = edges.length;
+
+                drawMiniGraph(vcpCtx2d, vcpCanvas, nodes, edges);
+            } catch (err) { console.error('Failed to refresh VCP wiring:', err); }
+        }
+
+        async function refreshAILEE() {
+            try {
+                const res = await fetch('/api/ailee/metric/value');
+                const data = await res.json();
+                const val = data.current_delta_v || 0;
+
+                document.getElementById('dash-delta-v').textContent = val.toFixed(4);
+
+                if (aileeChart.data.labels.length > 30) {
+                    aileeChart.data.labels.shift();
+                    aileeChart.data.datasets[0].data.shift();
+                }
+                aileeChart.data.labels.push(aileeStep++);
+                aileeChart.data.datasets[0].data.push(val);
+                aileeChart.update();
+            } catch (err) { console.error('Failed to refresh AILEE metric:', err); }
+        }
+
+        async function refreshAPI() {
+            try {
+                const res  = await fetch('/api');
+                const data = await res.json();
+                const ro = (data.endpoint_classification || {}).read_only_observer     || [];
+                const mu = (data.endpoint_classification || {}).state_mutating_command || [];
+                const total = ro.length + mu.length;
+
+                document.getElementById('dash-api-version').textContent =
+                    data.version || '—';
+                document.getElementById('dash-api-endpoints').textContent = total;
+
+                const preview = document.getElementById('dash-api-preview');
+                const sample = [...ro.slice(0, 2), ...mu.slice(0, 2)];
+                if (sample.length === 0) {
+                    preview.innerHTML = '<span class="tile-empty-hint">No endpoints found</span>';
+                    return;
+                }
+                preview.innerHTML = sample.map(ep => {
+                    const isPost = ep.trim().startsWith('POST');
+                    const path   = ep.trim().replace(/^(GET|POST)\s+/, '');
+                    const cls    = isPost ? 'ep-post' : 'ep-get';
+                    const method = isPost ? 'POST' : 'GET';
+                    return `<div class="ep-row">
+                        <span class="ep-method ${cls}">${method}</span>
+                        <span>${path}</span>
+                    </div>`;
+                }).join('');
+            } catch (err) { console.error('Failed to refresh API index:', err); }
+        }
+
+        // ── Boot & polling ────────────────────────────────────────────────
+        function refreshAll() {
+            refreshSimulation();
+            refreshNodes();
+            refreshCoupling();
+            refreshVCP();
+            refreshAILEE();
+            refreshAPI();
+        }
+
+        refreshAll();
+        setInterval(refreshAll, 3000);
+    })();
+    </script>
+</body>
+</html>
