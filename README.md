@@ -38,6 +38,7 @@ FEEN is available as a live, interactive web application that lets you explore a
 | **AILEE Metrics** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
 | **HLV Dynamics Lab** | [/hlv-lab](https://feen.onrender.com/hlv-lab) | Structured phase-memory dynamics experiments |
 | **API Reference** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
+| **Hardware Link** | [/hardware](https://feen.onrender.com/hardware) | Bluetooth bridge · sensor → FEEN node · FEEN output → actuator |
 
 This live instance is intended for exploration, demonstration, and validation of FEEN’s architecture and behavior, while the API remains available for programmatic access and integration.
 
@@ -103,8 +104,45 @@ The FEEN dashboard uses a 3-column tile grid:
 |-----|-------|
 | 1 | Simulation, Nodes, Coupling |
 | 2 | VCP Connectivity, VCP Wiring, AILEE Metrics |
-| 3 | HLV Dynamics Lab, API Reference |
+| 3 | HLV Dynamics Lab, API Reference, Hardware Link |
 
+---
+
+## Hardware Link
+
+The **Hardware Link** tile and page (`/hardware`) provide a minimal Bluetooth bridge for local device connectivity. All behavior is strictly local and deterministic — no data is sent to external services.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Bluetooth Scan** | Discover nearby BT devices; scan results appear in-page |
+| **Pairing** | One-click pair from scan results; paired devices listed with address and RSSI |
+| **Live Data Streams** | Continuous sensor value feed (temperature, accelerometer, RSSI) from each paired device |
+| **Sensor → Node** | `inject <node_id> <value>` in the test console writes a sensor reading directly into a FEEN node state via `POST /api/network/nodes/<id>/state` |
+| **Output → Actuator** | `send <addr> <value>` in the test console writes a value to a paired device characteristic via `POST /api/hardware/send` |
+| **Test Console** | Minimal command-line console for ad-hoc send/inject operations and real-time log output |
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/api/hardware/status` | Connection status, paired device count, device list |
+| `POST` | `/api/hardware/scan/start` | Start Bluetooth device scan |
+| `POST` | `/api/hardware/scan/stop` | Stop Bluetooth device scan |
+| `GET`  | `/api/hardware/scan/results` | Current scan result list |
+| `POST` | `/api/hardware/pair` | Pair a device `{ addr, name }` |
+| `POST` | `/api/hardware/unpair` | Unpair a device `{ addr }` |
+| `GET`  | `/api/hardware/streams` | Live sensor data from all paired devices |
+| `POST` | `/api/hardware/send` | Send a value to a paired device `{ addr, value }` |
+
+### Design Constraints
+
+- **Local only** — no cloud relay; all pairing and data exchange occurs on the local host.
+- **Deterministic** — stream values are computed from real device data when hardware is present; a deterministic sine-based waveform is used when running in offline/demo mode so the UI remains functional without physical devices.
+- **One-way sensor path** — sensor values enter FEEN exclusively through `set_state()` / `inject()`, preserving the physics core's integrity.
+
+---
 
 ## Key Innovation
 
@@ -483,7 +521,8 @@ feen/
 │   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Path view
 │   │   ├── ailee_metric.html              # AILEE Metrics — live Δv visualization
 │   │   ├── hlv_lab.html                   # HLV Dynamics Lab — Kuramoto experiments & results export
-│   │   └── docs.html                      # API Reference — human-readable REST docs
+│   │   ├── docs.html                      # API Reference — human-readable REST docs
+│   │   └── hardware.html                  # Hardware Link — Bluetooth bridge & test console
 │   └── 📁 static/                         # Frontend assets
 │       ├── css/style.css                  # Global stylesheet
 │       ├── css/node_graph.css             # Node-graph panel styles
