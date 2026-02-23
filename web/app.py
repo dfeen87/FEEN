@@ -67,6 +67,12 @@ def vcp_connectivity():
     return render_template('vcp_connectivity.html')
 
 
+@app.route('/hlv-lab')
+def hlv_lab():
+    """Serve the HLV Dynamics Lab page."""
+    return render_template('hlv_lab.html')
+
+
 @app.route('/docs')
 def api_docs():
     """Serve the human-readable API documentation page."""
