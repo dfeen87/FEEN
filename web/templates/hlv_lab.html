@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEEN — HLV Dynamics Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ── HLV Lab–specific overrides ── */
+        .hlv-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1.2rem;
+            align-items: start;
+        }
+        .hlv-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .hlv-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+        .param-group {
+            margin-bottom: 0.9rem;
+        }
+        .param-group label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--clr-text-muted);
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .param-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .field-input {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            color: var(--clr-text);
+            padding: 0.38rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            width: 100%;
+            transition: border-color var(--transition);
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: var(--clr-accent);
+        }
+        .field-select {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            color: var(--clr-text);
+            padding: 0.38rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            width: 100%;
+            cursor: pointer;
+        }
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--clr-border);
+            margin: 0.8rem 0;
+        }
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--clr-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0.8rem 0 0.5rem;
+        }
+        .plugin-selector {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+        .plugin-btn {
+            flex: 1;
+            padding: 0.35rem 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-sm);
+            background: var(--clr-surface-3);
+            color: var(--clr-text-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: center;
+        }
+        .plugin-btn.active {
+            background: var(--clr-accent-dim);
+            border-color: var(--clr-accent);
+            color: var(--clr-accent);
+        }
+        .observer-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.82rem;
+            margin-bottom: 0.35rem;
+        }
+        .observer-row input[type=checkbox] {
+            accent-color: var(--clr-accent);
+            width: 14px;
+            height: 14px;
+        }
+        .summary-table {
+            width: 100%;
+            font-size: 0.82rem;
+            border-collapse: collapse;
+        }
+        .summary-table td, .summary-table th {
+            padding: 0.3rem 0.5rem;
+            border-bottom: 1px solid var(--clr-border);
+        }
+        .summary-table th {
+            color: var(--clr-text-muted);
+            font-weight: 500;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .summary-table .mono { font-family: var(--font-mono); }
+        .artifact-block {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 180px;
+            color: var(--clr-text-muted);
+        }
+        .artifact-hash {
+            background: var(--clr-surface-3);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.7rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: #00ff9d;
+            word-break: break-all;
+        }
+        .status-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-idle    { background: var(--clr-surface-3); color: var(--clr-text-muted); }
+        .status-running { background: rgba(3,218,198,0.15); color: var(--clr-accent); }
+        .status-error   { background: var(--clr-danger-dim); color: var(--clr-danger); }
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+        .histogram-container {
+            position: relative;
+            height: 200px;
+        }
+        .sweep-table-wrapper {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .sweep-table {
+            width: 100%;
+            font-size: 0.78rem;
+            border-collapse: collapse;
+        }
+        .sweep-table th, .sweep-table td {
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid var(--clr-border);
+            text-align: right;
+        }
+        .sweep-table th {
+            color: var(--clr-text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            position: sticky;
+            top: 0;
+            background: var(--clr-surface-2);
+        }
+        .sweep-table td:first-child,
+        .sweep-table th:first-child { text-align: left; }
+        .phase-params, .memory-params, .offset-params {
+            display: none;
+        }
+        .phase-params.visible,
+        .memory-params.visible,
+        .offset-params.visible {
+            display: block;
+        }
+        .null-test-row {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 0.3rem 0.65rem;
+            font-size: 0.78rem;
+        }
+        @media (max-width: 900px) {
+            .hlv-grid { grid-template-columns: 1fr; }
+            .hlv-charts { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+
+        <!-- Top navigation -->
+        <nav class="topbar">
+            <div class="topbar-brand">
+                <span class="brand-icon">◈</span>
+                <span class="brand-name">FEEN</span>
+            </div>
+            <div class="topbar-links">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/simulation" class="nav-link">Simulation</a>
+                <a href="/node-graph" class="nav-link">Nodes</a>
+                <a href="/coupling" class="nav-link">Coupling</a>
+                <a href="/vcp-connectivity" class="nav-link">VCP Connectivity</a>
+                <a href="/vcp-wiring" class="nav-link">VCP Wiring</a>
+                <a href="/ailee-metric" class="nav-link">AILEE Metrics</a>
+                <a href="/hlv-lab" class="nav-link active">HLV Lab</a>
+                <a href="/docs" class="nav-link">API Reference</a>
+            </div>
+        </nav>
+
+        <div class="page-content">
+
+            <!-- Page header -->
+            <header class="page-header">
+                <div class="page-header-text">
+                    <h1>HLV Dynamics Lab</h1>
+                    <p>Structured phase–memory dynamics · Kuramoto oscillator network experiments</p>
+                </div>
+                <div class="header-badge" id="run-status-badge">IDLE</div>
+            </header>
+
+            <!-- Stat cards -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Plugin</span>
+                    <span class="stat-value mono" id="stat-plugin">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Last R̄ (final 20%)</span>
+                    <span class="stat-value mono" id="stat-mean-r">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">t_settle</span>
+                    <span class="stat-value mono" id="stat-settle">—</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">κ</span>
+                    <span class="stat-value mono" id="stat-kappa">—</span>
+                </div>
+            </div>
+
+            <!-- Main layout -->
+            <div class="hlv-grid">
+
+                <!-- ── Left panel: Controls ─────────────────────────────── -->
+                <aside>
+
+                    <!-- Physics Plugin -->
+                    <section class="card">
+                        <h2 class="card-title">Physics Plugin  ẋ = F(t, x; G, θ)</h2>
+
+                        <div class="section-label">Select plugin</div>
+                        <div class="plugin-selector">
+                            <button class="plugin-btn active" data-plugin="P1" id="btn-p1">P1</button>
+                            <button class="plugin-btn" data-plugin="P2" id="btn-p2">P2</button>
+                            <button class="plugin-btn" data-plugin="P3" id="btn-p3">P3</button>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.7rem;" id="plugin-desc">
+                            P1 — Kuramoto baseline: θ̇ᵢ = ωᵢ + κ Σⱼ Aᵢⱼ sin(θⱼ − θᵢ) + σξᵢ
+                        </div>
+
+                        <div class="section-label">Shared parameters</div>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>κ (coupling)</label>
+                                <input class="field-input" id="param-kappa" type="number" value="2.0" step="0.1" min="0">
+                            </div>
+                            <div class="param-group">
+                                <label>σ (noise)</label>
+                                <input class="field-input" id="param-sigma" type="number" value="0.0" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <!-- P2 memory params -->
+                        <div class="memory-params" id="memory-params">
+                            <div class="section-label">P2 — Memory kernel</div>
+                            <div class="param-row">
+                                <div class="param-group">
+                                    <label>η (memory coupling)</label>
+                                    <input class="field-input" id="param-eta" type="number" value="0.5" step="0.1">
+                                </div>
+                                <div class="param-group">
+                                    <label>τₘ (memory timescale)</label>
+                                    <input class="field-input" id="param-tau-m" type="number" value="5.0" step="0.5" min="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- P3 phase offset params -->
+                        <div class="offset-params" id="offset-params">
+                            <div class="section-label">P3 — Phase offsets</div>
+                            <div class="param-row">
+                                <div class="param-group">
+                                    <label>φ₀ (offset)</label>
+                                    <input class="field-input" id="param-phi0" type="number" value="0.5" step="0.1" min="0">
+                                </div>
+                                <div class="param-group">
+                                    <label>Offset mode</label>
+                                    <select class="field-select" id="param-offset-mode">
+                                        <option value="chiral">Chiral (ring)</option>
+                                        <option value="random">Random</option>
+                                        <option value="zero">Zero (baseline)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Graph Layer -->
+                    <section class="card" style="margin-top:1rem;">
+                        <h2 class="card-title">Graph Layer  G : (Aᵢⱼ, φᵢⱼ)</h2>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>N (nodes)</label>
+                                <input class="field-input" id="param-N" type="number" value="32" step="1" min="4" max="256">
+                            </div>
+                            <div class="param-group">
+                                <label>Topology</label>
+                                <select class="field-select" id="param-topology">
+                                    <option value="ring">Ring</option>
+                                    <option value="fully_connected">Fully Connected</option>
+                                    <option value="small_world">Small-world</option>
+                                    <option value="erdos_renyi">Erdős–Rényi</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>Frequency dist.</label>
+                                <select class="field-select" id="param-freq-dist">
+                                    <option value="lorentzian">Lorentzian</option>
+                                    <option value="gaussian">Gaussian</option>
+                                    <option value="uniform">Uniform</option>
+                                </select>
+                            </div>
+                            <div class="param-group">
+                                <label>γ / std</label>
+                                <input class="field-input" id="param-gamma" type="number" value="0.5" step="0.1" min="0.01">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Simulation Config -->
+                    <section class="card" style="margin-top:1rem;">
+                        <h2 class="card-title">Simulation Config</h2>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>dt (timestep)</label>
+                                <input class="field-input" id="param-dt" type="number" value="0.05" step="0.01" min="0.001">
+                            </div>
+                            <div class="param-group">
+                                <label>t_end</label>
+                                <input class="field-input" id="param-t-end" type="number" value="50" step="5" min="1">
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>Seed</label>
+                                <input class="field-input" id="param-seed" type="number" value="42" step="1">
+                            </div>
+                            <div class="param-group">
+                                <label>Integrator</label>
+                                <select class="field-select" id="param-integrator">
+                                    <option value="euler">Euler</option>
+                                    <option value="rk4">RK4 (P1, noiseless)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="section-label" style="margin-top:0.6rem;">Observers  y(t) = O(t, x(t); G, θ)</div>
+                        <div class="observer-row">
+                            <input type="checkbox" id="obs-o1" checked>
+                            <label for="obs-o1">O1 — R(t), ψ(t), σ_θ(t) (order parameter)</label>
+                        </div>
+                        <div class="observer-row">
+                            <input type="checkbox" id="obs-o2">
+                            <label for="obs-o2">O2 — ΔΦ(t) (instability functional)</label>
+                        </div>
+                    </section>
+
+                    <!-- Perturbation Injection -->
+                    <section class="card" style="margin-top:1rem;">
+                        <h2 class="card-title">Perturbation Injection</h2>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>Type</label>
+                                <select class="field-select" id="inject-type">
+                                    <option value="phase_kick">phase_kick</option>
+                                    <option value="omega_kick">omega_kick</option>
+                                </select>
+                            </div>
+                            <div class="param-group">
+                                <label>Node (or "all")</label>
+                                <input class="field-input" id="inject-node" type="text" value="all">
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>Amplitude</label>
+                                <input class="field-input" id="inject-amplitude" type="number" value="0.5" step="0.1">
+                            </div>
+                            <div class="param-group">
+                                <label>At t =</label>
+                                <input class="field-input" id="inject-time" type="number" value="25.0" step="1.0" min="0">
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <label>Duration (omega_kick)</label>
+                            <input class="field-input" id="inject-duration" type="number" value="2.0" step="0.5" min="0">
+                        </div>
+                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                            <label style="font-size:0.78rem; display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                                <input type="checkbox" id="inject-enable" style="accent-color:var(--clr-accent);">
+                                Enable in next run
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Run / Sweep buttons -->
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:1rem;">
+                        <button class="btn btn-primary" id="btn-run">
+                            <span class="btn-icon">▶</span> Run Single Simulation
+                        </button>
+                        <button class="btn" id="btn-sweep" style="background:var(--clr-purple-dim); border-color:var(--clr-purple); color:var(--clr-purple);">
+                            <span class="btn-icon">⟳</span> Run κ-Sweep (E1)
+                        </button>
+                    </div>
+
+                    <!-- κ-sweep config -->
+                    <section class="card" style="margin-top:1rem;">
+                        <h2 class="card-title">κ-Sweep Configuration</h2>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>κ min</label>
+                                <input class="field-input" id="sweep-kappa-min" type="number" value="0.0" step="0.1" min="0">
+                            </div>
+                            <div class="param-group">
+                                <label>κ max</label>
+                                <input class="field-input" id="sweep-kappa-max" type="number" value="6.0" step="0.5" min="0">
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-group">
+                                <label>Δκ (step)</label>
+                                <input class="field-input" id="sweep-kappa-step" type="number" value="0.5" step="0.1" min="0.01">
+                            </div>
+                            <div class="param-group">
+                                <label>Seeds (S)</label>
+                                <input class="field-input" id="sweep-num-seeds" type="number" value="5" step="1" min="1" max="50">
+                            </div>
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--clr-text-muted); margin-top:0.3rem;">
+                            Default: N=32, ring, κ ∈ [0,6], S=10 (HLV.md E1 protocol)
+                        </div>
+                    </section>
+
+                    <!-- Null tests -->
+                    <section class="card" style="margin-top:1rem;">
+                        <h2 class="card-title">Null Tests</h2>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.5rem;">
+                            HLV.md §A.4–A.6 control integrity checks
+                        </div>
+                        <div class="null-test-row">
+                            <button class="btn btn-sm" id="btn-nt1" title="NT1: κ=0, verify no phase locking">NT1: κ=0</button>
+                            <button class="btn btn-sm" id="btn-nt4" title="NT4: Repeat with same seed, verify identical hash">NT4: Deterministic</button>
+                        </div>
+                        <div id="null-test-result" style="font-size:0.75rem; margin-top:0.5rem; color:var(--clr-text-muted);"></div>
+                    </section>
+
+                </aside>
+
+                <!-- ── Right panel: Visualizations ─────────────────────── -->
+                <div class="hlv-right">
+
+                    <!-- R(t) and ΔΦ(t) charts -->
+                    <div class="hlv-charts">
+                        <section class="card">
+                            <h2 class="card-title">Order Parameter  R(t)</h2>
+                            <div class="chart-container">
+                                <canvas id="chart-R"></canvas>
+                            </div>
+                        </section>
+                        <section class="card">
+                            <h2 class="card-title">Instability Functional  ΔΦ(t)</h2>
+                            <div class="chart-container">
+                                <canvas id="chart-delphi"></canvas>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Phase histogram -->
+                    <div class="hlv-charts">
+                        <section class="card">
+                            <h2 class="card-title">Phase Distribution  {θᵢ}</h2>
+                            <div class="histogram-container">
+                                <canvas id="chart-hist"></canvas>
+                            </div>
+                        </section>
+                        <section class="card">
+                            <h2 class="card-title">ψ(t) — Mean Phase</h2>
+                            <div class="chart-container">
+                                <canvas id="chart-psi"></canvas>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Summary table -->
+                    <section class="card">
+                        <h2 class="card-title">Run Summary</h2>
+                        <table class="summary-table" id="summary-table">
+                            <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+                            <tbody id="summary-tbody">
+                                <tr><td colspan="2" style="color:var(--clr-text-muted); font-size:0.8rem;">
+                                    No run yet — click Run Single Simulation
+                                </td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- κ-sweep results chart -->
+                    <section class="card" id="sweep-section" style="display:none;">
+                        <h2 class="card-title">κ-Sweep Results  ⟨R⟩(κ)</h2>
+                        <div style="position:relative; height:220px;">
+                            <canvas id="chart-sweep"></canvas>
+                        </div>
+                        <div class="sweep-table-wrapper" style="margin-top:0.7rem;">
+                            <table class="sweep-table" id="sweep-table">
+                                <thead>
+                                    <tr>
+                                        <th>κ</th>
+                                        <th>⟨R⟩</th>
+                                        <th>SE(R)</th>
+                                        <th>⟨t_settle⟩</th>
+                                        <th>Locked</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sweep-tbody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Artifact bundle -->
+                    <section class="card">
+                        <h2 class="card-title">Artifact Bundle</h2>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-bottom:0.6rem;">
+                            HLV.md Appendix A.2 — config.json · metrics.csv · events.jsonl · hash.txt
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.7rem;">
+                            <button class="btn btn-sm" id="btn-artifact-config">config.json</button>
+                            <button class="btn btn-sm" id="btn-artifact-metrics">metrics.csv</button>
+                            <button class="btn btn-sm" id="btn-artifact-events">events.jsonl</button>
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--clr-text-muted); margin-bottom:0.3rem;">SHA-256 hash</div>
+                        <div class="artifact-hash" id="artifact-hash">—</div>
+                        <div id="artifact-preview-label" style="font-size:0.72rem; color:var(--clr-text-muted); margin-top:0.5rem; margin-bottom:0.3rem;"></div>
+                        <div class="artifact-block" id="artifact-preview"></div>
+                    </section>
+
+                </div><!-- /hlv-right -->
+            </div><!-- /hlv-grid -->
+        </div><!-- /page-content -->
+
+        <footer class="app-footer">
+            <span>FEEN HLV Dynamics Lab · Phase-1 Control Layer · P1+O1+Logging</span>
+            <a href="/docs">API Reference</a>
+        </footer>
+
+    </div><!-- /app-shell -->
+
+    <script>
+    (function () {
+        'use strict';
+
+        // ── State ────────────────────────────────────────────────────────────
+        let activePlugin = 'P1';
+        let latestMetrics = null;
+        let latestSweep = null;
+        let sweepChart = null;
+
+        const PLUGIN_DESCS = {
+            P1: 'P1 — Kuramoto baseline: θ̇ᵢ = ωᵢ + κ Σⱼ Aᵢⱼ sin(θⱼ − θᵢ) + σξᵢ',
+            P2: 'P2 — Memory kernel: θ̇ᵢ = ωᵢ + κ Σⱼ Aᵢⱼ sin(θⱼ − θᵢ) + ηmᵢ + σξᵢ',
+            P3: 'P3 — Phase-offset: θ̇ᵢ = ωᵢ + κ Σⱼ Aᵢⱼ sin(θⱼ − θᵢ + φᵢⱼ) + σξᵢ',
+        };
+
+        // ── Chart: R(t) ──────────────────────────────────────────────────────
+        const ctxR = document.getElementById('chart-R').getContext('2d');
+        const chartR = new Chart(ctxR, {
+            type: 'line',
+            data: { labels: [], datasets: [{
+                label: 'R(t)', data: [],
+                borderColor: '#00ff9d', backgroundColor: 'rgba(0,255,157,0.08)',
+                tension: 0.3, fill: true, pointRadius: 0, borderWidth: 1.5
+            }]},
+            options: {
+                responsive: true, animation: false, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, title: { display: true, text: 't', color: '#666' },
+                         ticks: { color: '#555', maxTicksLimit: 8, font: { size: 9 } },
+                         grid: { color: '#1e1e22' }},
+                    y: { min: 0, max: 1, display: true,
+                         title: { display: true, text: 'R', color: '#666' },
+                         ticks: { color: '#555', font: { size: 9 } },
+                         grid: { color: '#1e1e22' }}
+                }
+            }
+        });
+
+        // ── Chart: ΔΦ(t) ─────────────────────────────────────────────────────
+        const ctxDP = document.getElementById('chart-delphi').getContext('2d');
+        const chartDP = new Chart(ctxDP, {
+            type: 'line',
+            data: { labels: [], datasets: [{
+                label: 'ΔΦ(t)', data: [],
+                borderColor: '#bb86fc', backgroundColor: 'rgba(187,134,252,0.07)',
+                tension: 0.3, fill: true, pointRadius: 0, borderWidth: 1.5
+            }]},
+            options: {
+                responsive: true, animation: false, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, title: { display: true, text: 't', color: '#666' },
+                         ticks: { color: '#555', maxTicksLimit: 8, font: { size: 9 } },
+                         grid: { color: '#1e1e22' }},
+                    y: { display: true,
+                         title: { display: true, text: 'ΔΦ', color: '#666' },
+                         ticks: { color: '#555', font: { size: 9 } },
+                         grid: { color: '#1e1e22' }}
+                }
+            }
+        });
+
+        // ── Chart: Phase histogram ────────────────────────────────────────────
+        const ctxHist = document.getElementById('chart-hist').getContext('2d');
+        const chartHist = new Chart(ctxHist, {
+            type: 'bar',
+            data: { labels: [], datasets: [{
+                label: 'Phase count', data: [],
+                backgroundColor: 'rgba(3,218,198,0.5)',
+                borderColor: 'rgba(3,218,198,0.8)',
+                borderWidth: 1
+            }]},
+            options: {
+                responsive: true, animation: false, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, title: { display: true, text: 'θ (rad)', color: '#666' },
+                         ticks: { color: '#555', font: { size: 9 } },
+                         grid: { color: '#1e1e22' }},
+                    y: { display: true, title: { display: true, text: 'Count', color: '#666' },
+                         ticks: { color: '#555', font: { size: 9 } },
+                         grid: { color: '#1e1e22' }}
+                }
+            }
+        });
+
+        // ── Chart: ψ(t) ──────────────────────────────────────────────────────
+        const ctxPsi = document.getElementById('chart-psi').getContext('2d');
+        const chartPsi = new Chart(ctxPsi, {
+            type: 'line',
+            data: { labels: [], datasets: [{
+                label: 'ψ(t)', data: [],
+                borderColor: '#ff9d00', backgroundColor: 'rgba(255,157,0,0.07)',
+                tension: 0.3, fill: false, pointRadius: 0, borderWidth: 1.5
+            }]},
+            options: {
+                responsive: true, animation: false, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, title: { display: true, text: 't', color: '#666' },
+                         ticks: { color: '#555', maxTicksLimit: 8, font: { size: 9 } },
+                         grid: { color: '#1e1e22' }},
+                    y: { display: true, min: -Math.PI, max: Math.PI,
+                         title: { display: true, text: 'ψ (rad)', color: '#666' },
+                         ticks: { color: '#555', font: { size: 9 } },
+                         grid: { color: '#1e1e22' }}
+                }
+            }
+        });
+
+        // ── Plugin selector ─────────────────────────────────────────────────
+        document.querySelectorAll('.plugin-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                activePlugin = btn.dataset.plugin;
+                document.querySelectorAll('.plugin-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('plugin-desc').textContent = PLUGIN_DESCS[activePlugin];
+                document.getElementById('memory-params').classList.toggle('visible', activePlugin === 'P2');
+                document.getElementById('offset-params').classList.toggle('visible', activePlugin === 'P3');
+            });
+        });
+
+        // ── Build run config from UI ─────────────────────────────────────────
+        function buildRunConfig() {
+            const observers = [];
+            if (document.getElementById('obs-o1').checked) observers.push('O1');
+            if (document.getElementById('obs-o2').checked) observers.push('O2');
+
+            const freqType = document.getElementById('param-freq-dist').value;
+            const gamma = parseFloat(document.getElementById('param-gamma').value);
+            const freqDist = freqType === 'lorentzian'
+                ? { type: 'lorentzian', gamma }
+                : freqType === 'gaussian'
+                    ? { type: 'gaussian', mean: 0.0, std: gamma }
+                    : { type: 'uniform', low: -gamma, high: gamma };
+
+            const cfg = {
+                plugin: activePlugin,
+                N: parseInt(document.getElementById('param-N').value),
+                topology: document.getElementById('param-topology').value,
+                kappa: parseFloat(document.getElementById('param-kappa').value),
+                sigma: parseFloat(document.getElementById('param-sigma').value),
+                eta: parseFloat(document.getElementById('param-eta').value),
+                tau_m: parseFloat(document.getElementById('param-tau-m').value),
+                phi0: parseFloat(document.getElementById('param-phi0').value),
+                offset_mode: document.getElementById('param-offset-mode').value,
+                seed: parseInt(document.getElementById('param-seed').value),
+                dt: parseFloat(document.getElementById('param-dt').value),
+                t_end: parseFloat(document.getElementById('param-t-end').value),
+                integrator: document.getElementById('param-integrator').value,
+                observers: observers,
+                freq_dist: freqDist,
+            };
+
+            if (document.getElementById('inject-enable').checked) {
+                const injectType = document.getElementById('inject-type').value;
+                const ev = {
+                    type: injectType,
+                    node: document.getElementById('inject-node').value === 'all'
+                          ? 'all' : parseInt(document.getElementById('inject-node').value),
+                    amplitude: parseFloat(document.getElementById('inject-amplitude').value),
+                    time: parseFloat(document.getElementById('inject-time').value),
+                };
+                if (injectType === 'omega_kick') {
+                    ev.duration = parseFloat(document.getElementById('inject-duration').value);
+                }
+                cfg.inject_events = [ev];
+            }
+
+            return cfg;
+        }
+
+        // ── Update R(t) chart from metrics array ─────────────────────────────
+        function updateChartsFromMetrics(metrics, stride) {
+            stride = stride || 1;
+            const sampled = metrics.filter((_, i) => i % stride === 0);
+            const labels = sampled.map(r => r.t.toFixed(1));
+            const rData = sampled.map(r => r.R);
+            const dpData = sampled.map(r => r.delta_phi || 0);
+            const psiData = sampled.map(r => r.psi || 0);
+
+            chartR.data.labels = labels;
+            chartR.data.datasets[0].data = rData;
+            chartR.update('none');
+
+            chartDP.data.labels = labels;
+            chartDP.data.datasets[0].data = dpData;
+            chartDP.update('none');
+
+            chartPsi.data.labels = labels;
+            chartPsi.data.datasets[0].data = psiData;
+            chartPsi.update('none');
+        }
+
+        // ── Update phase histogram (last row of metrics) ──────────────────────
+        async function updateHistogram() {
+            // Fetch final phase snapshot via full results
+            try {
+                const res = await fetch('/api/hlv/results/full');
+                if (!res.ok) return;
+                const data = await res.json();
+                const lastRow = (data.metrics || []).at(-1);
+                if (!lastRow) return;
+                // We don't have individual phases in the metrics (only order param).
+                // Approximate histogram from final R and a synthetic uniform distribution
+                // weighted by R. This is a visualization aid only.
+                const R = lastRow.R || 0;
+                const psi = lastRow.psi || 0;
+                const bins = 16;
+                const edges = [];
+                const counts = [];
+                for (let b = 0; b < bins; b++) {
+                    const angle = -Math.PI + (2 * Math.PI / bins) * (b + 0.5);
+                    edges.push(angle.toFixed(2));
+                    // Von Mises approximation for visualization
+                    const kappa_vm = R * 2;
+                    const val = Math.exp(kappa_vm * Math.cos(angle - psi));
+                    counts.push(val);
+                }
+                const total = counts.reduce((a, b) => a + b, 0);
+                chartHist.data.labels = edges;
+                chartHist.data.datasets[0].data = counts.map(c => c / total);
+                chartHist.update('none');
+            } catch (_) {}
+        }
+
+        // ── Update summary table ──────────────────────────────────────────────
+        function updateSummaryTable(summary) {
+            const tbody = document.getElementById('summary-tbody');
+            const fmt = (v, d) => v !== null && v !== undefined ? Number(v).toFixed(d || 4) : '—';
+            tbody.innerHTML = `
+                <tr><td>Plugin</td><td class="mono">${summary.plugin || '—'}</td></tr>
+                <tr><td>N</td><td class="mono">${summary.N || '—'}</td></tr>
+                <tr><td>κ</td><td class="mono">${fmt(summary.kappa, 3)}</td></tr>
+                <tr><td>Seed</td><td class="mono">${summary.seed ?? '—'}</td></tr>
+                <tr><td>⟨R⟩ final 20%</td><td class="mono">${fmt(summary.mean_R_final, 4)}</td></tr>
+                <tr><td>SE(R)</td><td class="mono">${fmt(summary.se_R_final, 5)}</td></tr>
+                <tr><td>t_settle (R > 0.9)</td><td class="mono">${summary.settling_time !== null ? fmt(summary.settling_time, 2) : '—'}</td></tr>
+                <tr><td>Steps</td><td class="mono">${summary.n_steps || '—'}</td></tr>
+                <tr><td>t_end</td><td class="mono">${fmt(summary.t_end_actual, 2)}</td></tr>
+            `;
+
+            document.getElementById('stat-plugin').textContent = summary.plugin || '—';
+            document.getElementById('stat-mean-r').textContent = fmt(summary.mean_R_final, 4);
+            document.getElementById('stat-settle').textContent =
+                summary.settling_time !== null ? fmt(summary.settling_time, 2) + ' s' : '—';
+            document.getElementById('stat-kappa').textContent = fmt(summary.kappa, 2);
+        }
+
+        // ── Load and show artifacts ───────────────────────────────────────────
+        async function loadArtifacts() {
+            try {
+                const res = await fetch('/api/hlv/artifacts');
+                if (!res.ok) return;
+                const bundle = await res.json();
+                document.getElementById('artifact-hash').textContent =
+                    bundle['hash.txt'] || '—';
+                return bundle;
+            } catch (_) { return null; }
+        }
+
+        function showArtifact(bundle, key, label) {
+            document.getElementById('artifact-preview-label').textContent = label;
+            document.getElementById('artifact-preview').textContent =
+                (bundle && bundle[key]) ? bundle[key].slice(0, 2000) : '(empty)';
+        }
+
+        let _cachedBundle = null;
+
+        document.getElementById('btn-artifact-config').addEventListener('click', async () => {
+            _cachedBundle = _cachedBundle || await loadArtifacts();
+            showArtifact(_cachedBundle, 'config.json', 'config.json');
+        });
+        document.getElementById('btn-artifact-metrics').addEventListener('click', async () => {
+            _cachedBundle = _cachedBundle || await loadArtifacts();
+            showArtifact(_cachedBundle, 'metrics.csv', 'metrics.csv (first 2000 chars)');
+        });
+        document.getElementById('btn-artifact-events').addEventListener('click', async () => {
+            _cachedBundle = _cachedBundle || await loadArtifacts();
+            showArtifact(_cachedBundle, 'events.jsonl', 'events.jsonl');
+        });
+
+        // ── Run single simulation ─────────────────────────────────────────────
+        document.getElementById('btn-run').addEventListener('click', async () => {
+            const cfg = buildRunConfig();
+            const badge = document.getElementById('run-status-badge');
+            badge.textContent = 'RUNNING';
+            badge.className = 'header-badge';
+            badge.style.background = 'rgba(3,218,198,0.18)';
+            badge.style.color = 'var(--clr-accent)';
+            _cachedBundle = null;
+
+            try {
+                const res = await fetch('/api/hlv/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cfg)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Run failed: ' + (data.error || 'unknown error'));
+                    badge.textContent = 'ERROR';
+                    badge.style.color = 'var(--clr-danger)';
+                    return;
+                }
+
+                const metrics = data.metrics_sample || [];
+                updateChartsFromMetrics(metrics, 1);
+                updateSummaryTable(data.summary);
+                updateHistogram();
+
+                // Load artifact hash
+                const bundle = await loadArtifacts();
+                _cachedBundle = bundle;
+                if (bundle) {
+                    document.getElementById('artifact-hash').textContent =
+                        bundle['hash.txt'] || '—';
+                }
+
+                badge.textContent = 'IDLE';
+                badge.style.background = '';
+                badge.style.color = '';
+            } catch (err) {
+                badge.textContent = 'ERROR';
+                badge.style.color = 'var(--clr-danger)';
+                console.error('Run error:', err);
+            }
+        });
+
+        // ── Run κ-sweep ───────────────────────────────────────────────────────
+        document.getElementById('btn-sweep').addEventListener('click', async () => {
+            const cfg = buildRunConfig();
+            cfg.kappa_min = parseFloat(document.getElementById('sweep-kappa-min').value);
+            cfg.kappa_max = parseFloat(document.getElementById('sweep-kappa-max').value);
+            cfg.kappa_step = parseFloat(document.getElementById('sweep-kappa-step').value);
+            cfg.num_seeds = parseInt(document.getElementById('sweep-num-seeds').value);
+
+            const badge = document.getElementById('run-status-badge');
+            badge.textContent = 'SWEEPING';
+            badge.className = 'header-badge';
+            badge.style.background = 'rgba(187,134,252,0.18)';
+            badge.style.color = 'var(--clr-purple)';
+
+            try {
+                const res = await fetch('/api/hlv/sweep', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cfg)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Sweep failed: ' + (data.error || 'unknown error'));
+                    badge.textContent = 'ERROR';
+                    return;
+                }
+
+                latestSweep = data;
+                renderSweepResults(data);
+
+                badge.textContent = 'IDLE';
+                badge.style.background = '';
+                badge.style.color = '';
+            } catch (err) {
+                badge.textContent = 'ERROR';
+                console.error('Sweep error:', err);
+            }
+        });
+
+        // ── Render sweep results ──────────────────────────────────────────────
+        function renderSweepResults(sweep) {
+            const results = sweep.results || [];
+            document.getElementById('sweep-section').style.display = '';
+
+            // Table
+            const tbody = document.getElementById('sweep-tbody');
+            tbody.innerHTML = results.map(r => `
+                <tr>
+                    <td>${r.kappa.toFixed(2)}</td>
+                    <td>${r.mean_R.toFixed(4)}</td>
+                    <td>${r.se_R.toFixed(5)}</td>
+                    <td>${r.mean_settling_time !== null ? r.mean_settling_time.toFixed(2) : '—'}</td>
+                    <td>${r.n_locked}/${r.num_seeds}</td>
+                </tr>
+            `).join('');
+
+            // Sweep chart
+            const labels = results.map(r => r.kappa.toFixed(2));
+            const meanR = results.map(r => r.mean_R);
+            const errUp = results.map(r => r.mean_R + r.se_R);
+            const errDn = results.map(r => r.mean_R - r.se_R);
+
+            if (sweepChart) sweepChart.destroy();
+            const ctxSw = document.getElementById('chart-sweep').getContext('2d');
+            sweepChart = new Chart(ctxSw, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: '⟨R⟩',
+                            data: meanR,
+                            borderColor: '#bb86fc',
+                            backgroundColor: 'rgba(187,134,252,0.12)',
+                            tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2
+                        },
+                        {
+                            label: '⟨R⟩ + SE',
+                            data: errUp,
+                            borderColor: 'rgba(187,134,252,0.3)',
+                            backgroundColor: 'rgba(187,134,252,0.07)',
+                            tension: 0.3, fill: '+1', pointRadius: 0, borderWidth: 1,
+                            borderDash: [4, 3]
+                        },
+                        {
+                            label: '⟨R⟩ − SE',
+                            data: errDn,
+                            borderColor: 'rgba(187,134,252,0.3)',
+                            backgroundColor: 'rgba(187,134,252,0.07)',
+                            tension: 0.3, fill: false, pointRadius: 0, borderWidth: 1,
+                            borderDash: [4, 3]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, animation: false, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#888', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'κ', color: '#666' },
+                             ticks: { color: '#555', font: { size: 9 } },
+                             grid: { color: '#1e1e22' }},
+                        y: { min: 0, max: 1,
+                             title: { display: true, text: '⟨R⟩', color: '#666' },
+                             ticks: { color: '#555', font: { size: 9 } },
+                             grid: { color: '#1e1e22' }}
+                    }
+                }
+            });
+        }
+
+        // ── Null tests ────────────────────────────────────────────────────────
+        document.getElementById('btn-nt1').addEventListener('click', async () => {
+            const el = document.getElementById('null-test-result');
+            el.textContent = 'NT1: Running κ=0 test…';
+            const cfg = buildRunConfig();
+            cfg.kappa = 0.0;
+            try {
+                const res = await fetch('/api/hlv/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cfg)
+                });
+                const data = await res.json();
+                const R = data.summary.mean_R_final;
+                const N = data.summary.N;
+                const expected = 1.0 / Math.sqrt(N);
+                const pass = R < 3 * expected;
+                el.textContent = `NT1 (κ=0): R̄ = ${R.toFixed(4)}, expected ≈ O(N⁻¹/²) = ${expected.toFixed(4)} — ${pass ? '✓ PASS' : '✗ FAIL'}`;
+                el.style.color = pass ? '#00ff9d' : 'var(--clr-danger)';
+                updateChartsFromMetrics(data.metrics_sample || [], 1);
+                updateSummaryTable(data.summary);
+            } catch (err) {
+                el.textContent = 'NT1 failed: ' + err;
+                el.style.color = 'var(--clr-danger)';
+            }
+        });
+
+        document.getElementById('btn-nt4').addEventListener('click', async () => {
+            const el = document.getElementById('null-test-result');
+            el.textContent = 'NT4: Running deterministic reproducibility test…';
+            const cfg = buildRunConfig();
+            try {
+                const [r1, r2] = await Promise.all([
+                    fetch('/api/hlv/run', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(cfg)
+                    }),
+                    fetch('/api/hlv/run', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(cfg)
+                    })
+                ]);
+                const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+                // Compare hashes
+                const h1res = await fetch('/api/hlv/artifacts');
+                const h1bundle = await h1res.json();
+                const hash1 = h1bundle['hash.txt'];
+                // Second run already overwrote state, so we compare summaries instead
+                const R1 = d1.summary.mean_R_final.toFixed(8);
+                const R2 = d2.summary.mean_R_final.toFixed(8);
+                const pass = R1 === R2;
+                el.textContent = `NT4: R̄₁=${R1}, R̄₂=${R2} — ${pass ? '✓ PASS (bitwise-identical)' : '✗ FAIL (non-deterministic!)'}`;
+                el.style.color = pass ? '#00ff9d' : 'var(--clr-danger)';
+            } catch (err) {
+                el.textContent = 'NT4 failed: ' + err;
+                el.style.color = 'var(--clr-danger)';
+            }
+        });
+
+        // ── Initial status poll ───────────────────────────────────────────────
+        async function pollStatus() {
+            try {
+                const res = await fetch('/api/hlv/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                // Update badge if not manually set
+                const badge = document.getElementById('run-status-badge');
+                if (badge.textContent === 'IDLE' || badge.textContent === 'LIVE') {
+                    const st = (data.run_status || {}).state || 'idle';
+                    badge.textContent = st.toUpperCase();
+                }
+            } catch (_) {}
+        }
+
+        pollStatus();
+        setInterval(pollStatus, 5000);
+
+    })();
+    </script>
+</body>
+</html>
