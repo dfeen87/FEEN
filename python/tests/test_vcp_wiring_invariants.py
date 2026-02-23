@@ -53,6 +53,7 @@ class _Resonator:
     def t(self): return 0.0
     def energy(self): return 0.0
     def snr(self, T=293.15): return 0.0
+    def set_state(self, x, v, t=0.0): pass
     def inject(self, amplitude, phase=0.0): pass
     def tick(self, dt, F=0.0, omega_d=-1.0, internal_force=0.0): pass
     def total_energy(self): return 0.0
