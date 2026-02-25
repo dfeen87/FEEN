@@ -52,7 +52,7 @@ def run_demo():
 
     # 4. Input Signal: Sine + Noise
     # Input frequency 50 Hz (slower than resonance)
-    t = np.linspace(0, duration, steps)
+    t = np.linspace(0, duration, steps, endpoint=False)
     input_freq = 50.0
     clean_signal = np.sin(2 * np.pi * input_freq * t)
     noise = np.random.normal(0, 0.1, steps)
