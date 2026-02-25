@@ -82,8 +82,8 @@ def run_demo():
     # Wrap phases to [0, 2pi] for cleaner diff
     last_phases_wrapped = last_phases % (2 * np.pi)
 
-    diff_0_1 = np.mean(np.angle(np.exp(1j * (last_phases[:, 1] - last_phases[:, 0]))))
-    diff_1_2 = np.mean(np.angle(np.exp(1j * (last_phases[:, 2] - last_phases[:, 1]))))
+    diff_0_1 = np.mean(np.angle(np.exp(1j * (last_phases_wrapped[:, 1] - last_phases_wrapped[:, 0]))))
+    diff_1_2 = np.mean(np.angle(np.exp(1j * (last_phases_wrapped[:, 2] - last_phases_wrapped[:, 1]))))
 
     print(f"Final Phase Differences (rad):")
     print(f"  0-1: {diff_0_1:.3f}")
