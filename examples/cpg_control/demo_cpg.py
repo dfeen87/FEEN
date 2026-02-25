@@ -53,13 +53,15 @@ def run_demo():
         # This simulates the internal metabolism/drive of the CPG neurons
         gain = 0.05
         for i in range(N):
+            x = network.node(i).x()
             v = network.node(i).v()
             # Simple Van der Pol-like term: (1 - x^2) * v -> inject energy for small x
             # Or just linear negative damping: +gamma * v
             # To limit amplitude, we can saturate or use nonlinear damping.
             # Let's use a simple bounded feedback: gain * tanh(v)
-            # Inject adds to velocity/force.
-            network.node(i).inject(gain * v)
+            # Apply bounded feedback by incrementally modifying velocity.
+            dv = gain * np.tanh(v)
+            network.node(i).set_state(x, v + dv)
 
         network.tick_parallel(dt)
 
