@@ -120,11 +120,14 @@ def run_demo():
         s = np.linalg.svd(X_train, compute_uv=False)
         # normalize
         p = s / np.sum(s)
-        # Effective rank = exp(entropy) or similar, or just count singular values > threshold
-        # Simple count > 1% of max
+        # Effective rank via entropy: exp(-sum p_i log p_i)
+        eps = 1e-12
+        effective_rank = np.exp(-np.sum(p * np.log(p + eps)))
+        # Simple count of singular values > 1% of max
         rank = np.sum(s > 0.01 * np.max(s))
 
         print(f"Reservoir State Dimensionality (SVD > 1% max): {rank}/{N}")
+        print(f"Reservoir Effective Rank (entropy-based): {effective_rank:.2f}")
 
         # Correlation with delayed input to show fading memory
         # We verify that state retains info about past.
