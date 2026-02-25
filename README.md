@@ -452,12 +452,16 @@ feen/
 │   ├── signal_processing.h                # Filters and spectral transforms
 │   └── oscillator_bank.h                  # Frequency-multiplexed oscillator bank
 │
-├── 📁 examples/                           # Step-by-step C++ tutorials
-│   ├── 01_basic_oscillator.cpp            # Create and simulate a simple resonator
-│   ├── 02_bistable_bit.cpp                # Build a phononic memory cell
-│   ├── 03_frequency_multiplexing.cpp      # Parallel computation channels
-│   ├── 04_logic_gates.cpp                 # Phononic AND, OR, NOT gates
-│   └── 05_neural_network.cpp              # Analog computing with resonator arrays
+├── 📁 examples/                           # Tutorials and Reference Implementations
+│   ├── 01_basic_oscillator.cpp            # C++ Tutorial: Simple resonator
+│   ├── 02_bistable_bit.cpp                # C++ Tutorial: Phononic memory cell
+│   ├── 03_frequency_multiplexing.cpp      # C++ Tutorial: Parallel channels
+│   ├── 04_logic_gates.cpp                 # C++ Tutorial: Logic gates
+│   ├── 05_neural_network.cpp              # C++ Tutorial: Neural networks
+│   ├── 📁 reservoir_computing/            # Python Demo: Reservoir Computing
+│   ├── 📁 cpg_control/                    # Python Demo: CPG Sensorimotor Control
+│   ├── 📁 structural_monitoring/          # Python Demo: Structural Health Monitoring
+│   └── 📁 distributed_sync/               # Python Demo: Distributed Synchronization
 │
 ├── 📁 python/                             # Python layer
 │   ├── pyfeen.cpp                         # pybind11 interface (FEEN core + AILEE)
@@ -634,6 +638,14 @@ plt.ylabel('Final State')
 plt.title('Bistable Resonator Bifurcation')
 plt.show()
 ```
+
+### Reference Applications
+
+Lightweight Python demonstrations of the four primary FEEN application domains:
+- **[Reservoir Computing](examples/reservoir_computing/)**: Temporal pattern processing.
+- **[CPG Control](examples/cpg_control/)**: Sensorimotor gait coordination.
+- **[Structural Health Monitoring](examples/structural_monitoring/)**: Damage detection via vibration signatures.
+- **[Distributed Synchronization](examples/distributed_sync/)**: Clockless coordination via Kuramoto dynamics.
 
 ### REST API
 

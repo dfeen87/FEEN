@@ -236,3 +236,14 @@ The coupling mechanism between FEEN nodes and the grid must survive the full ran
 ## AI Use Disclosure
 
 *The authors acknowledge the use of Claude (Anthropic) for assistance in drafting portions of this paper. All technical claims, mathematical derivations, and physical models remain the intellectual work of the authors and were reviewed and validated by them prior to inclusion.*
+
+## Reference Examples
+
+The FEEN repository includes lightweight demonstration modules corresponding to the four primary application domains discussed in the Applications Preprint. These examples are located in the `examples/` directory:
+
+- `examples/reservoir_computing/`
+- `examples/cpg_control/`
+- `examples/structural_monitoring/`
+- `examples/distributed_sync/`
+
+These modules are reference demonstrations intended to illustrate how FEEN primitives map to real-world tasks. They are not production systems and use only synthetic data for clarity and reproducibility.
