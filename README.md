@@ -376,6 +376,7 @@ SNR: 89234.2
 
 - **[Physical Model](docs/FEEN_WAVE_ENGINE.md)** - Mathematical foundations and Duffing equation
 - **[Technical Analysis](docs/FEEN.md)** - Complete system architecture
+- **[Application Domains](docs/APPLICATIONS.md)** - Reservoir computing, CPG control, structural health monitoring, distributed synchronization
 - **[Hardware-in-the-Loop](docs/HARDWARE_IN_THE_LOOP.md)** - HIL integration strategy and hardware adapter contract
 - **[REST API Reference](docs/REST_API.md)** - Complete endpoint documentation
 - **API Reference** - Full class documentation (Doxygen)
@@ -398,6 +399,8 @@ See **[docs/SPIRAL_TIME.md](docs/SPIRAL_TIME.md)** for the full specification.
 
 ### Tutorials
 
+#### C++ Examples
+
 | Level | Tutorial | Description |
 |-------|----------|-------------|
 | Beginner | [Basic Oscillator](examples/01_basic_oscillator.cpp) | Create and simulate a simple resonator |
@@ -405,6 +408,19 @@ See **[docs/SPIRAL_TIME.md](docs/SPIRAL_TIME.md)** for the full specification.
 | Intermediate | [Frequency Multiplexing](examples/03_frequency_multiplexing.cpp) | Parallel computation channels |
 | Intermediate | [Logic Gates](examples/04_logic_gates.cpp) | Phononic AND, OR, NOT gates |
 | Advanced | [Neural Network](examples/05_neural_network.cpp) | Analog computing with resonator arrays |
+
+#### Python Examples
+
+| Domain | Example | Description |
+|--------|---------|-------------|
+| Core Physics | [Bifurcation Diagram](python/examples/plot_bifurcation.py) | Steady-state energy vs. Duffing β |
+| REST API | [REST API Demo](python/examples/rest_api_demo.py) | Full HTTP endpoint walkthrough |
+| Reservoir Computing | [reservoir_computing.py](python/examples/reservoir_computing.py) | 16-node physical reservoir for temporal pattern classification |
+| CPG Control | [cpg_control.py](python/examples/cpg_control.py) | 4-node CPG for quadruped gait coordination |
+| Structural Health Monitoring | [structural_health_monitoring.py](python/examples/structural_health_monitoring.py) | 8-node sensor mesh tracking damage-induced energy changes |
+| Distributed Synchronization | [distributed_synchronization.py](python/examples/distributed_synchronization.py) | 16-node ring: R(t) below/above threshold, node-dropout recovery |
+
+See [python/examples/README.md](python/examples/README.md) for setup instructions and a pyfeen API quick reference.
 
 ---
 
@@ -476,8 +492,13 @@ feen/
 │   │   └── hlv_dynamics.py                # HLV Dynamics Lab — Kuramoto P1/P2/P3 + O1/O2 (TOOL)
 │   │
 │   ├── 📁 examples/                       # Python usage examples
+│   │   ├── README.md                      # Setup guide and pyfeen API quick reference
 │   │   ├── plot_bifurcation.py            # Bifurcation diagram via pyfeen
-│   │   └── rest_api_demo.py               # REST API walkthrough
+│   │   ├── rest_api_demo.py               # REST API walkthrough
+│   │   ├── reservoir_computing.py         # Reservoir computing: 16-node physical reservoir
+│   │   ├── cpg_control.py                 # CPG control: quadruped gait coordination
+│   │   ├── structural_health_monitoring.py# Structural health monitoring: damage detection
+│   │   └── distributed_synchronization.py # Distributed synchronization: R(t) order parameter
 │   │
 │   └── 📁 tests/                          # Python test suite
 │       ├── test_ailee_rest_endpoints.py   # AILEE REST endpoint integration tests
@@ -503,6 +524,7 @@ feen/
 │   └── default_plugins.yaml              # Default plugin load list
 │
 ├── 📁 docs/                               # Documentation
+│   ├── APPLICATIONS.md                    # Application domains (reservoir computing, CPG, SHM, synchronization)
 │   ├── FEEN.md                            # Complete system architecture
 │   ├── FEEN_WAVE_ENGINE.md                # Mathematical foundations
 │   ├── HARDWARE_IN_THE_LOOP.md            # HIL integration strategy
@@ -588,17 +610,21 @@ bool result = gate.get_output();  // true
 
 ```cpp
 #include <feen/network.h>
+#include <feen/resonator.h>
 
 // Create 10 independent channels
 feen::ResonatorNetwork network;
 
 for (int i = 0; i < 10; ++i) {
-    double freq = 1000.0 + i * 10.0;  // 1000, 1010, 1020 Hz...
-    network.add_resonator(freq, 1000.0, 1e-4);
+    feen::ResonatorConfig cfg;
+    cfg.frequency_hz = 1000.0 + i * 10.0;  // 1000, 1010, 1020 Hz...
+    cfg.q_factor = 1000.0;
+    cfg.beta = 1e-4;
+    network.add_node(feen::Resonator(cfg));
 }
 
-// Verify isolation
-double isolation = network.isolation_db(0, 1);
+// Verify isolation between adjacent channels (static helper on Resonator)
+double isolation = feen::Resonator::isolation_db(network.node(0), network.node(1));
 assert(isolation < -40.0);  // >40 dB isolation
 ```
 
@@ -625,7 +651,7 @@ for x0 in x_range:
     res.inject(x0)
     for _ in range(10000):
         res.tick(1e-6)
-    final_states.append(res.get_state()[0])
+    final_states.append(res.x())
 
 # Plot bifurcation diagram
 plt.plot(x_range, final_states, 'b.', markersize=1)

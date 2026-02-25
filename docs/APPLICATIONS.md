@@ -32,6 +32,8 @@ These three properties motivate four primary application domains, each grounded 
 
 A note on scope: this paper presents engineering justification and prototype targets, not deployment claims. The synchronization mechanism has not yet been demonstrated in hardware; the reservoir computing prototype has not been benchmarked; the structural sensor node has not been fabricated. What the paper claims is that the physics motivates each application, that the prototype targets are within reach of current fabrication, and that the falsification criteria are clear enough to guide the experimental program. The ambition is a substrate that blurs the boundary between sensor, computer, and actuator — one whose intelligence is not installed but grown from the dynamics of its material.
 
+Runnable Python examples that illustrate each of the four primary domains using the `pyfeen` simulation library are available in [`python/examples/`](../python/examples/README.md).
+
 ---
 
 ## II. Application Domains
@@ -69,6 +71,8 @@ Physical reservoir computing is particularly effective for tasks requiring tempo
 
 **Prototype target:** an N = 16–64 FEEN mesh with Q-factors tuned across the speech-relevant sub-band (50–300 Hz) serves as a physical reservoir with a trained linear readout implemented in analog circuitry. Performance is benchmarked against the TI-46 spoken digit corpus, providing a direct comparison point with photonic reservoir implementations.
 
+**Runnable example:** [`python/examples/reservoir_computing.py`](../python/examples/reservoir_computing.py) demonstrates a 16-node FEEN reservoir classifying two sinusoidal burst classes using a least-squares linear readout. It shows node energy trajectories and a PCA projection of the reservoir state space.
+
 One limitation is inherent to the reservoir computing paradigm: the absence of in-situ training of physical coupling weights means that adaptation to new tasks requires either reconfiguration of the physical mesh or retraining only the linear readout layer. This limits expressivity to linear separability in the reservoir's feature space, which may be insufficient for tasks requiring compositional generalization.
 
 ---
@@ -93,6 +97,8 @@ Battery-powered mobile robots operate under strict energy budgets. FEEN's energy
 
 **Prototype target:** a FEEN mesh of N = 4–8 bistable resonators, coupled to piezoelectric leg actuators, implements a stable four- or six-legged gait through passive entrainment. Gait adaptation to terrain requires only a change in coupling weights κᵢⱼ, implementable through a simple analog bias circuit. The primary current constraint is the 100 Hz clock-rate ceiling: applications requiring sensorimotor loops faster than this cannot be addressed by a FEEN architecture without active reset schemes that themselves introduce energy overhead.
 
+**Runnable example:** [`python/examples/cpg_control.py`](../python/examples/cpg_control.py) simulates a four-limb CPG with walk, trot, and bound gaits. Each gait is produced by setting a different coupling matrix; no software state machine is required.
+
 ---
 
 ### II.III Structural Health Monitoring and Experimental Prototypes
@@ -106,6 +112,8 @@ FEEN's non-Markovian memory kernel Kᵢ(t) captures long-tail relaxation signatu
 #### Vibration-Powered Sensor Node
 
 The first near-term prototype target is a vibration-powered structural sensor node: an N = 8–16 FEEN mesh bonded to a structural element, harvesting ambient vibration energy through piezoelectric coupling, processing strain signals through the phononic mesh, and transmitting a compressed health state via the emergent order parameter R(t) — all without an external power supply or clock reference. This prototype is within reach of current MEMS fabrication tolerances and directly tests the non-Markovian kernel's damage-detection sensitivity under controlled crack-propagation conditions.
+
+**Runnable example:** [`python/examples/structural_health_monitoring.py`](../python/examples/structural_health_monitoring.py) simulates an 8-node sensor mesh driven by ambient structural vibration. It steps through five damage levels (coupling fractions from 1.0 to 0.4) and prints the energy deviation at each level, triggering a warning when the deviation exceeds a configurable threshold.
 
 This application extends naturally to aerospace structures. Launch vehicles, spacecraft panels, and deployable mechanisms are subject to fatigue, micro-cracking, and joint degradation that is difficult to detect prior to failure. The qualification of FEEN devices under combined radiation, vibration, and vacuum conditions remains an open engineering item, but the structural sensing function itself can be validated on terrestrial hardware before flight qualification is pursued.
 
@@ -128,6 +136,8 @@ The synchronization demonstrator has three specific objectives:
 3. Demonstrate that phase recovery after deliberate node dropout follows the predicted exponential timescale τ_recover = 1/(κλ₂(L)), testing H₂.
 
 These three measurements together provide sufficient empirical grounding to claim that FEEN's synchronization mechanism is physically real and behaves as the theory predicts.
+
+**Runnable example:** [`python/examples/distributed_synchronization.py`](../python/examples/distributed_synchronization.py) runs three experiments on a 16-node ring: (1) below-threshold coupling (R stays near zero), (2) above-threshold coupling (R converges to R* > 0), and (3) above-threshold coupling with a mid-run node dropout (R dips then recovers). The order parameter R(t) is plotted for each experiment.
 
 #### Physical Implementation
 
