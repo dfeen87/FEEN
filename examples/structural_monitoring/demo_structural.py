@@ -32,9 +32,11 @@ def simulate_structural_response(decay_tau, label):
     # 3. Inject and Measure
     energies = []
 
-    # Inject into first node
+    # Inject into first node by incrementally perturbing its state
+    sensor0 = network.node(0)
     for k in range(steps):
-        network.node(0).inject(signal[k] * 0.1)
+        x, v = sensor0.state()
+        sensor0.set_state(x + signal[k] * 0.1, v)
         network.tick_parallel(dt)
 
         # Measure total energy of the mesh
