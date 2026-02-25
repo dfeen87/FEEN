@@ -92,9 +92,9 @@ def run_demo():
     print(f"Damage Indicator: {indicator:.2%} shift")
 
     if indicator > 0.1:
-         print("Status: STRUCTURAL ANOMALY DETECTED")
+        print("Status: STRUCTURAL ANOMALY DETECTED")
     else:
-         print("Status: HEALTHY")
+        print("Status: HEALTHY")
 
 if __name__ == "__main__":
     run_demo()
