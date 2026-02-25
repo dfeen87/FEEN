@@ -24,7 +24,7 @@ def simulate_structural_response(decay_tau, label):
     dt = 1e-4
     duration = 2.0
     steps = int(duration / dt)
-    t = np.linspace(0, duration, steps)
+    t = np.linspace(0, duration, steps, endpoint=False)
 
     envelope = np.exp(-t / decay_tau)
     signal = envelope * np.sin(2 * np.pi * freq * t)
