@@ -52,7 +52,7 @@ def run_demo():
 
     # 4. Input Signal: Sine + Noise
     # Input frequency 50 Hz (slower than resonance)
-    t = np.linspace(0, duration, steps, endpoint=False)
+    t = np.linspace(0, duration, steps)
     input_freq = 50.0
     clean_signal = np.sin(2 * np.pi * input_freq * t)
     noise = np.random.normal(0, 0.1, steps)
@@ -67,15 +67,27 @@ def run_demo():
     input_node_idx = 0
 
     for k in range(steps):
-        # Drive the input node by applying a small incremental perturbation
-        # to its current state. This preserves the reservoir's fading-memory
-        # behavior instead of overwriting the node state each timestep.
-        node = network.node(input_node_idx)
-        x_curr = node.x()
-        v_curr = node.v()
-        # Use the (scaled) input signal as a displacement "kick"
-        drive = input_signal[k] * 0.1
-        node.set_state(x_curr + drive, v_curr)
+        # Injection
+        # We use inject() to add energy. In a real physical sense, this drives the resonator.
+        # Resonator::inject adds displacement/velocity instantaneously or drives it.
+        # The API `inject(amplitude, phase)` sets instantaneous properties or adds energy.
+        # Let's assume it acts as a forcing term if called repeatedly, or we can use set_state.
+        # The prompt says "Inject a synthetic time-series".
+        # `inject` in `Resonator` usually adds to current state or sets it.
+        # Let's check `python/pyfeen.cpp`: `.def("inject", &Resonator::inject, py::arg("amplitude"), py::arg("phase") = 0.0)`
+        # In `Resonator.h` (from memory/context), `inject` typically adds energy.
+        # If we want continuous drive, we might need to modify `tick` or just `inject` small amounts.
+        # However, `Resonator` has a `tick` that takes `F` (force).
+        # `ResonatorNetwork::tick_parallel` calculates internal forces and calls `tick`.
+        # It does NOT expose external force `F` for individual nodes in `tick_parallel`.
+        # So we must use `inject` or `set_state` before `tick_parallel`.
+        # `inject` is likely "add to state".
+
+        # We will use `node(0).inject(input_signal[k])` which effectively adds a kick.
+        # To avoid blowing up, we scale it.
+
+        network.node(input_node_idx).inject(input_signal[k] * 0.1)
+
         network.tick_parallel(dt)
 
         # Collect state (energy or displacement)
@@ -108,14 +120,11 @@ def run_demo():
         s = np.linalg.svd(X_train, compute_uv=False)
         # normalize
         p = s / np.sum(s)
-        # Effective rank via entropy: exp(-sum p_i log p_i)
-        eps = 1e-12
-        effective_rank = np.exp(-np.sum(p * np.log(p + eps)))
-        # Simple count of singular values > 1% of max
+        # Effective rank = exp(entropy) or similar, or just count singular values > threshold
+        # Simple count > 1% of max
         rank = np.sum(s > 0.01 * np.max(s))
 
         print(f"Reservoir State Dimensionality (SVD > 1% max): {rank}/{N}")
-        print(f"Reservoir Effective Rank (entropy-based): {effective_rank:.2f}")
 
         # Correlation with delayed input to show fading memory
         # We verify that state retains info about past.

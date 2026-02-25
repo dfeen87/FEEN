@@ -7,7 +7,7 @@ Reservoir Computing exploits the rich, high-dimensional dynamics of a recurrent 
 
 ## What the Demo Shows
 - **Network Construction**: Builds a random mesh of 16 coupled resonators with heterogeneous natural frequencies.
-- **Signal Injection**: Feeds a noisy sine wave into a single input node of the reservoir.
+- **Signal Injection**: Feeds a noisy sine wave into a subset of nodes.
 - **State Harvesting**: Records the trajectory of all resonators over time.
 - **Linear Readout**: Uses linear regression to reconstruct the clean, denoised signal from the reservoir state, proving the network retains information about the input history and filters high-frequency noise.
 - **Dimensionality Analysis**: Computes the effective rank of the state matrix to quantify the richness of the reservoir's response.

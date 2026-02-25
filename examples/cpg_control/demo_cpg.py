@@ -53,15 +53,13 @@ def run_demo():
         # This simulates the internal metabolism/drive of the CPG neurons
         gain = 0.05
         for i in range(N):
-            x = network.node(i).x()
             v = network.node(i).v()
             # Simple Van der Pol-like term: (1 - x^2) * v -> inject energy for small x
             # Or just linear negative damping: +gamma * v
             # To limit amplitude, we can saturate or use nonlinear damping.
             # Let's use a simple bounded feedback: gain * tanh(v)
-            # Apply bounded feedback by incrementally modifying velocity.
-            dv = gain * np.tanh(v)
-            network.node(i).set_state(x, v + dv)
+            # Inject adds to velocity/force.
+            network.node(i).inject(gain * v)
 
         network.tick_parallel(dt)
 
@@ -79,11 +77,8 @@ def run_demo():
     tail = 100
     last_phases = phases[-tail:]
 
-    # Wrap phases to [0, 2pi] for cleaner diff
-    last_phases_wrapped = last_phases % (2 * np.pi)
-
-    diff_0_1 = np.mean(np.angle(np.exp(1j * (last_phases_wrapped[:, 1] - last_phases_wrapped[:, 0]))))
-    diff_1_2 = np.mean(np.angle(np.exp(1j * (last_phases_wrapped[:, 2] - last_phases_wrapped[:, 1]))))
+    diff_0_1 = np.mean(np.angle(np.exp(1j * (last_phases[:, 1] - last_phases[:, 0]))))
+    diff_1_2 = np.mean(np.angle(np.exp(1j * (last_phases[:, 2] - last_phases[:, 1]))))
 
     print(f"Final Phase Differences (rad):")
     print(f"  0-1: {diff_0_1:.3f}")

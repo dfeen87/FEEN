@@ -71,11 +71,11 @@ def run_demo():
                 current_energy = node.energy()
                 target_energy = 0.5
                 if current_energy < target_energy:
-                    # Add energy if below target
-                    node.set_state(x, v * 1.02, node.t())
+                     # Add energy if below target
+                     node.set_state(x, v * 1.02, node.t())
                 else:
-                    # Let damping reduce it if above
-                    pass
+                     # Let damping reduce it if above
+                     pass
 
             network.tick_parallel(dt)
 

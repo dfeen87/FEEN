@@ -24,7 +24,7 @@ def simulate_structural_response(decay_tau, label):
     dt = 1e-4
     duration = 2.0
     steps = int(duration / dt)
-    t = np.linspace(0, duration, steps, endpoint=False)
+    t = np.linspace(0, duration, steps)
 
     envelope = np.exp(-t / decay_tau)
     signal = envelope * np.sin(2 * np.pi * freq * t)
@@ -32,11 +32,9 @@ def simulate_structural_response(decay_tau, label):
     # 3. Inject and Measure
     energies = []
 
-    # Inject into first node by incrementally perturbing its state
-    sensor0 = network.node(0)
+    # Inject into first node
     for k in range(steps):
-        x, v = sensor0.state()
-        sensor0.set_state(x + signal[k] * 0.1, v)
+        network.node(0).inject(signal[k] * 0.1)
         network.tick_parallel(dt)
 
         # Measure total energy of the mesh
@@ -94,9 +92,9 @@ def run_demo():
     print(f"Damage Indicator: {indicator:.2%} shift")
 
     if indicator > 0.1:
-        print("Status: STRUCTURAL ANOMALY DETECTED")
+         print("Status: STRUCTURAL ANOMALY DETECTED")
     else:
-        print("Status: HEALTHY")
+         print("Status: HEALTHY")
 
 if __name__ == "__main__":
     run_demo()
