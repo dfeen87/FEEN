@@ -946,19 +946,6 @@ See [CITATION.cff](CITATION.cff) for more citation formats.
 
 ---
 
-## License
-
-FEEN is released under the **MIT License**. See [LICENSE](LICENSE) for details.
-
-```
-MIT License - Copyright (c) 2025 Don Michael Feeney Jr.
-
-Permission is hereby granted, free of charge, to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software...
-```
-
----
-
 MIT License - see [`LICENSE`](LICENSE) file.
 
 ---
