@@ -959,6 +959,10 @@ publish, distribute, sublicense, and/or sell copies of the Software...
 
 ---
 
+MIT License - see [`LICENSE`](LICENSE) file.
+
+---
+
 ## Acknowledgments
 
 This project builds on decades of research in:
@@ -970,6 +974,8 @@ This project builds on decades of research in:
 Special thanks to:
 - Contributors to open-source scientific computing
 - Early adopters providing feedback and validation
+
+This project was developed with a combination of original ideas, hands‑on coding, and support from advanced AI systems. I would like to acknowledge **Microsoft Copilot**, **Anthropic Claude**, **Google Jules** and **OpenAI ChatGPT** for their meaningful assistance in refining concepts, improving clarity, and strengthening the overall quality of this work.
 
 ---
 
