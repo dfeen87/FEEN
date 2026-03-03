@@ -6,7 +6,6 @@
  
 *A Physics-First Phononic Computing Framework*
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-3.2.0-green.svg?style=flat-square)](CITATION.cff)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -557,7 +556,7 @@ feen/
 ├── render.yaml                            # Render.com deployment config
 ├── CITATION.cff                           # Academic citation metadata
 ├── BENEFITS.md                            # Summary of repository benefits
-└── LICENSE                                # MIT License
+└── LICENSE                               
 
 ```
 
@@ -946,7 +945,11 @@ See [CITATION.cff](CITATION.cff) for more citation formats.
 
 ---
 
-MIT License - see [`LICENSE`](LICENSE) file.
+## License
+
+This project is available for **non‑commercial use only** under the terms of the included LICENSE file.  
+Commercial use requires a separate paid license.
+
 
 ---
 
