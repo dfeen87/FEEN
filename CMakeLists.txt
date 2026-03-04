@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(feen
-    VERSION 3.0.0
+    VERSION 3.8.0
     DESCRIPTION "A Wave-Native Physics-Informed Programming Substrate"
     LANGUAGES CXX
 )
@@ -69,31 +69,5 @@ endif()
 option(FEEN_BUILD_TESTS "Build the physical validation suite" ON)
 
 if (FEEN_BUILD_TESTS)
-    enable_testing()
-
-    add_executable(phys_test tests/test_resonator.cpp)
-    target_link_libraries(phys_test PRIVATE feen)
-
-    add_test(
-        NAME ResonatorPhysicsValidation
-        COMMAND phys_test
-    )
-
-    add_executable(spiral_time_test tests/test_spiral_time.cpp)
-    target_link_libraries(spiral_time_test PRIVATE feen)
-
-    add_test(
-        NAME SpiralTimeObserverValidation
-        COMMAND spiral_time_test
-    )
-
-    add_executable(hardware_adapter_test tests/test_hardware_adapter.cpp)
-    target_link_libraries(hardware_adapter_test PRIVATE feen)
-
-    add_test(
-        NAME HardwareAdapterValidation
-        COMMAND hardware_adapter_test
-    )
-
     add_subdirectory(tests)
 endif()

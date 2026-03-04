@@ -1,5 +1,5 @@
 // =============================================================================
-// FEEN Wave Engine: resonator.h  (Complete Physical Model v3.0)
+// FEEN Wave Engine: resonator.h  (Complete Physical Model v3.8)
 // =============================================================================
 //
 // Nonlinear Duffing resonator with:
@@ -70,8 +70,8 @@ struct DuffingState {
 
 struct ResonatorConfig {
     std::string name;
-    double frequency_hz;
-    double q_factor;
+    double frequency_hz = 1000.0;
+    double q_factor = 200.0;
     double phase_lock_rad = 0.0;
     double sustain_s = 0.0;
     DecayProfile decay_profile = DecayProfile::Exponential;

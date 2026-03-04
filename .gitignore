@@ -30,4 +30,11 @@ phys_test
 # Python
 __pycache__/
 *.pyc
+*.pyo
 *.so
+*.egg-info/
+.pytest_cache/
+
+# Logs
+*.log
+api_log.txt
