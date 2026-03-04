@@ -42,6 +42,7 @@ PYBIND11_MODULE(pyfeen, m) {
         .def("inject", &Resonator::inject, py::arg("amplitude"), py::arg("phase") = 0.0)
         .def("tick", &Resonator::tick, py::arg("dt"), py::arg("F") = 0.0, py::arg("omega_d") = -1.0, py::arg("internal_force") = 0.0)
         .def("energy", &Resonator::total_energy)
+        .def("total_energy", &Resonator::total_energy)
         .def("snr", &Resonator::snr, py::arg("T") = ROOM_TEMP)
         .def("x", &Resonator::x)
         .def("v", &Resonator::v)

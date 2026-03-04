@@ -55,6 +55,54 @@ except ImportError:
     vcp_integration = None
 
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Maximum number of nodes allowed in the network. Guards against accidental
+# DoS from node-creation loops; get_couplings is O(n²) so large networks
+# can cause GET timeout.
+MAX_NETWORK_SIZE = 1000
+
+# dt bounds for simulation steps: clamp to [DT_MIN, DT_MAX] to prevent
+# integrator instability from negative, zero, or astronomically large steps.
+DT_MIN = 1e-12
+DT_MAX = 1.0
+
+# ---------------------------------------------------------------------------
+# Input validation helpers
+# ---------------------------------------------------------------------------
+
+def _validate_dt(dt):
+    """Clamp dt to [DT_MIN, DT_MAX] and ensure it is finite."""
+    import math as _math
+    if not _math.isfinite(dt):
+        raise ValueError(f"dt must be finite, got {dt}")
+    return max(DT_MIN, min(DT_MAX, float(dt)))
+
+
+def _validate_frequency(freq):
+    """Raise ValueError if frequency_hz is not positive."""
+    if freq <= 0:
+        raise ValueError(f"frequency_hz must be > 0, got {freq}")
+    return float(freq)
+
+
+def _validate_q_factor(q):
+    """Raise ValueError if q_factor is not positive."""
+    if q <= 0:
+        raise ValueError(f"q_factor must be > 0, got {q}")
+    return float(q)
+
+
+def _validate_amplitude(amp):
+    """Raise ValueError if amplitude is not finite."""
+    import math as _math
+    if not _math.isfinite(amp):
+        raise ValueError(f"amplitude must be finite, got {amp}")
+    return float(amp)
+
+
 class ResonatorNetworkManager:
     """Manages a global FEEN resonator network accessible via REST API."""
 
@@ -64,10 +112,13 @@ class ResonatorNetworkManager:
 
     def add_node(self, config_dict):
         """Add a new resonator node to the network."""
+        if self.network.size() >= MAX_NETWORK_SIZE:
+            raise ValueError(f"Network size limit of {MAX_NETWORK_SIZE} nodes reached")
+
         config = pyfeen.ResonatorConfig()
-        config.frequency_hz = config_dict.get('frequency_hz', 1000.0)
-        config.q_factor = config_dict.get('q_factor', 200.0)
-        config.beta = config_dict.get('beta', 1e-4)
+        config.frequency_hz = _validate_frequency(config_dict.get('frequency_hz', 1000.0))
+        config.q_factor = _validate_q_factor(config_dict.get('q_factor', 200.0))
+        config.beta = float(config_dict.get('beta', 1e-4))
         config.name = config_dict.get('name', f'node_{len(self.node_configs)}')
 
         resonator = pyfeen.Resonator(config)
@@ -113,104 +164,15 @@ class ResonatorNetworkManager:
 
     def inject_node(self, node_id, amplitude, phase=0.0):
         """Inject a signal into a specific node."""
-        # Since ResonatorNetwork stores by value, we need to be careful.
-        # But wait, pybind11 might return a copy if not careful.
-        # Actually, ResonatorNetwork::node() returns a reference in C++,
-        # but pybind11 default behavior for reference return policy needs checking.
-        # However, for `inject`, it modifies the state.
-        # If pybind11 returns a copy, this won't work.
-        # Let's assume for now we might need to update the binding to return reference or
-        # expose an `inject_node` method on ResonatorNetwork if direct modification fails.
-        #
-        # Re-checking pyfeen.cpp:
-        # .def("node", static_cast<const Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t) const>(&ResonatorNetwork::node))
-        # It binds the CONST version of node(). This means we get a READ-ONLY object (or copy).
-        # We cannot call inject() on a const reference.
-        #
-        # FIX: The current C++ binding for `node` returns `const Resonator&`.
-        # We need a non-const access or a network-level injection method.
-        # Since I cannot easily change C++ core without recompiling and binding logic was just set,
-        # I should have bound the non-const version too.
-        #
-        # Wait, I can't call inject on a const object.
-        # But I need to support injection.
-        #
-        # Strategy: I will rely on the fact that I just updated pyfeen.cpp.
-        # But I only bound the const version:
-        # .def("node", static_cast<const Resonator& ...
-        #
-        # I should have bound the non-const version or added an inject helper.
-        # Since I can't easily re-plan the C++ binding step without going back,
-        # I will check if I can add a `inject_node` method to `ResonatorNetwork` via binding?
-        # No, I have to stick to what's exposed.
-        #
-        # Actually, `Resonator` methods like `inject` are non-const.
-        # If `node()` returns const, I can't call `inject`.
-        #
-        # CRITICAL FIX: I need to update pyfeen.cpp to expose non-const node access OR
-        # add a helper.
-        # However, I am in the `update python/feen_rest_api.py` step.
-        # I can try to use `node()` and hope pybind11 casts away constness if not strict? No, that's unsafe.
-        #
-        # Let's look at what I bound in the previous step:
-        # .def("node", static_cast<const Resonator& (ResonatorNetwork::*)(ResonatorNetwork::index_t) const>(&ResonatorNetwork::node))
-        # Yes, only const.
-        #
-        # BUT, `tick_parallel` advances state.
-        # `inject` is the problem.
-        #
-        # Workaround: since `ResonatorNetwork` has no `inject` method, and I only exposed const `node()`.
-        # I MUST update pyfeen.cpp to expose the non-const `node()` method.
-        # I will add a plan step to fix this if I can't do it now.
-        #
-        # Wait, I am an agent. I can just go back and fix `pyfeen.cpp` in a "correction" step if I realize this now?
-        # Or I can try to proceed and see if I can workaround it.
-        # No, C++ const correctness is strict.
-        #
-        # Let's assume I will add a fix step or I can just edit `pyfeen.cpp` right now?
-        # No, the plan says "Update python/feen_rest_api.py".
-        # I will write the Python code assuming I can get a mutable node.
-        # If it fails at runtime/test, I will fix it.
-        #
-        # Actually, for `ResonatorNetworkManager`, I can keep the Python list of resonators if I want?
-        # No, the C++ `ResonatorNetwork` owns the nodes (stores `std::vector<Resonator>`).
-        # If I use `ResonatorNetwork`, the Python list is redundant/out of sync.
-        #
-        # I will proceed with `feen_rest_api.py` using `network.node(id)`.
-        # I will flag the need to fix bindings in the next step or implicitly.
-        #
-        # ACTUALLY, I can't edit pyfeen.cpp in this step.
-        # I will write the code here.
-        pass
-
-        # NOTE: This will likely fail if `node(i)` returns const.
-        # I will implement `inject_node` by just logging a warning for now if it fails?
-        # No, I need it to work.
-        #
-        # Let's look at `ResonatorNetwork` C++ class again.
-        # It has `Resonator& node(index_t i)`.
-        # I just need to bind IT.
-        #
-        # I will update `feen_rest_api.py` to use `self.network`.
-
-        # NOTE: I will handle the `inject` logic assuming I will fix the binding to return a mutable reference.
-        # For the coupling API, I need the `ResonatorNetwork`.
-
         node = self.get_node(node_id)
         if node is None:
             return False
-
-        # This requires `node` to be a mutable python object wrapping the C++ ref.
-        # If the binding returns a copy, this won't affect the network.
-        # `ResonatorNetwork` stores resonators by value in a vector.
-        # `node(i)` returns a reference.
-        # Pybind11 `reference_internal` policy is needed.
-
         try:
             node.inject(amplitude, phase)
             return True
         except Exception as e:
-            print(f"Injection failed: {e}")
+            import logging as _logging
+            _logging.getLogger(__name__).error("Injection failed: %s", e)
             return False
 
     def tick_network(self, dt):
@@ -280,7 +242,15 @@ _ailee_metric_lock = threading.Lock()
 
 # Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Set a secret key for session signing. Read from environment for production;
+# falls back to a per-process random key so it is always present and unique.
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
+
+# CORS configuration: restrict origins via FEEN_CORS_ORIGINS env var in production.
+# Defaults to '*' for development convenience. Set e.g.:
+#   FEEN_CORS_ORIGINS=https://myapp.example.com
+_cors_origins = os.environ.get('FEEN_CORS_ORIGINS', '*')
+CORS(app, origins=_cors_origins)  # Intentionally open for dev; restrict via env var in prod
 
 
 # ---------------------------------------------------------------------------
@@ -308,21 +278,15 @@ def stateless_simulate():
         cfg = data.get('config', {})
         state = data.get('state', {})
         inp = float(data.get('input', 0.0))
-        dt = float(data.get('dt', 1e-6))
+        dt = _validate_dt(float(data.get('dt', 1e-6)))
 
         # Create temporary resonator
         c = pyfeen.ResonatorConfig()
-        c.frequency_hz = float(cfg.get('frequency_hz', 1000.0))
-        c.q_factor = float(cfg.get('q_factor', 200.0))
+        c.frequency_hz = _validate_frequency(float(cfg.get('frequency_hz', 1000.0)))
+        c.q_factor = _validate_q_factor(float(cfg.get('q_factor', 200.0)))
         c.beta = float(cfg.get('beta', 1e-4))
 
         res = pyfeen.Resonator(c)
-        # Set state (assuming we can inject or set)
-        # Resonator usually starts at 0,0.
-        # If no set_state method is exposed, we might have issues.
-        # But wait, python binding usually exposes set_state or similar?
-        # Let's check memory: "Resonator::set_state is used for direct state overwrites"
-        # So it should be available.
         res.set_state(
             float(state.get('x', 0.0)),
             float(state.get('v', 0.0)),
@@ -345,6 +309,8 @@ def stateless_coupling():
     Output: { force: float }
     """
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
     try:
         s1 = data.get('state1', {})
         s2 = data.get('state2', {})
@@ -562,8 +528,11 @@ def inject_signal(node_id):
     if not data:
         return jsonify({'error': 'No JSON data provided'}), 400
 
-    amplitude = data.get('amplitude', 1.0)
-    phase = data.get('phase', 0.0)
+    try:
+        amplitude = _validate_amplitude(float(data.get('amplitude', 1.0)))
+        phase = float(data.get('phase', 0.0))
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': str(e)}), 400
 
     if network.inject_node(node_id, amplitude, phase):
         return jsonify({
@@ -592,6 +561,10 @@ def tick_network():
     steps = data.get('steps', 1)
 
     try:
+        dt = _validate_dt(float(dt))
+        steps = int(steps)
+        if steps < 1:
+            return jsonify({'error': 'steps must be >= 1'}), 400
         for _ in range(steps):
             network.tick_network(dt)
 
@@ -638,6 +611,12 @@ def add_coupling():
         i = int(data.get('target_id'))
         j = int(data.get('source_id'))
         strength = float(data.get('strength'))
+
+        n = network.network.size()
+        if i < 0 or i >= n or j < 0 or j >= n:
+            return jsonify({'error': f'Node index out of range [0, {n - 1}]'}), 400
+        if i == j:
+            return jsonify({'error': 'Self-coupling (i == j) is not permitted'}), 400
 
         with _network_lock:
             network.set_coupling(i, j, strength)

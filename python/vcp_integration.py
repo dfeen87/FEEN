@@ -1,8 +1,7 @@
+import logging
 import os
 import math
-import random
 import time
-import json
 try:
     import requests
 except ImportError:
@@ -44,7 +43,7 @@ def get_vcp_network_view():
                 data = res_edges.json()
                 edges = data.get('couplings', [])
         except Exception as e:
-            print(f"VCP fetch failed: {e}")
+            logging.warning("VCP fetch failed: %s", e)
             # Fallback to dummy data will happen below if empty
 
     # 2. Fallback to dummy data if fetch failed or no URL

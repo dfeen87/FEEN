@@ -8,3 +8,27 @@ add_test(
     NAME AileeMetricValidation
     COMMAND ailee_metric_test
 )
+
+add_executable(phys_test test_resonator.cpp)
+target_link_libraries(phys_test PRIVATE feen)
+
+add_test(
+    NAME ResonatorPhysicsValidation
+    COMMAND phys_test
+)
+
+add_executable(spiral_time_test test_spiral_time.cpp)
+target_link_libraries(spiral_time_test PRIVATE feen)
+
+add_test(
+    NAME SpiralTimeObserverValidation
+    COMMAND spiral_time_test
+)
+
+add_executable(hardware_adapter_test test_hardware_adapter.cpp)
+target_link_libraries(hardware_adapter_test PRIVATE feen)
+
+add_test(
+    NAME HardwareAdapterValidation
+    COMMAND hardware_adapter_test
+)
