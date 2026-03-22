@@ -113,7 +113,7 @@ Clean separation: AILEE owns policy, FEEN provides physics-native signal primiti
 
 ### 9. **Academic & Citation Value** 📝
 - **Citable software** with proper DOI and citation format (CITATION.cff)
-- **MIT Licensed** - Free to use in research and commercial projects
+- **Non-Commercial License** - Free to use in research, academic, and personal projects
 - **Version 3.0.0** - Mature, stable release
 - **Active development** - Continuous research project
 - Keywords: phononic computing, nonlinear dynamics, resonator networks
@@ -192,7 +192,7 @@ This repository offers:
 - ✅ **Active development** with clear roadmap
 - ✅ **Real-world applications** (AILEE trust layer integration)
 - ✅ **Academic value** with proper citation support
-- ✅ **MIT License** for maximum freedom
+- ✅ **Non-Commercial License** for research and academic freedom
 - ✅ **Zero-friction setup** with header-only core library
 
 **Cloning this repository gives you immediate access to a revolutionary computing framework that bridges theoretical physics and practical software engineering.**
