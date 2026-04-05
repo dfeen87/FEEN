@@ -6,7 +6,7 @@
  
 *A Physics-First Phononic Computing Framework*
 
-[![Version](https://img.shields.io/badge/version-3.2.0-green.svg?style=flat-square)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-3.8.1-green.svg?style=flat-square)](CITATION.cff)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
@@ -17,10 +17,6 @@
 ## What is FEEN?
 
 FEEN (Frequency-Encoded Elastic Network) is a revolutionary computing paradigm that replaces electrons with **phonons** (mechanical vibrations) as information carriers. Unlike conventional digital logic, FEEN harnesses the nonlinear dynamics of elastic resonators to perform computation through wave mechanics.
-
-## Status
-
-This repository is a continuous research project under active development.
 
 ### Live Application
 
@@ -936,7 +932,7 @@ If you use FEEN in your research, please cite:
   title = {FEEN Wave Engine: A Physics-First Phononic Computing Framework},
   author = {Feeney, D.M.},
   year = {2025},
-  version = {3.0.0},
+  version = {3.8.1},
   url = {https://github.com/dfeen87/feen}
 }
 ```
@@ -947,8 +943,8 @@ See [CITATION.cff](CITATION.cff) for more citation formats.
 
 ## License
 
-This project is available for **non‑commercial use only** under the terms of the included LICENSE file.  
-Commercial use requires a separate paid license.
+This project is available for **non-commercial use only** under the terms of the included LICENSE file.
+Commercial use requires a separate paid commercial license. To obtain a commercial license, please contact the author.
 
 
 ---
@@ -975,11 +971,3 @@ This project was developed with a combination of original ideas, hands‑on codi
 
 ---
 
-## Fun Facts
-
-- A single FEEN resonator at 1 kHz with Q=1000 can store information for **~300 milliseconds** with zero active power
-- At room temperature, a typical bistable resonator has a bit-flip probability of **< 10⁻⁵⁰** per second
-- The spectral multiplexing model projects **~1000 independent frequency channels** as theoretically achievable in a 1 kHz bandwidth with Q=10,000; validated implementations currently operate reliably at O(10²) channels
-- The energy barrier in a bistable resonator is **~10 billion times** larger than thermal noise (k_B T)
-
----
