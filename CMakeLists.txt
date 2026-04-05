@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(feen
-    VERSION 3.8.0
+    VERSION 3.8.1
     DESCRIPTION "A Wave-Native Physics-Informed Programming Substrate"
     LANGUAGES CXX
 )
