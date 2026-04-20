@@ -14,9 +14,48 @@
 
 ---
 
+## Table of Contents
+
+- [What is FEEN?](#what-is-feen)
+- [Domain Focus: Medicine](#domain-focus-medicine)
+- [HLV Dynamics Lab](#hlv-dynamics-lab)
+- [Hardware Link](#hardware-link)
+- [Key Innovation](#key-innovation)
+- [Features](#features)
+- [AILEE Integration](#ailee-integration)
+- [VCP Connectivity](#vcp-connectivity)
+- [Quick Start](#quick-start)
+- [Documentation](#documentation)
+- [Repository Structure](#repository-structure)
+- [Examples](#examples)
+- [Plugin System](#plugin-system)
+- [Validation Suite](#validation-suite)
+- [Theory](#theory)
+- [Building & Dependencies](#building--dependencies)
+- [Performance](#performance)
+- [Contributing](#contributing)
+- [Roadmap](#-roadmap)
+- [Citation](#citation)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
+---
+
 ## What is FEEN?
 
 FEEN (Frequency-Encoded Elastic Network) is a revolutionary computing paradigm that replaces electrons with **phonons** (mechanical vibrations) as information carriers. Unlike conventional digital logic, FEEN harnesses the nonlinear dynamics of elastic resonators to perform computation through wave mechanics.
+
+## Domain Focus: Medicine
+
+FEEN includes a dedicated medicine/pharmacology domain module at `domains/medicine/` that applies wave-native FEEN mechanics to therapeutic and skeletal-system modeling. This domain maps core FEEN concepts (Duffing dynamics, bistability, thresholded triggering, and network topology) into biomedical constructs such as:
+
+- **Programmable drug-release matrices** (`DuffingPolymerMatrix`) for sustained vs. triggered release behavior
+- **Biological dual-trigger logic** (`BiologicalAndGate`) for conditional activation events
+- **Skeletal-network topology modeling** (`AdjacencyPeriosteum`) for Laplacian-based stability/resilience analysis
+
+Related domain documentation is included in:
+- `domains/medicine/PAPER.md` (wave-native pharmacokinetics concept paper)
+- `domains/medicine/NOTE.md` (technical note on skeletal topological resilience)
 
 ### Live Application
 
@@ -970,4 +1009,3 @@ This project was developed with a combination of original ideas, hands‑on codi
 - [Issues](https://github.com/dfeen87/feen/issues) - Report bugs, request features
 
 ---
-
