@@ -47,7 +47,7 @@ FEEN (Frequency-Encoded Elastic Network) is a revolutionary computing paradigm t
 
 ## Domain Focus: Medicine
 
-FEEN includes a dedicated medicine/pharmacology domain module at `domains/medicine/` that applies wave-native FEEN mechanics to therapeutic and skeletal-system modeling. This domain maps core FEEN concepts (Duffing dynamics, bistability, thresholded triggering, and network topology) into biomedical constructs such as:
+FEEN includes a dedicated medicine/pharmacology domain module at `domains/medicine/` that applies wave-native FEEN mechanics to therapeutic and skeletal-system modeling. This domain maps core FEEN concepts (nonlinear oscillator behavior, stable-vs-switchable release states, trigger-threshold activation, and graph topology) into biomedical constructs such as:
 
 - **Programmable drug-release matrices** (`DuffingPolymerMatrix`) for sustained vs. triggered release behavior
 - **Biological dual-trigger logic** (`BiologicalAndGate`) for conditional activation events
