@@ -34,7 +34,7 @@
 - [Building & Dependencies](#building--dependencies)
 - [Performance](#performance)
 - [Contributing](#contributing)
-- [Roadmap](#-roadmap)
+- [Roadmap](#roadmap)
 - [Citation](#citation)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
