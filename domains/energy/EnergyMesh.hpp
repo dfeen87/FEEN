@@ -198,9 +198,6 @@ public:
         // If we inject power P over dt, we inject energy ΔE = P * dt
         auto& node = network_.node(node_idx);
         double energy_boost = gain.power_watts * dt;
-        if (!std::isfinite(energy_boost)) {
-            throw std::runtime_error("Computed gain energy boost must be finite.");
-        }
         double current_energy = node.total_energy();
         if (!std::isfinite(current_energy)) {
             throw std::runtime_error("Resonator current energy must be finite.");

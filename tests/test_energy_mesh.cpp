@@ -66,6 +66,23 @@ int main() {
     assert(std::isfinite(energy_after_explicit_gain));
     assert(energy_after_explicit_gain > energy_before_explicit_gain);
 
+    // Phase-sensitive gain injection should preserve energy but alter state orientation.
+    EnergyMesh phase_mesh;
+    const std::size_t p0 = phase_mesh.add_der_node();
+    const std::size_t p1 = phase_mesh.add_der_node();
+    const GainOperator phase_gain(10.0);
+    phase_mesh.apply_gain_for_duration(p0, phase_gain, 1e-2, 0.0);
+    phase_mesh.apply_gain_for_duration(p1, phase_gain, 1e-2, M_PI / 2.0);
+
+    const auto& node_phase_0 = phase_mesh.network().node(p0);
+    const auto& node_phase_90 = phase_mesh.network().node(p1);
+    const double phase_energy_diff =
+        std::abs(node_phase_0.total_energy() - node_phase_90.total_energy());
+    assert(phase_energy_diff <= 1e-10);
+    assert(std::abs(node_phase_0.x()) > 1e-8);
+    assert(std::abs(node_phase_90.x()) < 1e-8);
+    assert(std::abs(node_phase_90.v()) > 1e-8);
+
     // Invalid gain integration dt should be rejected.
     try {
         mesh.apply_gain_for_duration(a, GainOperator(1.0), 0.0, 0.0);
