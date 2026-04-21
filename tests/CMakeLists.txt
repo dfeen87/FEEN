@@ -32,3 +32,11 @@ add_test(
     NAME HardwareAdapterValidation
     COMMAND hardware_adapter_test
 )
+
+add_executable(energy_mesh_test test_energy_mesh.cpp)
+target_link_libraries(energy_mesh_test PRIVATE feen)
+
+add_test(
+    NAME EnergyMeshValidation
+    COMMAND energy_mesh_test
+)

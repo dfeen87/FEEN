@@ -75,5 +75,6 @@ endif()
 option(FEEN_BUILD_TESTS "Build the physical validation suite" ON)
 
 if (FEEN_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
