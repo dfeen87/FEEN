@@ -25,7 +25,7 @@ int main() {
 
     // Observer should produce bounded coherence
     CoherenceObserver observer;
-    const double r = observer.compute_order_parameter(mesh.network());
+    [[maybe_unused]] const double r = observer.compute_order_parameter(mesh.network());
     assert(std::isfinite(r));
     assert(r >= 0.0 && r <= 1.0);
 
@@ -59,9 +59,9 @@ int main() {
     }
 
     // Explicit power × dt gain integration should inject finite energy.
-    const double energy_before_explicit_gain = mesh.network().node(a).total_energy();
+    [[maybe_unused]] const double energy_before_explicit_gain = mesh.network().node(a).total_energy();
     mesh.apply_gain_for_duration(a, GainOperator(20.0), 5e-3, 0.0);
-    const double energy_after_explicit_gain = mesh.network().node(a).total_energy();
+    [[maybe_unused]] const double energy_after_explicit_gain = mesh.network().node(a).total_energy();
     assert(std::isfinite(energy_before_explicit_gain));
     assert(std::isfinite(energy_after_explicit_gain));
     assert(energy_after_explicit_gain > energy_before_explicit_gain);
@@ -76,7 +76,7 @@ int main() {
 
     const auto& node_phase_0 = phase_mesh.network().node(p0);
     const auto& node_phase_90 = phase_mesh.network().node(p1);
-    const double phase_energy_diff =
+    [[maybe_unused]] const double phase_energy_diff =
         std::abs(node_phase_0.total_energy() - node_phase_90.total_energy());
     assert(phase_energy_diff <= 1e-10);
     assert(std::abs(node_phase_0.x()) > 1e-8);
@@ -114,7 +114,7 @@ int main() {
     for (int step = 0; step < 250; ++step) {
         monotonic_mesh.tick(1e-4);
         const double current_energy = total_energy(monotonic_mesh);
-        const double tolerance =
+        [[maybe_unused]] const double tolerance =
             ENERGY_MONOTONIC_TOLERANCE_FACTOR * std::max(1.0, std::abs(prev_energy));
         assert(current_energy <= prev_energy + tolerance);
         prev_energy = current_energy;
