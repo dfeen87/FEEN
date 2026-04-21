@@ -36,8 +36,8 @@ struct GainOperator {
     double power_watts; // Power injected into the system (P > 0)
 
     explicit GainOperator(double power) : power_watts(power) {
-        if (power_watts < 0.0) {
-            throw std::invalid_argument("GainOperator must have non-negative power.");
+        if (!std::isfinite(power_watts) || power_watts < 0.0) {
+            throw std::invalid_argument("GainOperator must have finite, non-negative power.");
         }
     }
 
