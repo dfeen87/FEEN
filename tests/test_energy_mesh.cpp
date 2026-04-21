@@ -90,7 +90,8 @@ int main() {
     } catch (const std::invalid_argument&) {
     }
 
-    // Without gain, total network energy should be non-increasing (up to numerical tolerance).
+    // After initial excitation and with no further gain, total energy should be
+    // non-increasing (up to numerical tolerance).
     EnergyMesh monotonic_mesh;
     const std::size_t m0 = monotonic_mesh.add_der_node();
     const std::size_t m1 = monotonic_mesh.add_der_node();
@@ -106,12 +107,15 @@ int main() {
         return sum;
     };
 
+    constexpr double ENERGY_MONOTONIC_TOLERANCE_FACTOR = 1e-8;
+
     double prev_energy = total_energy(monotonic_mesh);
     assert(std::isfinite(prev_energy));
     for (int step = 0; step < 250; ++step) {
         monotonic_mesh.tick(1e-4);
         const double current_energy = total_energy(monotonic_mesh);
-        const double tolerance = 1e-8 * std::max(1.0, std::abs(prev_energy));
+        const double tolerance =
+            ENERGY_MONOTONIC_TOLERANCE_FACTOR * std::max(1.0, std::abs(prev_energy));
         assert(current_energy <= prev_energy + tolerance);
         prev_energy = current_energy;
     }
