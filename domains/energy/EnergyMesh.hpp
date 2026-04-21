@@ -55,7 +55,12 @@ struct GainOperator {
 class CoherenceObserver {
 public:
     CoherenceObserver(double sync_threshold = 0.8)
-        : sync_threshold_(sync_threshold) {}
+        : sync_threshold_(sync_threshold) {
+        if (!std::isfinite(sync_threshold_) || sync_threshold_ < 0.0 || sync_threshold_ > 1.0) {
+            throw std::invalid_argument(
+                "CoherenceObserver sync_threshold must be finite and within [0, 1].");
+        }
+    }
 
     /**
      * @brief Computes the Kuramoto order parameter ℛ(t) to monitor synchronization.
