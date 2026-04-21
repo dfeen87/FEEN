@@ -1,3 +1,3 @@
 #pragma once
 
-#include "energy_mesh.h"
+#include "../../../domains/energy/EnergyMesh.hpp"

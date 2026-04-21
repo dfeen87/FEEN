@@ -179,7 +179,7 @@ public:
      * remapping to oscillator amplitude.
      *
      * @param node_idx The index of the node to receive power.
-     * @param gain The GainOperator supplying power (W).
+     * @param gain The GainOperator supplying power (watts, i.e. joules/second).
      * @param dt Integration window in seconds.
      * @param phase The phase angle θᵢ to inject at.
      */
