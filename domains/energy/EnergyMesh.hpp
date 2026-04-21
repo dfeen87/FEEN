@@ -156,9 +156,11 @@ public:
      * @param k Coupling strength K.
      */
     void add_transmission_line(size_t i, size_t j, double k) {
-        // Diffusive coupling routing energy down the phase gradient
-        network_.add_coupling(i, j, k);
-        network_.add_coupling(j, i, k);
+        // Diffusive coupling routing energy down the phase gradient.
+        // Overwrite any existing line strength so repeated configuration of
+        // the same (i, j) pair does not silently accumulate coupling.
+        network_.set_coupling(i, j, k);
+        network_.set_coupling(j, i, k);
     }
 
     /**
