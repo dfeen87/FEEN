@@ -14,14 +14,14 @@ int main() {
 
     // DuffingPolymerMatrix constructor input validation
     try {
-        DuffingPolymerMatrix invalid_omega(-1.0, 0.0, 100.0, 1.0);
-        (void)invalid_omega;
+        DuffingPolymerMatrix invalid_omega0_zero(-1.0, 0.0, 100.0, 1.0);
+        (void)invalid_omega0_zero;
         assert(false && "Expected invalid_argument for non-positive omega0");
     } catch (const std::invalid_argument&) {
     }
     try {
-        DuffingPolymerMatrix invalid_q(-1.0, 1.0, 0.0, 1.0);
-        (void)invalid_q;
+        DuffingPolymerMatrix invalid_q_zero(-1.0, 1.0, 0.0, 1.0);
+        (void)invalid_q_zero;
         assert(false && "Expected invalid_argument for non-positive q");
     } catch (const std::invalid_argument&) {
     }
