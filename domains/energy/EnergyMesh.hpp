@@ -1,10 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <complex>
 #include <cmath>
-#include <iostream>
-#include <cstdint>
 #include <stdexcept>
 #include <feen/network.h>
 #include <feen/resonator.h>
