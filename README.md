@@ -63,7 +63,7 @@ It maps core FEEN concepts (nonlinear oscillator behavior, stable-vs-switchable 
   Uses FEEN resonator energy + external force to model two release regimes:
   - **Monostable (`β > 0`)**: sustained-release behavior.
   - **Bistable (`β < 0`)**: locked reservoir with barrier  
-    **ΔU = ω₀⁴ / (4\|β\|)**, released when effective energy exceeds threshold.
+    **ΔU = ω₀⁴ / (4|β|)**, released when effective energy exceeds threshold.
 - **`BiologicalAndGate`**  
   Two-condition activation gate for release triggering (pH shift AND enzymatic force).
 - **`AdjacencyPeriosteum`**  
