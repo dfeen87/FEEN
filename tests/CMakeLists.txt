@@ -40,3 +40,11 @@ add_test(
     NAME EnergyMeshValidation
     COMMAND energy_mesh_test
 )
+
+add_executable(medicine_domain_test test_medicine_domain.cpp)
+target_link_libraries(medicine_domain_test PRIVATE feen_pharma)
+
+add_test(
+    NAME MedicineDomainValidation
+    COMMAND medicine_domain_test
+)

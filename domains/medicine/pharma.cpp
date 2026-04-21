@@ -1,4 +1,5 @@
 #include "pharma.hpp"
+#include <stdexcept>
 
 namespace feen {
 namespace pharma {
@@ -19,7 +20,22 @@ bool BiologicalAndGate::evaluate(bool condition_1_pH_shift, bool condition_2_enz
 
 DuffingPolymerMatrix::DuffingPolymerMatrix(double beta, double omega0, double q, double t)
     : ZwitterionScaffold(q, t), beta_(beta), omega0_(omega0), released_(false) {
+    if (!std::isfinite(beta_) || !std::isfinite(omega0_) || !std::isfinite(Q_factor) || !std::isfinite(tau)) {
+        throw std::invalid_argument("DuffingPolymerMatrix parameters must be finite");
+    }
+    if (omega0_ <= 0.0) {
+        throw std::invalid_argument("DuffingPolymerMatrix omega0 must be > 0");
+    }
+    if (Q_factor <= 0.0) {
+        throw std::invalid_argument("DuffingPolymerMatrix Q-factor must be > 0");
+    }
+    if (tau < 0.0) {
+        throw std::invalid_argument("DuffingPolymerMatrix tau must be >= 0");
+    }
     delta_U_ = calculate_barrier_delta_U();
+    if (!std::isfinite(delta_U_)) {
+        throw std::runtime_error("DuffingPolymerMatrix barrier delta_U is not finite");
+    }
 }
 
 double DuffingPolymerMatrix::calculate_barrier_delta_U() const {
@@ -33,16 +49,30 @@ double DuffingPolymerMatrix::calculate_barrier_delta_U() const {
 
 void DuffingPolymerMatrix::process_wave_data(const feen::Resonator& resonator, double F) {
     if (released_) return;
+    if (!std::isfinite(F)) {
+        throw std::invalid_argument("DuffingPolymerMatrix force F must be finite");
+    }
 
     // Check if the total energy from the resonator + external force exceeds the structural energy barrier ΔU
     // Assuming F provides additional potential/kinetic contribution crossing the threshold
     // Using a simplified threshold mechanism for demonstration of structural snap
     double energy = resonator.total_energy();
+    const double x = resonator.x();
+    if (!std::isfinite(energy) || !std::isfinite(x)) {
+        throw std::runtime_error("DuffingPolymerMatrix resonator state must be finite");
+    }
 
     // In bistable regime (β < 0), check if energy + F * x exceeds barrier
     if (beta_ < 0.0) {
-        double work_done = std::abs(F * resonator.x());
-        if (energy + work_done > delta_U_) {
+        double work_done = std::abs(F * x);
+        if (!std::isfinite(work_done)) {
+            throw std::runtime_error("DuffingPolymerMatrix computed work is not finite");
+        }
+        const double total_effective_energy = energy + work_done;
+        if (!std::isfinite(total_effective_energy)) {
+            throw std::runtime_error("DuffingPolymerMatrix total effective energy is not finite");
+        }
+        if (total_effective_energy > delta_U_) {
             released_ = true;
         }
     } else {
@@ -70,11 +100,22 @@ AdjacencyPeriosteum::AdjacencyPeriosteum(std::size_t num_nodes)
 }
 
 void AdjacencyPeriosteum::add_connection(std::size_t i, std::size_t j, double weight) {
-    if (i < n_ && j < n_) {
-        // Assuming undirected graph for the skeletal mesh
-        adjacency_matrix_[i][j] = weight;
-        adjacency_matrix_[j][i] = weight;
+    if (i >= n_ || j >= n_) {
+        throw std::out_of_range("AdjacencyPeriosteum node index out of range");
     }
+    if (i == j) {
+        throw std::invalid_argument("AdjacencyPeriosteum self-connections are not allowed");
+    }
+    if (!std::isfinite(weight)) {
+        throw std::invalid_argument("AdjacencyPeriosteum connection weight must be finite");
+    }
+    if (weight < 0.0) {
+        throw std::invalid_argument("AdjacencyPeriosteum connection weight must be non-negative");
+    }
+
+    // Assuming undirected graph for the skeletal mesh
+    adjacency_matrix_[i][j] = weight;
+    adjacency_matrix_[j][i] = weight;
 }
 
 std::vector<std::vector<double>> AdjacencyPeriosteum::calculate_laplacian() const {
@@ -83,6 +124,9 @@ std::vector<std::vector<double>> AdjacencyPeriosteum::calculate_laplacian() cons
     for (std::size_t i = 0; i < n_; ++i) {
         double degree = 0.0;
         for (std::size_t j = 0; j < n_; ++j) {
+            if (!std::isfinite(adjacency_matrix_[i][j])) {
+                throw std::runtime_error("AdjacencyPeriosteum matrix contains non-finite value");
+            }
             if (i != j) {
                 laplacian[i][j] = -adjacency_matrix_[i][j];
                 degree += adjacency_matrix_[i][j];
@@ -105,7 +149,13 @@ double AdjacencyPeriosteum::calculate_laplacian_stability() const {
     for (std::size_t i = 0; i < n_; ++i) {
         double degree = 0.0;
         for (std::size_t j = 0; j < n_; ++j) {
+            if (!std::isfinite(adjacency_matrix_[i][j])) {
+                throw std::runtime_error("AdjacencyPeriosteum matrix contains non-finite value");
+            }
             degree += adjacency_matrix_[i][j];
+        }
+        if (!std::isfinite(degree)) {
+            throw std::runtime_error("AdjacencyPeriosteum degree is not finite");
         }
         if (min_degree < 0.0 || degree < min_degree) {
             min_degree = degree;
