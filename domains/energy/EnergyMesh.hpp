@@ -179,14 +179,23 @@ public:
         // If we inject power P, we inject energy E = P * dt
         // As a simplified model, we directly boost amplitude.
         // True physical forcing should use F(t), but for discrete logic:
+        auto& node = network_.node(node_idx);
         double energy_boost = gain.power_watts; // Simplified normalized energy metric
-        double current_energy = network_.node(node_idx).total_energy();
+        double current_energy = node.total_energy();
         double new_energy = current_energy + energy_boost;
+        double omega0 = node.omega0();
+
+        if (omega0 <= 0.0) {
+            throw std::runtime_error("Resonator omega0 must be positive.");
+        }
+
+        // Clamp negative energies to 0 to avoid NaN amplitudes in bistable cases.
+        double non_negative_energy = (new_energy > 0.0) ? new_energy : 0.0;
 
         // A = sqrt(2 * E / ω₀²)
-        double new_amplitude = std::sqrt(2.0 * new_energy / (OMEGA_0 * OMEGA_0));
+        double new_amplitude = std::sqrt(2.0 * non_negative_energy / (omega0 * omega0));
 
-        network_.node(node_idx).inject(new_amplitude, phase);
+        node.inject(new_amplitude, phase);
     }
 
     /**
