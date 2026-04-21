@@ -18,6 +18,7 @@
 
 - [What is FEEN?](#what-is-feen)
 - [Domain Focus: Medicine](#domain-focus-medicine)
+- [Domain Focus: Energy](#domain-focus-energy)
 - [HLV Dynamics Lab](#hlv-dynamics-lab)
 - [Hardware Link](#hardware-link)
 - [Key Innovation](#key-innovation)
@@ -54,9 +55,53 @@ It maps core FEEN concepts (nonlinear oscillator behavior, stable-vs-switchable 
 - **Biological dual-trigger logic** (`BiologicalAndGate`) for conditional activation events
 - **Skeletal-network topology modeling** (`AdjacencyPeriosteum`) for Laplacian-based stability/resilience analysis
 
+### Medicine Domain Components (`domains/medicine/`)
+
+- **`ZwitterionScaffold`**  
+  Base material model carrying Q-factor and time-constant parameters used by release-matrix logic.
+- **`DuffingPolymerMatrix`**  
+  Uses FEEN resonator energy + external force to model two release regimes:
+  - **Monostable (`β > 0`)**: sustained-release behavior.
+  - **Bistable (`β < 0`)**: locked reservoir with barrier  
+    **ΔU = ω₀⁴ / (4|β|)**, released when effective energy exceeds threshold.
+- **`BiologicalAndGate`**  
+  Two-condition activation gate for release triggering (pH shift AND enzymatic force).
+- **`AdjacencyPeriosteum`**  
+  Graph/adjacency model of periosteal connectivity, with Laplacian construction (`L = D - A`) and a stability proxy based on minimum node degree.
+
+Implementation files:
+- `domains/medicine/pharma.hpp`
+- `domains/medicine/pharma.cpp`
+
 Related domain documentation is included in:
 - `domains/medicine/PAPER.md` (wave-native pharmacokinetics concept paper)
 - `domains/medicine/NOTE.md` (technical note on skeletal topological resilience)
+
+## Domain Focus: Energy
+
+FEEN includes an energy-systems domain at `domains/energy/` that maps resonator-network physics to grid-like distributed energy resource (DER) coordination.
+
+### Energy Domain Components (`domains/energy/`)
+
+- **`GainOperator`**  
+  Explicit power-injection model used to represent generation sources and enforce clear energy accounting (`ΔE = P × dt`).
+- **`EnergyMesh`**  
+  DER mesh abstraction built on `feen::ResonatorNetwork`:
+  - Adds DER nodes at grid frequency (60 Hz),
+  - Connects nodes with transmission-line coupling,
+  - Applies time-windowed gain injection,
+  - Advances deterministic mesh dynamics by `tick(dt)`.
+- **`CoherenceObserver`**  
+  Computes Kuramoto-style global order parameter **ℛ(t)** and flags fragmentation based on configurable synchronization thresholds.
+
+Public integration headers:
+- `include/feen/energy.h`
+- `include/feen/energy/energy_mesh.h`
+- `include/feen/energy/gain_operator.h`
+- `include/feen/energy/coherence_observer.h`
+
+Validation coverage:
+- `tests/test_energy_mesh.cpp`
 
 ### Live Application
 
@@ -470,6 +515,7 @@ feen/
 │   ├── gates.h                            # Phononic AND / OR / NOT logic gates
 │   ├── memory.h                           # Resonator-backed memory management
 │   ├── transducer.h                       # Electrical ↔ phononic conversion
+│   ├── energy.h                           # Energy-domain umbrella header
 │   │
 │   ├── 📁 ailee/                          # AILEE telemetry signal primitives
 │   │   ├── ailee_types.h                  # Shared FEEN–AILEE signal types & enums
@@ -493,6 +539,11 @@ feen/
 │   │   ├── fpga_driver.h                  # FPGA ADC/DAC I/O control
 │   │   ├── hardware_adapter.h             # Hardware-in-the-loop sensor/actuator bridge
 │   │   └── mems_calibration.h             # MEMS sensor calibration routines
+│   │
+│   ├── 📁 energy/                         # Energy-domain wrappers
+│   │   ├── energy_mesh.h                  # Energy mesh API wrapper
+│   │   ├── gain_operator.h                # Gain operator API wrapper
+│   │   └── coherence_observer.h           # Coherence observer API wrapper
 │   │
 │   └── 📁 spiral_time/                    # Optional Spiral-Time observer layer
 │       ├── spiral_time_observer.h         # Observer that annotates FEEN trajectories
@@ -565,6 +616,15 @@ feen/
 │   ├── HARDWARE_IN_THE_LOOP.md            # HIL integration strategy
 │   ├── REST_API.md                        # REST API endpoint reference
 │   └── SPIRAL_TIME.md                     # Spiral-Time observer specification
+│
+├── 📁 domains/                            # Domain-specific overlays
+│   ├── 📁 medicine/                       # Pharmacology and skeletal topology models
+│   │   ├── pharma.hpp                     # Medicine domain interfaces
+│   │   ├── pharma.cpp                     # Medicine domain implementation
+│   │   ├── NOTE.md                        # Skeletal topological resilience note
+│   │   └── PAPER.md                       # Wave-native pharmacokinetics concept paper
+│   └── 📁 energy/                         # Grid/DER energy mesh domain
+│       └── EnergyMesh.hpp                 # Energy domain core types and logic
 │
 ├── 📁 web/                                # Web application (Flask)
 │   ├── app.py                             # Route definitions and entry point
