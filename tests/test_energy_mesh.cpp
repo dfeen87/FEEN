@@ -2,8 +2,10 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <algorithm>
+#include <array>
 
-#include "../domains/energy/EnergyMesh.hpp"
+#include <feen/energy/energy_mesh.h>
 
 int main() {
     using feen::EnergyDomain::CoherenceObserver;
@@ -55,6 +57,80 @@ int main() {
         assert(false && "Expected invalid_argument for threshold > 1");
     } catch (const std::invalid_argument&) {
     }
+
+    // Explicit power × dt gain integration should inject finite energy.
+    const double energy_before_explicit_gain = mesh.network().node(a).total_energy();
+    mesh.apply_gain_for_duration(a, GainOperator(20.0), 5e-3, 0.0);
+    const double energy_after_explicit_gain = mesh.network().node(a).total_energy();
+    assert(std::isfinite(energy_before_explicit_gain));
+    assert(std::isfinite(energy_after_explicit_gain));
+    assert(energy_after_explicit_gain > energy_before_explicit_gain);
+
+    // Invalid gain integration dt should be rejected.
+    try {
+        mesh.apply_gain_for_duration(a, GainOperator(1.0), 0.0, 0.0);
+        assert(false && "Expected invalid_argument for non-positive gain integration dt");
+    } catch (const std::invalid_argument&) {
+    }
+
+    // Without gain, total network energy should be non-increasing (up to numerical tolerance).
+    EnergyMesh monotonic_mesh;
+    const std::size_t m0 = monotonic_mesh.add_der_node();
+    const std::size_t m1 = monotonic_mesh.add_der_node();
+    monotonic_mesh.add_transmission_line(m0, m1, 0.2);
+    monotonic_mesh.apply_gain_for_duration(m0, GainOperator(25.0), 1e-2, 0.0);
+    monotonic_mesh.apply_gain_for_duration(m1, GainOperator(15.0), 1e-2, 0.3);
+
+    auto total_energy = [](const EnergyMesh& local_mesh) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i < local_mesh.network().size(); ++i) {
+            sum += local_mesh.network().node(i).total_energy();
+        }
+        return sum;
+    };
+
+    double prev_energy = total_energy(monotonic_mesh);
+    assert(std::isfinite(prev_energy));
+    for (int step = 0; step < 250; ++step) {
+        monotonic_mesh.tick(1e-4);
+        const double current_energy = total_energy(monotonic_mesh);
+        const double tolerance = 1e-8 * std::max(1.0, std::abs(prev_energy));
+        assert(current_energy <= prev_energy + tolerance);
+        prev_energy = current_energy;
+    }
+
+    // Coherence fragmentation thresholds across synchronized/fragmented scenarios.
+    EnergyMesh coherent_mesh;
+    std::array<std::size_t, 3> coherent_nodes = {
+        coherent_mesh.add_der_node(), coherent_mesh.add_der_node(), coherent_mesh.add_der_node()
+    };
+    for (const auto idx : coherent_nodes) {
+        coherent_mesh.network().node(idx).inject(1.0, 0.0);
+    }
+    CoherenceObserver strict_observer(0.9);
+    assert(!strict_observer.check_fragmentation(coherent_mesh.network()));
+
+    EnergyMesh fragmented_mesh;
+    std::array<std::size_t, 3> fragmented_nodes = {
+        fragmented_mesh.add_der_node(), fragmented_mesh.add_der_node(), fragmented_mesh.add_der_node()
+    };
+    fragmented_mesh.network().node(fragmented_nodes[0]).inject(1.0, 0.0);
+    fragmented_mesh.network().node(fragmented_nodes[1]).inject(1.0, 2.0 * M_PI / 3.0);
+    fragmented_mesh.network().node(fragmented_nodes[2]).inject(1.0, 4.0 * M_PI / 3.0);
+    CoherenceObserver fragmentation_observer(0.6);
+    assert(fragmentation_observer.check_fragmentation(fragmented_mesh.network()));
+
+    EnergyMesh mixed_mesh;
+    std::array<std::size_t, 3> mixed_nodes = {
+        mixed_mesh.add_der_node(), mixed_mesh.add_der_node(), mixed_mesh.add_der_node()
+    };
+    mixed_mesh.network().node(mixed_nodes[0]).inject(1.0, 0.0);
+    mixed_mesh.network().node(mixed_nodes[1]).inject(1.0, 0.0);
+    mixed_mesh.network().node(mixed_nodes[2]).inject(1.0, M_PI);
+    CoherenceObserver high_threshold_observer(0.5);
+    CoherenceObserver low_threshold_observer(0.2);
+    assert(high_threshold_observer.check_fragmentation(mixed_mesh.network()));
+    assert(!low_threshold_observer.check_fragmentation(mixed_mesh.network()));
 
     return 0;
 }

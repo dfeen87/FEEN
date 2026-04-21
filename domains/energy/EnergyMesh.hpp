@@ -173,27 +173,34 @@ public:
     }
 
     /**
-     * @brief Applies a Gain operator to a specific DER.
+     * @brief Applies gain over an explicit time window.
      *
-     * E(t) conservation constraint exception.
+     * Uses ΔE = P × dt to map power injection into injected energy before
+     * remapping to oscillator amplitude.
      *
      * @param node_idx The index of the node to receive power.
-     * @param gain The GainOperator supplying the power.
+     * @param gain The GainOperator supplying power (W).
+     * @param dt Integration window in seconds.
      * @param phase The phase angle θᵢ to inject at.
      */
-    void apply_gain(size_t node_idx, const GainOperator& gain, double phase = 0.0) {
+    void apply_gain_for_duration(
+        size_t node_idx, const GainOperator& gain, double dt, double phase = 0.0) {
         if (!std::isfinite(phase)) {
             throw std::invalid_argument("Injection phase must be finite.");
+        }
+        if (!std::isfinite(dt) || dt <= 0.0) {
+            throw std::invalid_argument("Gain integration dt must be finite and > 0.");
         }
 
         // Map power injection to an amplitude change
         // For a harmonic oscillator, Energy E = 1/2 * ω₀² * A²
         // E_input = ∑ E_output + E_loss
-        // If we inject power P, we inject energy E = P * dt
-        // As a simplified model, we directly boost amplitude.
-        // True physical forcing should use F(t), but for discrete logic:
+        // If we inject power P over dt, we inject energy ΔE = P * dt
         auto& node = network_.node(node_idx);
-        double energy_boost = gain.power_watts; // Simplified normalized energy metric
+        double energy_boost = gain.power_watts * dt;
+        if (!std::isfinite(energy_boost)) {
+            throw std::runtime_error("Computed gain energy boost must be finite.");
+        }
         double current_energy = node.total_energy();
         if (!std::isfinite(current_energy)) {
             throw std::runtime_error("Resonator current energy must be finite.");
@@ -213,6 +220,16 @@ public:
         double new_amplitude = std::sqrt(2.0 * non_negative_energy / (omega0 * omega0));
 
         node.inject(new_amplitude, phase);
+    }
+
+    /**
+     * @brief Applies a Gain operator using legacy normalized 1-second window.
+     *
+     * Preserves existing call sites while delegating to the explicit
+     * power × dt gain model.
+     */
+    void apply_gain(size_t node_idx, const GainOperator& gain, double phase = 0.0) {
+        apply_gain_for_duration(node_idx, gain, 1.0, phase);
     }
 
     /**
