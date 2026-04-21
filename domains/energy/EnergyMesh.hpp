@@ -3,6 +3,7 @@
 #include <complex>
 #include <cmath>
 #include <stdexcept>
+#include <cstddef>
 #include <feen/network.h>
 #include <feen/resonator.h>
 
@@ -23,7 +24,6 @@ namespace EnergyDomain {
 
 // Base grid frequency
 constexpr double GRID_FREQ_HZ = 60.0;
-constexpr double OMEGA_0 = 2.0 * M_PI * GRID_FREQ_HZ; // ω₀ = 2π f₀
 
 /**
  * @brief Represents an explicit power generation source.
@@ -89,7 +89,12 @@ public:
                 continue;
             }
 
-            double theta_i = std::atan2(-v / OMEGA_0, x);
+            const double omega0 = node.omega0();
+            if (!std::isfinite(omega0) || omega0 <= 0.0) {
+                throw std::runtime_error("Resonator omega0 must be finite and positive.");
+            }
+
+            double theta_i = std::atan2(-v / omega0, x);
             z += std::polar(1.0, theta_i);
         }
 
@@ -134,6 +139,10 @@ public:
      * @return size_t The index of the added node.
      */
     size_t add_der_node(double q_factor = 200.0) {
+        if (!std::isfinite(q_factor) || q_factor <= 0.0) {
+            throw std::invalid_argument("DER q_factor must be finite and > 0.");
+        }
+
         feen::ResonatorConfig cfg;
         cfg.frequency_hz = GRID_FREQ_HZ; // f₀ = 60 Hz
         cfg.q_factor = q_factor;
@@ -173,6 +182,10 @@ public:
      * @param phase The phase angle θᵢ to inject at.
      */
     void apply_gain(size_t node_idx, const GainOperator& gain, double phase = 0.0) {
+        if (!std::isfinite(phase)) {
+            throw std::invalid_argument("Injection phase must be finite.");
+        }
+
         // Map power injection to an amplitude change
         // For a harmonic oscillator, Energy E = 1/2 * ω₀² * A²
         // E_input = ∑ E_output + E_loss
@@ -182,6 +195,10 @@ public:
         auto& node = network_.node(node_idx);
         double energy_boost = gain.power_watts; // Simplified normalized energy metric
         double current_energy = node.total_energy();
+        if (!std::isfinite(current_energy)) {
+            throw std::runtime_error("Resonator current energy must be finite.");
+        }
+
         double new_energy = current_energy + energy_boost;
         double omega0 = node.omega0();
 
@@ -204,6 +221,9 @@ public:
      * @param dt Time step in seconds.
      */
     void tick(double dt) {
+        if (!std::isfinite(dt) || dt <= 0.0) {
+            throw std::invalid_argument("EnergyMesh tick dt must be finite and > 0.");
+        }
         network_.tick_parallel(dt);
     }
 
