@@ -104,6 +104,49 @@ Public integration headers:
 Validation coverage:
 - `tests/test_energy_mesh.cpp`
 
+## Domain Focus: SatelliteSwarm
+
+FEEN includes a dedicated satellite‑systems domain at `domains/satellite/` that models a **fractionated spacecraft swarm** as a wave‑native resonator network. Each satellite behaves as a physical node in a coupled phononic mesh, with inter‑satellite optical/RF links mapped directly onto FEEN’s coupling primitives. Formation control, routing, and timing emerge from **local phase relationships**, enabling fully **clockless** coordination in Low Earth Orbit (LEO).
+
+The domain maps FEEN’s core mechanics (nonlinear resonator behavior, phase‑locked manifolds, bistable vs. monostable logic, Laplacian connectivity) into aerospace constructs such as:
+
+- **Clockless formation‑flying controllers** based on stable phase offsets  
+- **Wave‑native routing** using destructive/constructive interference  
+- **Radiation‑hard bistable storage nodes** with SEU‑threshold logic  
+- **Non‑Markovian structural observers** for fatigue/micro‑cracking detection  
+
+### SatelliteSwarm Domain Components (`domains/satellite/`)
+
+- **`SatelliteNode`**  
+  Represents an individual spacecraft modeled as a FEEN‑native resonator.  
+  Supports monostable routing behavior or bistable storage behavior with barrier  
+  **ΔU = ω₀⁴ / (4|β|)** and Kramers‑damped relaxation for sub‑threshold SEU events.
+
+- **`SatelliteLink`**  
+  Encodes low‑bandwidth optical/RF coupling between satellites.  
+  Contributes to the swarm Laplacian `L = D − A`, which governs phase‑locking and formation stability.
+
+- **`SwarmController`**  
+  Clockless formation‑flying controller enforcing the algebraic connectivity condition  
+  **κλ₂(L) ≳ CΔω**, ensuring stable geometry without a global broadcast clock.  
+  Maintains target phase offsets **θᵢ − θⱼ = Φ_target**, which map directly to orbital positioning.
+
+- **`PhaseGatedRouter`**  
+  Implements wave‑native data routing using high‑frequency modal excitations.  
+  Packets propagate along the phase‑locked manifold where  
+  **sin(θⱼ − θᵢ) ≈ 0**, naturally routing around lagging or SEU‑perturbed nodes via destructive interference.
+
+- **`StructuralIntegrityObserver`**  
+  Read‑only, non‑intrusive observer tracking a Prony‑series memory kernel  
+  **Kᵢ(t) ≈ ∑ cᵢₘ e^(−λᵢₘ t)**  
+  to detect non‑stationary drift in structural parameters.  
+  Flags **Fatigue/Micro‑cracking** events without modifying the primary coupled‑mode dynamics.
+
+Implementation file:
+- `domains/satellite/SatelliteSwarm.hpp` (header‑only domain module)
+
+---
+
 ### Live Application
 
 FEEN is available as a live, interactive web application that lets you explore and control the wave‑based engine in real time. The simulation interface provides a visual workspace for observing network state, injecting signals, managing nodes, and experimenting with plugins — all backed by the same deterministic physics core exposed through the REST API.
