@@ -6,7 +6,8 @@
  
 *A Physics-First Phononic Computing Framework*
 
-[![Version](https://img.shields.io/badge/version-3.8.1-green.svg?style=flat-square)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-3.10-green.svg?style=flat-square)](CITATION.cff)
+[![CI](https://github.com/dfeen87/FEEN/actions/workflows/main.yml/badge.svg)](https://github.com/dfeen87/FEEN/actions/workflows/main.yml)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
@@ -114,7 +115,7 @@ FEEN is available as a live, interactive web application that lets you explore a
 | **Nodes** | [/node-graph](https://feen.onrender.com/node-graph) | Resonator nodes and active plugins |
 | **Coupling** | [/coupling](https://feen.onrender.com/coupling) | Interactive node coupling editor |
 | **VCP Connectivity** | [/vcp-connectivity](https://feen.onrender.com/vcp-connectivity) | Live graph of distributed VCP nodes & FEEN physics metrics |
-| **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Path wiring view |
+| **VCP Wiring** | [/vcp-wiring](https://feen.onrender.com/vcp-wiring) | Verified Control Protocol wiring view |
 | **AILEE Metrics** | [/ailee-metric](https://feen.onrender.com/ailee-metric) | Live Δv metric visualization |
 | **HLV Dynamics Lab** | [/hlv-lab](https://feen.onrender.com/hlv-lab) | Structured phase-memory dynamics experiments |
 | **API Reference** | [/docs](https://feen.onrender.com/docs) | Human-readable REST API reference |
@@ -335,7 +336,10 @@ This separation ensures that FEEN can evolve toward FPGA or ASIC implementations
 
 ## VCP Connectivity
 
-FEEN provides a read-only visualization layer for **VCP (Verified Control Path)** distributed networks. This is a **Phase II integration** — FEEN acts purely as a physics observer; VCP remains the distributed orchestrator and FEEN never modifies VCP state.
+FEEN provides a read-only visualization layer for **VCP (Verified Control Protocol)** distributed networks. This is a **Phase II integration** — FEEN acts purely as a physics observer; VCP remains the distributed orchestrator and FEEN never modifies VCP state.
+
+VCP reference implementation: **Ambient AI VCP System**  
+https://github.com/dfeen87/Ambient-AI-VCP-System
 
 ### Architecture Boundary
 
@@ -635,7 +639,7 @@ feen/
 │   │   ├── node_graph.html                # Nodes — resonator and plugin visualization
 │   │   ├── coupling.html                  # Coupling — interactive coupling editor
 │   │   ├── vcp_connectivity.html          # VCP Connectivity — live VCP graph & FEEN metrics
-│   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Path view
+│   │   ├── vcp_wiring.html                # VCP Wiring — Verified Control Protocol view
 │   │   ├── ailee_metric.html              # AILEE Metrics — live Δv visualization
 │   │   ├── hlv_lab.html                   # HLV Dynamics Lab — Kuramoto experiments & results export
 │   │   ├── docs.html                      # API Reference — human-readable REST docs
@@ -1001,25 +1005,22 @@ We welcome contributions! Here's how to get started:
 
 ## Roadmap
 
-The items below are exploratory and forward-looking. They represent potential research directions and platform maturity goals, not committed or scheduled work. All items are subject to experimental validation and may evolve as the project matures.
+The roadmap below is directional (not date-committed) and will continue to evolve with validation results and community feedback.
 
-### v3.2 — Scaling & Instrumentation
-- [ ] GPU‑accelerated network simulations (CUDA/OpenCL)
-- [ ] Real‑time visualization and diagnostics dashboard
-- [ ] MATLAB/Simulink co‑simulation interface
-- [ ] Extended harmonic mode and coupling support
+### v3.10 — Documentation & Integration Polish
+- [ ] Stabilize docs/site navigation and endpoint examples
+- [ ] Expand VCP observer docs and cross-repo integration references
+- [ ] Improve dashboard discoverability for simulation and diagnostics views
 
-### v3.3 — Hybrid & Experimental Regimes
-- [ ] Quantum‑regime phonon modeling (ground‑state dynamics) — exploratory, subject to experimental validation
-- [ ] Machine learning model training on resonator networks — research-oriented
-- [ ] Hardware‑in‑the‑loop testing framework
-- [ ] WebAssembly demo for browser‑based simulation
+### v3.11 — Runtime & Tooling Improvements
+- [ ] Deeper diagnostics and performance instrumentation
+- [ ] Hardware bridge hardening and observability
+- [ ] Additional Python examples for reproducible workflows
 
-### v4.0 — Platform Maturity
-- [ ] Distributed computation across resonator clusters
-- [ ] Automatic circuit synthesis from logic or energy‑flow specifications
-- [ ] Commercial MEMS/NEMS fabrication and characterization guidelines
-- [ ] Full SDK for phononic computing platforms
+### v4.0 — Platform Expansion
+- [ ] Distributed resonator-cluster execution patterns
+- [ ] Automatic topology/circuit synthesis from constraints
+- [ ] SDK maturation for production-grade phononic applications
 
 ---
 
