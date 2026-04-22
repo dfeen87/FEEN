@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <complex>
+#include <string>
 
 #include "feen/resonator.h"
 #include "feen/network.h"
@@ -109,7 +110,10 @@ public:
      */
     void update_and_check(const std::vector<SwarmNode>& nodes, double dt) {
         if (node_fatigue_.size() != nodes.size()) {
-            throw std::logic_error("StructuralObserver node count mismatch.");
+            throw std::logic_error(
+                "StructuralObserver node count mismatch: expected " +
+                std::to_string(nodes.size()) + ", got " +
+                std::to_string(node_fatigue_.size()) + ".");
         }
         for (std::size_t i = 0; i < nodes.size(); ++i) {
             double energy = nodes[i].get_core().total_energy();
@@ -166,7 +170,7 @@ public:
      * Formula: κλ₂(L) ≳ CΔω
      * @return Minimum algebraic connectivity
      */
-    [[nodiscard]] double check_laplacian_connectivity() const noexcept {
+    double check_laplacian_connectivity() const noexcept {
         // Mock computation of Fiedler value λ₂ for the formation graph.
         return 1.0;
     }
@@ -179,11 +183,8 @@ public:
      * and flow efficiently where the phase manifold condition is met:
      * sin(θⱼ − θᵢ) ≈ 0
      */
-    void route_data() const {
+    void route_data() {
         for (const auto& link : links_) {
-            if (link.source_node >= nodes_.size() || link.target_node >= nodes_.size()) {
-                throw std::out_of_range("Swarm link endpoint index out of range.");
-            }
             const auto& src_node = nodes_[link.source_node].get_core();
             const auto& tgt_node = nodes_[link.target_node].get_core();
 
