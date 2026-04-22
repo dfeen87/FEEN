@@ -2,10 +2,12 @@
 
 #include <vector>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <iostream>
 #include <complex>
+#include <string>
 
 #include "feen/resonator.h"
 #include "feen/network.h"
@@ -51,6 +53,9 @@ public:
      * Energy barrier ΔU = ω₀⁴ / (4|β|)
      */
     void RadiationStrike(double E_seu) {
+        if (!std::isfinite(E_seu)) {
+            throw std::invalid_argument("RadiationStrike requires finite E_seu.");
+        }
         if (E_seu <= 0.0) return;
 
         // In feen::Resonator, beta is private in config, but we can infer bistability
@@ -78,8 +83,8 @@ public:
         }
     }
 
-    feen::Resonator& get_core() { return core_resonator_; }
-    const feen::Resonator& get_core() const { return core_resonator_; }
+    feen::Resonator& get_core() noexcept { return core_resonator_; }
+    const feen::Resonator& get_core() const noexcept { return core_resonator_; }
 
 private:
     feen::Resonator core_resonator_;
@@ -104,6 +109,12 @@ public:
      * if accumulated drift exceeds threshold.
      */
     void update_and_check(const std::vector<SwarmNode>& nodes, double dt) {
+        if (node_fatigue_.size() != nodes.size()) {
+            throw std::logic_error(
+                "StructuralObserver node count mismatch: expected " +
+                std::to_string(nodes.size()) + ", got " +
+                std::to_string(node_fatigue_.size()) + ".");
+        }
         for (std::size_t i = 0; i < nodes.size(); ++i) {
             double energy = nodes[i].get_core().total_energy();
             // Simplified kernel integration: drift accumulation
@@ -144,6 +155,12 @@ public:
     }
 
     void add_link(std::size_t src, std::size_t tgt, double strength, double target_phase) {
+        if (src >= nodes_.size() || tgt >= nodes_.size()) {
+            throw std::out_of_range("Swarm link endpoint index out of range.");
+        }
+        if (!std::isfinite(strength) || !std::isfinite(target_phase)) {
+            throw std::invalid_argument("Swarm link strength/target_phase must be finite.");
+        }
         links_.emplace_back(src, tgt, strength, target_phase);
     }
 
@@ -153,7 +170,7 @@ public:
      * Formula: κλ₂(L) ≳ CΔω
      * @return Minimum algebraic connectivity
      */
-    double check_laplacian_connectivity() const {
+    double check_laplacian_connectivity() const noexcept {
         // Mock computation of Fiedler value λ₂ for the formation graph.
         return 1.0;
     }
@@ -190,6 +207,9 @@ public:
      * @brief Steps the swarm forward, updating structural observer cleanly.
      */
     void tick_swarm(double dt) {
+        if (!std::isfinite(dt) || dt <= 0.0) {
+            throw std::invalid_argument("Swarm tick dt must be finite and > 0.");
+        }
         // Evaluate structural integrity non-intrusively
         observer_.update_and_check(nodes_, dt);
 
@@ -198,7 +218,8 @@ public:
         // for domain-specific interactions.
     }
 
-    std::vector<SwarmNode>& get_nodes() { return nodes_; }
+    std::vector<SwarmNode>& get_nodes() noexcept { return nodes_; }
+    const std::vector<SwarmNode>& get_nodes() const noexcept { return nodes_; }
 
 private:
     std::vector<SwarmNode> nodes_;
