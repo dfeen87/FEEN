@@ -268,20 +268,6 @@ double state = bit.total_energy();  // Read
 - No feedback from observers to dynamics; FEEN core is unmodified
 - See [Hardware-in-the-Loop Guide](docs/HARDWARE_IN_THE_LOOP.md) for full strategy
 
-### **Rich Ecosystem**
-
-```
-feen/
-├── Core Library       → Resonators, networks, gates
-├── Applications       → Neural nets, filters, oscillator banks
-├── Hardware Support   → FPGA drivers, hardware adapter, MEMS calibration
-├── Analysis Tools     → Spectrum analyzer, phase portraits
-├── Python Bindings    → NumPy integration, visualization
-├── REST API           → HTTP access with global node control
-├── Plugin System      → Observer, tool, and UI plugin lifecycle
-└── Validation Suite   → Physics-enforcing tests
-```
-
 ---
 
 ## AILEE Integration
@@ -336,7 +322,7 @@ This separation ensures that FEEN can evolve toward FPGA or ASIC implementations
 
 ## VCP Connectivity
 
-FEEN provides a read-only visualization layer for **VCP (Verified Control Protocol)** distributed networks. This is a **Phase II integration** — FEEN acts purely as a physics observer; VCP remains the distributed orchestrator and FEEN never modifies VCP state.
+FEEN provides a read-only visualization layer for **VCP (Verifiable Computation Protocol )** distributed networks. This is a **Phase II integration** — FEEN acts purely as a physics observer; VCP remains the distributed orchestrator and FEEN never modifies VCP state.
 
 VCP reference implementation: **Ambient AI VCP System**  
 https://github.com/dfeen87/Ambient-AI-VCP-System
@@ -1003,24 +989,37 @@ We welcome contributions! Here's how to get started:
 
 ---
 
-## Roadmap
+## **Roadmap**
 
-The roadmap below is directional (not date-committed) and will continue to evolve with validation results and community feedback.
+The roadmap below is directional (not date‑committed) and will continue to evolve with validation results and community feedback.
 
-### v3.10 — Documentation & Integration Polish
-- [ ] Stabilize docs/site navigation and endpoint examples
-- [ ] Expand VCP observer docs and cross-repo integration references
-- [ ] Improve dashboard discoverability for simulation and diagnostics views
+### **v4.X.X — Platform Consolidation, Tooling Maturity, and Cross‑Domain Expansion**
+- [ ] **Distributed resonator‑cluster execution patterns**  
+  Formalize multi‑node execution semantics, scheduling, and synchronization for large‑scale FEEN deployments.
 
-### v3.11 — Runtime & Tooling Improvements
-- [ ] Deeper diagnostics and performance instrumentation
-- [ ] Hardware bridge hardening and observability
-- [ ] Additional Python examples for reproducible workflows
+- [ ] **Automatic topology & circuit synthesis from constraints**  
+  Generate resonator networks directly from logical, physical, or optimization constraints.
 
-### v4.0 — Platform Expansion
-- [ ] Distributed resonator-cluster execution patterns
-- [ ] Automatic topology/circuit synthesis from constraints
-- [ ] SDK maturation for production-grade phononic applications
+- [ ] **SDK maturation for production‑grade phononic applications**  
+  Harden the public API surface, stabilize domain headers, and finalize long‑term compatibility guarantees.
+
+- [ ] **Deep diagnostics & performance instrumentation**  
+  Expand tracing, profiling, and observability hooks across simulation, connectivity, and hardware layers.
+
+- [ ] **Hardware bridge hardening & observability**  
+  Improve error surfaces, latency reporting, and device‑level introspection for FEEN‑backed hardware.
+
+- [ ] **Expanded Python examples for reproducible workflows**  
+  Provide end‑to‑end notebooks demonstrating simulation, connectivity, diagnostics, and domain interactions.
+
+- [ ] **Documentation & site navigation stabilization**  
+  Improve discoverability of endpoints, domain APIs, and cross‑domain examples; unify docs structure.
+
+- [ ] **VCP observer documentation & cross‑repo integration references**  
+  Clarify how FEEN, VCP, and ambient‑node interact; provide diagrams and minimal reproducible examples.
+
+- [ ] **Dashboard discoverability improvements**  
+  Refine UI flows for simulation, diagnostics, topology editing, and HLV/observer views.
 
 ---
 
@@ -1046,6 +1045,8 @@ See [CITATION.cff](CITATION.cff) for more citation formats.
 
 This project is available for **non-commercial use only** under the terms of the included LICENSE file.
 Commercial use requires a separate paid commercial license. To obtain a commercial license, please contact the author.
+
+See [LICENSE](LICENSE) for datails.
 
 
 ---
