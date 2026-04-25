@@ -1,13 +1,75 @@
 #include "OsteoMesh.hpp"
 #include <cmath>
 #include <stdexcept>
+#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
+#include <algorithm>
+#include <random>
 
 void VascularEdge::reset_to_baseline() {
-    flow_resistance = baseline_resistance;
+    flow_capacity = baseline_capacity;
+}
+
+void VascularEdge::degrade(double amount) {
+    flow_capacity -= amount;
+    if (flow_capacity < 0.0) {
+        flow_capacity = 0.0;
+    }
 }
 
 void SkeletalNode::add_edge(std::shared_ptr<VascularEdge> edge) {
     adjacent_edges.push_back(edge);
+}
+
+void OsteoMeshNetwork::add_node(SkeletalNode node) {
+    nodes.push_back(node);
+}
+
+void OsteoMeshNetwork::add_edge(std::shared_ptr<VascularEdge> edge) {
+    edges.push_back(edge);
+}
+
+double OsteoMeshNetwork::compute_fiedler_value() {
+    int n = nodes.size();
+    if (n == 0) return 0.0;
+
+    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(n, n);
+    Eigen::MatrixXd D = Eigen::MatrixXd::Zero(n, n);
+
+    for (const auto& edge : edges) {
+        int u = edge->u;
+        int v = edge->v;
+        A(u, v) += edge->flow_capacity;
+        A(v, u) += edge->flow_capacity;
+    }
+
+    for (int i = 0; i < n; ++i) {
+        double degree = 0.0;
+        for (int j = 0; j < n; ++j) {
+            degree += A(i, j);
+        }
+        D(i, i) = degree;
+    }
+
+    Eigen::MatrixXd L = D - A;
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(L);
+    Eigen::VectorXd eigenvalues = solver.eigenvalues();
+
+    if (n < 2) return 0.0;
+    return eigenvalues(1); // Fiedler value is the second smallest eigenvalue
+}
+
+void OsteoMeshNetwork::simulate_vaso_occlusive_loop(int iterations, double degrade_amount) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    if (edges.empty()) return;
+    std::uniform_int_distribution<> distrib(0, edges.size() - 1);
+
+    for (int i = 0; i < iterations; ++i) {
+        int rand_edge_idx = distrib(gen);
+        edges[rand_edge_idx]->degrade(degrade_amount);
+    }
 }
 
 MetaboJointMatrix::MetaboJointMatrix(double b, double w0, double E_base, double F_enz)
