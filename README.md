@@ -78,6 +78,28 @@ Related domain documentation is included in:
 - `domains/medicine/PAPER.md` (wave-native pharmacokinetics concept paper)
 - `domains/medicine/NOTE.md` (technical note on skeletal topological resilience)
 
+## Domain Focus: BioMesh
+
+FEEN includes a biological network domain at `domains/BioMesh/` that models cybernetic hematopoiesis and skeletal-system modeling using a graph-theoretic formalization of biological networks.
+
+### BioMesh Domain Components (`domains/BioMesh/`)
+
+- **`SkeletalNode`**
+  Represents a biological node tracking local metrics such as pH and protease concentration.
+- **`VascularEdge`**
+  Represents vascular connectivity between skeletal nodes, tracking baseline and degraded flow capacity.
+- **`OsteoMeshNetwork`**
+  Topological graph connecting skeletal nodes via vascular edges. Computes structural integrity via the Graph Laplacian's Fiedler value (`L = D - A`).
+- **`MetaboJointMatrix`**
+  A biological "AND" gate utilizing a bistable Duffing oscillator. Payload is eluted only when both conditions are met spatially and temporally (e.g., low pH attenuating the central energy barrier and high protease concentration triggering an enzymatic impulse).
+
+Implementation files:
+- `domains/BioMesh/OsteoMesh.hpp`
+- `domains/BioMesh/OsteoMesh.cpp`
+
+Related domain documentation is included in:
+- `domains/BioMesh/CYBERNETIC_HEMATOPOIESIS.md` (Technical Note: Cybernetic Hematopoiesis and the Wave-Native Eradication of Sickle Cell Disease)
+
 ## Domain Focus: Energy
 
 FEEN includes an energy-systems domain at `domains/energy/` that maps resonator-network physics to grid-like distributed energy resource (DER) coordination.
@@ -651,11 +673,18 @@ feen/
 │   └── SPIRAL_TIME.md                     # Spiral-Time observer specification
 │
 ├── 📁 domains/                            # Domain-specific overlays
+│   ├── 📁 BioMesh/                        # Biological networks and cybernetic hematopoiesis
+│   │   ├── BioMesh_Tests.cpp              # Unit tests for BioMesh mechanics
+│   │   ├── CYBERNETIC_HEMATOPOIESIS.md    # Theoretical framework on wave-native eradication of SCD
+│   │   ├── OsteoMesh.cpp                  # BioMesh domain implementation
+│   │   └── OsteoMesh.hpp                  # BioMesh domain interfaces
 │   ├── 📁 medicine/                       # Pharmacology and skeletal topology models
 │   │   ├── pharma.hpp                     # Medicine domain interfaces
 │   │   ├── pharma.cpp                     # Medicine domain implementation
 │   │   ├── NOTE.md                        # Skeletal topological resilience note
 │   │   └── PAPER.md                       # Wave-native pharmacokinetics concept paper
+│   ├── 📁 satellite/                      # Fractionated spacecraft swarm models
+│   │   └── SatelliteSwarm.hpp             # Satellite swarm domain core types and logic
 │   └── 📁 energy/                         # Grid/DER energy mesh domain
 │       └── EnergyMesh.hpp                 # Energy domain core types and logic
 │
