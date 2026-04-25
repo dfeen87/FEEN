@@ -5,25 +5,40 @@
 
 class VascularEdge {
 public:
-    double flow_resistance;
-    double baseline_resistance;
+    int u;
+    int v;
+    double flow_capacity;
+    double baseline_capacity;
 
-    VascularEdge(double resistance = 1.0, double baseline = 1.0)
-        : flow_resistance(resistance), baseline_resistance(baseline) {}
+    VascularEdge(int u_id = 0, int v_id = 0, double capacity = 1.0, double baseline = 1.0)
+        : u(u_id), v(v_id), flow_capacity(capacity), baseline_capacity(baseline) {}
 
     void reset_to_baseline();
+    void degrade(double amount);
 };
 
 class SkeletalNode {
 public:
+    int id;
     double local_pH;
     double local_protease_concentration;
     std::vector<std::shared_ptr<VascularEdge>> adjacent_edges;
 
-    SkeletalNode(double pH = 7.4, double protease = 0.0)
-        : local_pH(pH), local_protease_concentration(protease) {}
+    SkeletalNode(int node_id = 0, double pH = 7.4, double protease = 0.0)
+        : id(node_id), local_pH(pH), local_protease_concentration(protease) {}
 
     void add_edge(std::shared_ptr<VascularEdge> edge);
+};
+
+class OsteoMeshNetwork {
+public:
+    std::vector<SkeletalNode> nodes;
+    std::vector<std::shared_ptr<VascularEdge>> edges;
+
+    void add_node(SkeletalNode node);
+    void add_edge(std::shared_ptr<VascularEdge> edge);
+    double compute_fiedler_value();
+    void simulate_vaso_occlusive_loop(int iterations, double degrade_amount);
 };
 
 class MetaboJointMatrix {
