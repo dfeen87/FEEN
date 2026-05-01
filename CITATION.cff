@@ -4,7 +4,7 @@ message: "If you use FEEN in academic work, please cite it as below."
 type: software
 version: 3.11
 date-released: 2026-04-22
-license: non-commercial
+license: MIT
 
 authors:
   - family-names: Feeney
