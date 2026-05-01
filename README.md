@@ -1115,10 +1115,10 @@ See [CITATION.cff](CITATION.cff) for more citation formats.
 
 ## License
 
-This project is available for **non-commercial use only** under the terms of the included LICENSE file.
-Commercial use requires a separate paid commercial license. To obtain a commercial license, please contact the author.
+This project is 100% open-source and distributed under the **MIT License**.
+You may use, modify, and distribute this software in commercial and non-commercial contexts in accordance with the license terms.
 
-See [LICENSE](LICENSE) for datails.
+See [LICENSE](LICENSE) for details.
 
 
 ---
@@ -1136,6 +1136,11 @@ Special thanks to:
 - Early adopters providing feedback and validation
 
 This project was developed with a combination of original ideas, hands‑on coding, and support from advanced AI systems. I would like to acknowledge **Microsoft Copilot**, **Anthropic Claude**, **Google Jules** and **OpenAI ChatGPT** for their meaningful assistance in refining concepts, improving clarity, and strengthening the overall quality of this work.
+
+---
+
+## Enterprise Consulting & Integration
+This architecture is fully open-source under the MIT License. If your organization requires custom scaling, proprietary integration, or dedicated technical consulting to deploy these models at an enterprise level, please reach out at: dfeen87@gmail.com
 
 ---
 
