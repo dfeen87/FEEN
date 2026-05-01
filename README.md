@@ -6,6 +6,7 @@
  
 *A Physics-First Phononic Computing Framework*
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-3.11-green.svg?style=flat-square)](CITATION.cff)
 [![CI](https://github.com/dfeen87/FEEN/actions/workflows/main.yml/badge.svg)](https://github.com/dfeen87/FEEN/actions/workflows/main.yml)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
