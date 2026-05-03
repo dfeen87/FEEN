@@ -40,7 +40,7 @@ The denominator $(1+\Delta_{GR})$ acts as a **coherence penalty**—even small i
 | Parkinsonian (initial) | 0.15 | 0.20 | 0.05 | 0.85 | ~0.017 |
 | Post-ACM target | $\ge0.40$ | $\ge0.40$ | $\ge0.50$ | $\le0.30$ | $>0.085$ |
 
-The `verify_systemic_independence` method uses a threshold of $5\times\text{baseline\_M}\approx0.085$ together with $\Lambda\ge0.4$ to determine whether the intervention was a genuine ACM or merely a **conventional suppressor**.
+The `verify_systemic_independence` method uses a threshold of $5\times M_{base}\approx0.085$ together with $\Lambda\ge0.4$ to determine whether the intervention was a genuine ACM or merely a **conventional suppressor**.
 
 ---
 
@@ -59,16 +59,18 @@ This phase targets the most debilitating symptom first: the pathological oscilla
 
 ### Phase 2 — Resonant Tutoring (`apply_phase2_tutoring`)
 
-$$\text{gross\_thermo\_support}=0.6\cdot\Phi$$
-$$\text{plasticity\_growth}=0.5\cdot\Phi$$
-$$\text{metabolic\_cost}=\text{plasticity\_growth}\cdot0.4$$
-$$\Gamma\leftarrow\min(1.0,\Gamma+\text{plasticity\_growth})$$
-$$\Theta\leftarrow\min(1.0,\Theta+\text{gross\_thermo\_support}-\text{metabolic\_cost})$$
+Let $S_{\Theta}$ represent Thermodynamic Support, $G_{\Gamma}$ represent Plasticity Growth, and $C_{\Theta}$ represent Metabolic Cost:
+
+$$S_{\Theta}=0.6\cdot\Phi$$
+$$G_{\Gamma}=0.5\cdot\Phi$$
+$$C_{\Theta}=G_{\Gamma}\cdot0.4$$
+$$\Gamma\leftarrow\min(1.0,\Gamma+G_{\Gamma})$$
+$$\Theta\leftarrow\min(1.0,\Theta+S_{\Theta}-C_{\Theta})$$
 $$\Lambda\leftarrow\min(1.0,\Lambda+0.4\cdot\Phi)$$
 
 This is the most scientifically substantive phase. It models three simultaneous processes:
-1. **Thermodynamic support:** The scaffold actively improves mitochondrial ATP yield, consistent with proposed neuroprotective strategies that target Complex I of the mitochondrial respiratory chain.
-2. **Neuroplastic induction:** The ACM drives long-term potentiation in the motor circuit, calibrated against a **metabolic penalty**. This captures the known bioenergetic cost of synaptic remodeling—learning and repair consume ATP. Scientists can vary the $0.4$ coefficient to simulate patients with different baseline metabolic reserves.
+1. **Thermodynamic support:** The scaffold actively improves mitochondrial ATP yield ($S_{\Theta}$), consistent with proposed neuroprotective strategies that target Complex I of the mitochondrial respiratory chain.
+2. **Neuroplastic induction:** The ACM drives long-term potentiation in the motor circuit ($G_{\Gamma}$), calibrated against a **metabolic penalty** ($C_{\Theta}$). This captures the known bioenergetic cost of synaptic remodeling—learning and repair consume ATP. Scientists can vary the $0.4$ coefficient to simulate patients with different baseline metabolic reserves.
 3. **Phase re-alignment:** Synchrony between SNpc and Striatum is actively restored, mirroring the effect of dopamine replacement in re-coupling the nigrostriatal pathway.
 
 **Scientific relevance:** Phase 2 is the distinguishing step between an ACM and a conventional dopamine agonist. A classical agonist only boosts $\Lambda$ transiently; the ACM simultaneously builds $\Gamma$—the neuroplastic reserve that will sustain $\Lambda$ after the scaffold is removed.
@@ -77,16 +79,18 @@ This is the most scientifically substantive phase. It models three simultaneous 
 
 ### Phase 3 — Taper (`execute_phase3_taper`)
 
-$$\text{step\_size}=\frac{\Phi}{\text{steps}}$$
+Let $N_{steps}$ be the tapering duration and $D_{\Gamma}$ be the degradation factor:
+
+$$\delta_{\Phi}=\frac{\Phi}{N_{steps}}$$
 
 For each step:
-$$\Phi\leftarrow\Phi-\text{step\_size}$$
-$$\text{degradation\_factor}=\max(0.0,1.0-\Gamma)$$
-$$\Lambda\leftarrow\max(0.15,\Lambda-0.05\cdot\text{degradation\_factor})$$
-$$\Theta\leftarrow\max(0.20,\Theta-0.05\cdot\text{degradation\_factor})$$
-$$\Delta_{GR}\leftarrow\min(0.85,\Delta_{GR}+0.1\cdot\text{degradation\_factor})$$
+$$\Phi\leftarrow\Phi-\delta_{\Phi}$$
+$$D_{\Gamma}=\max(0.0,1.0-\Gamma)$$
+$$\Lambda\leftarrow\max(0.15,\Lambda-0.05\cdot D_{\Gamma})$$
+$$\Theta\leftarrow\max(0.20,\Theta-0.05\cdot D_{\Gamma})$$
+$$\Delta_{GR}\leftarrow\min(0.85,\Delta_{GR}+0.1\cdot D_{\Gamma})$$
 
-The scaffold is gradually withdrawn. The $\text{degradation\_factor}$ is the critical parameter: it is **inversely proportional to the achieved neuroplastic gain $\Gamma$**. If $\Gamma$ is near $1.0$ (maximum plasticity), the degradation factor is near $0$, and the motor loop sustains itself—the hallmark of a true ACM. If $\Gamma$ is low (the scaffold never induced lasting plasticity), the system regresses toward the Parkinsonian attractor.
+The scaffold is gradually withdrawn. The $D_{\Gamma}$ variable is the critical parameter: it is **inversely proportional to the achieved neuroplastic gain $\Gamma$**. If $\Gamma$ is near $1.0$ (maximum plasticity), the degradation factor is near $0$, and the motor loop sustains itself—the hallmark of a true ACM. If $\Gamma$ is low (the scaffold never induced lasting plasticity), the system regresses toward the Parkinsonian attractor.
 
 **Scientific relevance:** This phase provides a quantitative model for **drug discontinuation protocols**. Researchers can simulate what happens when a patient is tapered off treatment after differing durations of Phase 2, directly reading the post-taper $M$ value to predict relapse risk.
 
@@ -94,12 +98,12 @@ The scaffold is gradually withdrawn. The $\text{degradation\_factor}$ is the cri
 
 ## Independence Verification (`verify_systemic_independence`)
 
-$$\text{baseline\_M}\approx0.017$$
-$$\text{is\_stable}=(M>5\times\text{baseline\_M})\land(\Lambda\ge0.4)$$
+$$M_{base}\approx0.017$$
+$$\text{Stability}=(M>5\times M_{base})\land(\Lambda\ge0.4)$$
 
 After $\Phi$ reaches zero, this diagnostic determines the **classification of the intervention**:
-* **True ACM (returns `True`):** $M>0.085$ and $\Lambda\ge0.4$. The motor loop is stable without external support. The patient achieved durable remission.
-* **Conventional Suppressor (returns `False`):** The system has regressed. The intervention was symptom-masking only, and the patient is back near the Parkinsonian attractor.
+* **True ACM:** $M>0.085$ and $\Lambda\ge0.4$. The motor loop is stable without external support. The patient achieved durable remission.
+* **Conventional Suppressor:** The system has regressed. The intervention was symptom-masking only, and the patient is back near the Parkinsonian attractor.
 
 This binary distinction gives scientists a clean success criterion for in-silico drug candidate screening.
 
