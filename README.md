@@ -210,7 +210,7 @@ print(f"Systemic Independence Achieved: {success}")
 print(f"Post-Taper M-Score: {pd_model.M:.4f}")
 ```
 
-**Documentation:** For a full breakdown of the mathematical mapping, the Neuro-Coherence ($M$) Function, and real-world metabolic penalties, please read the [Domain Parkinson's Research Documentation](/research_interfaces/PARKINSONS.md).
+**Documentation:** For a full breakdown of the mathematical mapping, the Neuro-Coherence ($M$) Function, and real-world metabolic penalties, please read the [Domain Parkinson's Research Documentation](./research_interfaces/PARKINSONS.md).
 
 ---
 
