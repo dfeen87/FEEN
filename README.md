@@ -21,6 +21,7 @@
 - [What is FEEN?](#what-is-feen)
 - [Domain Focus: Medicine](#domain-focus-medicine)
 - [Domain Focus: Energy](#domain-focus-energy)
+- [Medical Research Interfaces](#medical-research-interfaces)
 - [HLV Dynamics Lab](#hlv-dynamics-lab)
 - [Hardware Link](#hardware-link)
 - [Key Innovation](#key-innovation)
@@ -167,6 +168,49 @@ The domain maps FEEN’s core mechanics (nonlinear resonator behavior, phase‑l
 
 Implementation file:
 - `domains/satellite/SatelliteSwarm.hpp` (header‑only domain module)
+
+---
+
+## Medical Research Interfaces
+
+While the core FEEN architecture is built in high-performance C++, we provide the `research_interfaces` directory. This contains accessible, mathematically rigorous Python models designed for computational neuroscientists and medical researchers, requiring **zero C++ compilation**.
+
+#### Installation & Requirements
+The `Domain_Parkinsons` module is built using Python's standard library to ensure maximum compatibility across clinical research environments. There are no external dependencies required to run the core logic.
+
+* **Requirement:** Python 3.8 or higher.
+
+**To get started:**
+```bash
+# Clone the repository
+git clone https://github.com/dfeen87/FEEN.git
+
+# Navigate to the research interfaces directory
+cd FEEN/research_interfaces
+```
+
+#### Quick Start: The ACM Protocol
+You can import the module directly into your lab's Python scripts or Jupyter Notebooks to begin simulating the Neuro-Coherence Restoration Cycle (NCRC).
+
+```python
+from domain_parkinsons import DomainParkinsons
+
+# 1. Initialize the Parkinsonian state (High Variance, Low Coherence)
+pd_model = DomainParkinsons()
+print(f"Baseline M-Score: {pd_model.M:.4f}")
+
+# 2. Execute the 3-Phase NCRC Protocol
+pd_model.apply_phase1_scaffold(external_influence=0.4) # Dampen beta-oscillations
+pd_model.apply_phase2_tutoring(external_influence=0.8) # Induce neuroplasticity & thermodynamic support
+pd_model.execute_phase3_taper(steps=10)                # Taper the scaffold
+
+# 3. Verify if Systemic Independence was achieved
+success = pd_model.verify_systemic_independence()
+print(f"Systemic Independence Achieved: {success}")
+print(f"Post-Taper M-Score: {pd_model.M:.4f}")
+```
+
+**Documentation:** For a full breakdown of the mathematical mapping, the Neuro-Coherence ($M$) Function, and real-world metabolic penalties, please read the [Domain Parkinson's Research Documentation](research_interfaces/PARKINSONS.md).
 
 ---
 
