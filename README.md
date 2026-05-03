@@ -708,6 +708,10 @@ feen/
 │       ├── css/node_graph.css             # Node-graph panel styles
 │       ├── js/main.js                     # Dashboard JavaScript
 │       └── js/node_graph.js               # Node-graph visualization logic
+├── 📁 research_interfaces/                # Domain-specific overlays
+│   └──📁 parkinsons                       # Biological networks and cybernetic hematopoiesis
+│       ├── domains_parkinsons.py          # The ACM logic
+│       └── PARKINSONS.md                  # Instructions for running the Python
 │
 ├── CMakeLists.txt                         # Root CMake build configuration
 ├── vcpkg.json                             # C++ dependencies (vcpkg manifest)
