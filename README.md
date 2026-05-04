@@ -7,7 +7,7 @@
 *A Physics-First Phononic Computing Framework*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.11-green.svg?style=flat-square)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-3.14-green.svg?style=flat-square)](CITATION.cff)
 [![CI](https://github.com/dfeen87/FEEN/actions/workflows/main.yml/badge.svg)](https://github.com/dfeen87/FEEN/actions/workflows/main.yml)
 [![C++](https://img.shields.io/badge/C++-17-00599C.svg?style=flat-square&logo=c%2B%2B)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -21,6 +21,8 @@
 - [What is FEEN?](#what-is-feen)
 - [Domain Focus: Medicine](#domain-focus-medicine)
 - [Domain Focus: Energy](#domain-focus-energy)
+- [Domain Focus: SatelliteSwarm](#domain-focus-satelliteswarm)
+- [Domain Focus: Internet](#domain-focus-internet)
 - [Medical Research Interfaces](#medical-research-interfaces)
 - [HLV Dynamics Lab](#hlv-dynamics-lab)
 - [Hardware Link](#hardware-link)
@@ -168,6 +170,35 @@ The domain maps FEEN’s core mechanics (nonlinear resonator behavior, phase‑l
 
 Implementation file:
 - `domains/satellite/SatelliteSwarm.hpp` (header‑only domain module)
+
+---
+
+## Domain Focus: Internet
+
+FEEN includes an internet infrastructure domain at `domains/internet/` that models routers, data centers, and fiber optic networks as a wave-native resonator mesh. Network topology, routing, and DDoS mitigation emerge from wave mechanics — impedance, interference, and phase-locking — applied directly to internet infrastructure constructs.
+
+The domain maps FEEN's core mechanics (resonator impedance, constructive/destructive interference, bistable logic, Dijkstra pathfinding over an impedance graph) into networking constructs such as:
+
+- **Wave-native routing** via least-impedance pathfinding (Dijkstra on resonator + fiber impedance)
+- **DDoS detection and mitigation** using parasitic-frequency identification and destructive interference
+- **Ground-to-orbit handoff** interfacing with the Satellite domain via Doppler-corrected phase-locking
+
+### Internet Domain Components (`domains/internet/`)
+
+- **`RouterNode`**
+  Represents a router or data center as a FEEN resonator. Local impedance is modeled as `computational_load / bandwidth_capacity`. Includes an inbound traffic evaluator that detects DDoS floods by simulating a massive load surge and checking impedance threshold, then neutralizes the attack by injecting a destructive-interference waveform (180° phase shift) via `core_resonator_.inject()`.
+
+- **`FiberEdge`**
+  Physical fiber optic link between two `RouterNode` endpoints. Edge impedance is proportional to cable length; severed cables return infinity. Bidirectional by default in pathfinding.
+
+- **`HarmonicRouter`**
+  Network coordinator that owns a graph of `RouterNode` and `FiberEdge` objects. Provides:
+  - **Harmonic Pathfinding** — Dijkstra's algorithm over a combined node + edge impedance graph to find the path of least resistance.
+  - **Ground-to-Orbit Handoff** — phase-locks a ground `RouterNode` to a moving `SatelliteDomain::SwarmNode` by applying a Doppler-shifted target frequency via `set_state()`.
+  - **Network Tick** — advances all router resonators by a time step `dt`.
+
+Implementation file:
+- `domains/internet/InternetDomain.hpp` (header‑only domain module)
 
 ---
 
@@ -730,6 +761,8 @@ feen/
 │   │   └── PAPER.md                       # Wave-native pharmacokinetics concept paper
 │   ├── 📁 satellite/                      # Fractionated spacecraft swarm models
 │   │   └── SatelliteSwarm.hpp             # Satellite swarm domain core types and logic
+│   ├── 📁 internet/                       # Internet infrastructure domain
+│   │   └── InternetDomain.hpp             # Router, fiber, and harmonic-routing logic
 │   └── 📁 energy/                         # Grid/DER energy mesh domain
 │       └── EnergyMesh.hpp                 # Energy domain core types and logic
 │
