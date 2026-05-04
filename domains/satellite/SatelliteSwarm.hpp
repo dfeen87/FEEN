@@ -58,6 +58,8 @@ public:
         }
         if (E_seu <= 0.0) return;
 
+        current_seu_energy_ = E_seu;
+
         // In feen::Resonator, beta is private in config, but we can infer bistability
         // by checking if the barrier height is non-zero.
         double delta_U = core_resonator_.barrier_height();

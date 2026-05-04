@@ -2,7 +2,7 @@ cff-version: 1.2.0
 title: "FEEN: The Phononic Wave Engine"
 message: "If you use FEEN in academic work, please cite it as below."
 type: software
-version: 3.11
+version: 3.14
 date-released: 2026-04-22
 license: MIT
 
