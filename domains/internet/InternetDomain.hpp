@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vector>
+#include <algorithm>
+#include <complex>
 #include <cmath>
 #include <cstddef>
+#include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
-#include <iostream>
-#include <complex>
 #include <string>
-#include <limits>
+#include <vector>
 
 #include "feen/resonator.h"
 #include "feen/network.h"
@@ -27,14 +28,21 @@ public:
           bandwidth_capacity_(bandwidth_capacity),
           computational_load_(computational_load),
           parasitic_noise_amplitude_(0.0),
-          parasitic_noise_frequency_(0.0) {}
+          parasitic_noise_frequency_(0.0) {
+        if (!std::isfinite(bandwidth_capacity_) || bandwidth_capacity_ <= 0.0) {
+            throw std::invalid_argument("RouterNode bandwidth_capacity must be finite and > 0.");
+        }
+        if (!std::isfinite(computational_load_) || computational_load_ < 0.0) {
+            throw std::invalid_argument("RouterNode computational_load must be finite and >= 0.");
+        }
+    }
 
     /**
      * @brief Calculates local impedance.
      * Impedance is modeled as computational_load / bandwidth_capacity.
      * High load or low bandwidth spikes impedance.
      */
-    double impedance() const {
+    [[nodiscard]] double impedance() const {
         if (bandwidth_capacity_ <= 0.0) return std::numeric_limits<double>::infinity();
         return computational_load_ / bandwidth_capacity_;
     }
@@ -49,16 +57,20 @@ public:
      * @brief Simulates an inbound traffic evaluator perimeter.
      * Detects a flood of parasitic, non-harmonic frequencies (DDoS).
      */
-    void evaluate_inbound_traffic(double noise_amplitude, double noise_frequency, double current_time) {
-        // A DDoS attack artificially spikes local impedance by simulating a massive load
+    void evaluate_inbound_traffic(double noise_amplitude, double noise_frequency) {
+        // Temporarily spike local impedance to simulate a massive load surge (DDoS probe).
+        // The spike is always reverted after threshold evaluation so that normal load
+        // is never permanently corrupted by the detection logic.
         double simulated_noise_load = noise_amplitude * 1e6; // Arbitrary high factor
         computational_load_ += simulated_noise_load;
+        bool ddos_detected = (impedance() > DDOS_IMPEDANCE_THRESHOLD);
+        computational_load_ -= simulated_noise_load;
 
-        if (impedance() > DDOS_IMPEDANCE_THRESHOLD) {
+        if (ddos_detected) {
             // Node detected massive influx of noise. Identify parasitic frequency.
             parasitic_noise_amplitude_ = noise_amplitude;
             parasitic_noise_frequency_ = noise_frequency;
-            mitigate_ddos(current_time);
+            mitigate_ddos();
         }
     }
 
@@ -66,16 +78,11 @@ public:
      * @brief Neutralizes the malicious traffic via destructive interference.
      * Emits an exact inverse waveform (180-degree phase shift).
      */
-    void mitigate_ddos(double current_time) {
+    void mitigate_ddos() {
         if (parasitic_noise_amplitude_ > 0.0) {
             // Emitting inverse waveform (180 phase shift) is effectively injecting negative amplitude
             // or shifting phase by PI.
-            // core_resonator_.inject() defaults phase to 0. We can do inject(amp, M_PI) to cancel.
-            // We just record that neutralization occurred and reset the load.
             core_resonator_.inject(parasitic_noise_amplitude_, M_PI); // Destructive interference
-
-            // Restore normal computational load (noise neutralized)
-            computational_load_ -= (parasitic_noise_amplitude_ * 1e6);
 
             parasitic_noise_amplitude_ = 0.0;
             parasitic_noise_frequency_ = 0.0;
@@ -84,7 +91,7 @@ public:
         }
     }
 
-    bool was_ddos_mitigated() const { return ddos_mitigated_; }
+    [[nodiscard]] bool was_ddos_mitigated() const { return ddos_mitigated_; }
     void clear_mitigation_flag() { ddos_mitigated_ = false; }
 
 private:
@@ -112,7 +119,7 @@ struct FiberEdge {
     FiberEdge(std::size_t src, std::size_t tgt, double l)
         : source_node(src), target_node(tgt), length(l), is_severed(false) {}
 
-    double edge_impedance() const {
+    [[nodiscard]] double edge_impedance() const {
         if (is_severed) return std::numeric_limits<double>::infinity();
         return length; // Simple model: longer fiber = higher natural impedance
     }
@@ -130,6 +137,9 @@ public:
         if (src >= nodes_.size() || tgt >= nodes_.size()) {
             throw std::out_of_range("HarmonicRouter link endpoint index out of range.");
         }
+        if (!std::isfinite(length) || length <= 0.0) {
+            throw std::invalid_argument("HarmonicRouter edge length must be finite and > 0.");
+        }
         edges_.emplace_back(src, tgt, length);
     }
 
@@ -141,7 +151,7 @@ public:
      * Finds the path of least impedance by evaluating node impedance + edge impedance.
      * Severed edges return infinity. Uses Dijkstra's algorithm.
      */
-    std::vector<std::size_t> find_path(std::size_t source, std::size_t target) const {
+    [[nodiscard]] std::vector<std::size_t> find_path(std::size_t source, std::size_t target) const {
         if (source == target) return {source};
         if (source >= nodes_.size() || target >= nodes_.size()) return {};
 
@@ -199,9 +209,10 @@ public:
         std::size_t curr = target;
         if (prev[curr] != std::numeric_limits<std::size_t>::max() || curr == source) {
             while (curr != std::numeric_limits<std::size_t>::max()) {
-                path.insert(path.begin(), curr);
+                path.push_back(curr);
                 curr = prev[curr];
             }
+            std::reverse(path.begin(), path.end());
         }
 
         return path;
@@ -215,6 +226,9 @@ public:
     void orbit_handoff(std::size_t ground_node_idx, const SatelliteDomain::SwarmNode& satellite_node, double doppler_shift_hz) {
         if (ground_node_idx >= nodes_.size()) {
             throw std::out_of_range("Ground node index out of range.");
+        }
+        if (!std::isfinite(doppler_shift_hz)) {
+            throw std::invalid_argument("orbit_handoff doppler_shift_hz must be finite.");
         }
 
         RouterNode& ground_node = nodes_[ground_node_idx];
@@ -235,6 +249,20 @@ public:
         double new_v = -target_omega * std::sin(target_omega * current_t);
 
         ground_node.get_core().set_state(new_x, new_v, current_t);
+    }
+
+    /**
+     * @brief Advances all router node resonators by dt.
+     *
+     * @param dt Time step in seconds.
+     */
+    void tick(double dt) {
+        if (!std::isfinite(dt) || dt <= 0.0) {
+            throw std::invalid_argument("HarmonicRouter tick dt must be finite and > 0.");
+        }
+        for (auto& node : nodes_) {
+            node.get_core().tick(dt);
+        }
     }
 
 private:
