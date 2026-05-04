@@ -48,3 +48,12 @@ add_test(
     NAME MedicineDomainValidation
     COMMAND medicine_domain_test
 )
+
+add_executable(internet_domain_test ../domains/internet/test_internet_domain.cpp)
+target_link_libraries(internet_domain_test PRIVATE feen)
+target_include_directories(internet_domain_test PRIVATE ${CMAKE_SOURCE_DIR})
+
+add_test(
+    NAME InternetDomainValidation
+    COMMAND internet_domain_test
+)
